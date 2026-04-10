@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useUser } from '../clerkMock.jsx';
 import axios from 'axios';
-import { Activity, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert, Cpu, ThumbsUp, ThumbsDown, Download, Scan } from 'lucide-react';
+import { Activity, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert, Cpu, ThumbsUp, ThumbsDown, Download, Scan, Trash2 } from 'lucide-react';
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import Lottie from 'lottie-react';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -115,6 +115,18 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteData = async () => {
+    if (!window.confirm("Are you sure you want to permanently delete all your health data? This cannot be undone.")) return;
+    try {
+      const res = await axios.delete(`${API_URL}/user/${user.id}`);
+      if (res.data.status === 'success') {
+         window.location.reload();
+      }
+    } catch (err) {
+      console.error("Deletion failed:", err);
+    }
+  };
+
   const handleExport = async () => {
     try {
       const res = await axios.get(`${API_URL}/user/export/${user.id}`);
@@ -183,6 +195,12 @@ const Dashboard = () => {
             className="px-4 py-2 bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:text-blue-400 rounded-lg text-sm font-medium transition-colors flex items-center text-gray-300 shadow-xl"
           >
              <Download className="w-4 h-4 mr-2" /> Export My Health Data
+          </button>
+          <button 
+            onClick={handleDeleteData}
+            className="px-4 py-2 bg-red-900/20 border border-red-500/20 hover:bg-red-600 hover:text-white rounded-lg text-sm font-medium transition-colors flex items-center text-red-500 shadow-xl"
+          >
+             <Trash2 className="w-4 h-4 mr-2" /> Delete My Data
           </button>
           <button 
             onClick={generateReport}

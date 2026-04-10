@@ -346,6 +346,76 @@ app.get('/api/user/export/:clerkId', async (req, res) => {
   }
 });
 
+// Phase 5: Refinements & Compliance Endpoints
+
+// 1. Delete Account Data (11.4)
+app.delete('/api/user/:clerkId', async (req, res) => {
+  try {
+    const clerkId = req.params.clerkId;
+    
+    // Purge all user data from collections
+    await Promise.all([
+      UserProfile.deleteOne({ clerkId }),
+      Report.deleteMany({ clerkId }),
+      InteractionHistory.deleteMany({ clerkId }),
+      Feedback.deleteMany({ clerkId })
+    ]);
+
+    res.json({ status: 'success', message: 'All user data successfully purged from MongoDB' });
+  } catch (error) {
+    console.error('Account deletion error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// 2. AI Symptom Chatbot (11.6)
+app.post('/api/chat/symptom', async (req, res) => {
+  try {
+    const { clerkId, message, conversationHistory } = req.body;
+    
+    // Fetch critical profile context to ground the chatbot
+    let profileContext = "";
+    if (clerkId) {
+       const [profile, report] = await Promise.all([
+         UserProfile.findOne({ clerkId }),
+         Report.findOne({ clerkId }).sort({ createdAt: -1 })
+       ]);
+       
+       if (profile) {
+         profileContext = `The user is a ${profile.age}yo ${profile.gender} from ${profile.location}. 
+         They have the following conditions: ${profile.conditions?.join(', ') || 'None'}. 
+         ${report ? `Their latest AI assessment summary: ${report.summary}` : ''}`;
+       }
+    }
+
+    const systemPrompt = `You are VaidyaSetu's AI Symptom Assistant, a professional and empathetic healthcare bot.
+    Your job is to provide preliminary insights into symptoms. 
+    You MUST include a disclaimer that you are not a doctor and they should seek medical attention for emergencies.
+    User Profile Context (use this to personalize, do not reveal the exact raw text):
+    ${profileContext || 'No profile context available.'}
+    Keep responses concise, reassuring, and structured with bullet points.`;
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...(conversationHistory || []),
+      { role: 'user', content: message }
+    ];
+
+    const completion = await groq.chat.completions.create({
+      messages,
+      model: 'llama-3.3-70b-versatile',
+    });
+
+    res.json({
+      status: 'success',
+      reply: completion.choices[0]?.message?.content || "I apologize, but I am unable to process your request."
+    });
+  } catch (error) {
+    console.error('Chatbot error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useUser } from '../../clerkMock.jsx';
 import CreatableSelect from 'react-select/creatable';
 import useOnboardingStore from '../../store/useOnboardingStore';
 import { ChevronLeft, ShieldCheck, AlertCircle, Check } from 'lucide-react';
