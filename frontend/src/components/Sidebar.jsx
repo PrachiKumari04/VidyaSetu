@@ -32,7 +32,7 @@ const Sidebar = () => {
         <div className="block md:hidden">
             <SignedIn>
                 <div className="flex items-center space-x-4">
-                  <Link href="/settings" className="text-gray-400 hover:text-emerald-500 transition-colors" title="Profile Settings">
+                  <Link to="/settings" className="text-gray-400 hover:text-emerald-500 transition-colors" title="Profile Settings">
                     <Settings className="w-5 h-5" />
                   </Link>
                   <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }} />

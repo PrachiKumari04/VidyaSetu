@@ -1,27 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: dark;
-  color: #d1d5db; /* gray-300 */
-  background-color: #030712; /* gray-950 */
-
+  color: #d1d5db;
+  background-color: #030712;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  display: flex;
   min-width: 320px;
   min-height: 100vh;
   background-color: #030712;
@@ -36,18 +34,6 @@ h1, h2, h3, h4, h5, h6 {
   color: #ffffff;
 }
 
-/* Scrollbar hide helper */
-@layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-}
-
-/* Animations from reference */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -66,7 +52,14 @@ h1, h2, h3, h4, h5, h6 {
   animation: slideInRight 0.5s ease-out forwards;
 }
 
-/* Custom Gradient for Branding */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .text-emerald-gradient {
   background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   -webkit-background-clip: text;
