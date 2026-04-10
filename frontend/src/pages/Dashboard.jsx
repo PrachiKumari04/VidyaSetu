@@ -5,7 +5,7 @@ import { Activity, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert } from 'lu
 import Lottie from 'lottie-react';
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 // Fallback Lottie Animation data (Simple pulsing circle to simulate scan)
 const scanAnimation = {

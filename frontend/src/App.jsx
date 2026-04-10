@@ -7,7 +7,7 @@ import Dashboard from './pages/Dashboard';
 import { Loader2 } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 // Main app shell — checks onboarding status and redirects if needed
 const AppLayout = () => {

@@ -60,17 +60,19 @@ const Step4History = () => {
         clerkId: user.id,
       };
       
-      const response = await axios.post('http://localhost:5000/api/user/profile', payload);
+      const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
+      const response = await axios.post(`${API_URL}/user/profile`, payload);
+
       if (response.data.status === 'success') {
         setSuccess(true);
         setTimeout(() => {
-          // In a real app, redirect to dashboard
           window.location.href = '/';
         }, 2000);
       }
     } catch (error) {
       console.error('Final submission failed:', error);
-      alert('Failed to activate ecosystem. Please check connection.');
+      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      alert(`Failed to activate ecosystem: ${errorMsg}. Please check connection.`);
     } finally {
       setLoading(false);
     }
