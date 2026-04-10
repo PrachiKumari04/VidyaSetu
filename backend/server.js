@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { Groq } = require('groq-sdk');
+const UserProfile = require('./src/models/UserProfile');
 
 dotenv.config();
 
@@ -45,6 +46,33 @@ app.get('/api/health', async (req, res) => {
     });
   } catch (error) {
     console.error('Health check error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// Profile Save Route
+app.post('/api/user/profile', async (req, res) => {
+  try {
+    const profileData = req.body;
+    const { clerkId } = profileData;
+
+    if (!clerkId) {
+      return res.status(400).json({ status: 'error', message: 'clerkId is required' });
+    }
+
+    const profile = await UserProfile.findOneAndUpdate(
+      { clerkId },
+      { ...profileData, onboardingComplete: true },
+      { new: true, upsert: true }
+    );
+
+    res.json({
+      status: 'success',
+      message: 'Profile saved successfully',
+      data: profile
+    });
+  } catch (error) {
+    console.error('Profile save error:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 });
