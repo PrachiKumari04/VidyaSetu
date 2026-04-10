@@ -1,16 +1,23 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react';
+import { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Onboarding from './pages/Onboarding';
-import { Activity } from 'lucide-react';
+import { Activity, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Placeholder for dashboard — replace in Phase 2
 const DashboardPlaceholder = () => (
   <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
     <div className="max-w-lg w-full p-12 bg-gray-900/40 backdrop-blur-xl rounded-3xl border border-emerald-500/10">
       <div className="p-4 bg-emerald-500/10 rounded-full inline-block mb-6 border border-emerald-500/20">
         <Activity className="w-10 h-10 text-emerald-500" />
       </div>
-      <h1 className="text-4xl font-bold mb-4 text-white">Health Ecosystem <span className="text-emerald-500">Active</span></h1>
+      <h1 className="text-4xl font-bold mb-4 text-white">
+        Health Ecosystem <span className="text-emerald-500">Active</span>
+      </h1>
       <p className="text-gray-400 mb-8">
         Your personalized health bridge is initializing. Phase 1 is now operational.
       </p>
@@ -23,46 +30,82 @@ const DashboardPlaceholder = () => (
   </div>
 );
 
-const AppLayout = () => (
-  <div className="flex flex-col md:flex-row min-h-screen w-full">
-    <Sidebar />
-    <main className="flex-1 p-4 sm:p-8 md:p-12 w-full overflow-auto">
-      <Routes>
-        <Route path="/" element={<DashboardPlaceholder />} />
-        <Route path="/prescriptions" element={<DashboardPlaceholder />} />
-        <Route path="/vitals" element={<DashboardPlaceholder />} />
-        <Route path="/alerts" element={<DashboardPlaceholder />} />
-      </Routes>
-    </main>
-  </div>
-);
+// Main app shell — checks onboarding status and redirects if needed
+const AppLayout = () => {
+  const { user, isLoaded } = useUser();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+
+    // Check if this user has completed onboarding
+    axios.get(`${API_URL}/user/${user.id}`)
+      .then((res) => {
+        if (res.data?.status === 'success') {
+          const profile = res.data.data;
+          if (!profile.onboardingComplete) {
+            navigate('/onboarding', { replace: true });
+          }
+        } else {
+          // No profile found — send to onboarding
+          navigate('/onboarding', { replace: true });
+        }
+      })
+      .catch(() => {
+        // On error (e.g. 404 no profile) — send to onboarding
+        navigate('/onboarding', { replace: true });
+      })
+      .finally(() => setChecking(false));
+  }, [isLoaded, user]);
+
+  if (checking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#030712]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+          <p className="text-gray-400 text-sm">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col md:flex-row min-h-screen w-full">
+      <Sidebar />
+      <main className="flex-1 p-4 sm:p-8 md:p-12 w-full overflow-auto">
+        <Routes>
+          <Route path="/" element={<DashboardPlaceholder />} />
+          <Route path="/prescriptions" element={<DashboardPlaceholder />} />
+          <Route path="/vitals" element={<DashboardPlaceholder />} />
+          <Route path="/alerts" element={<DashboardPlaceholder />} />
+        </Routes>
+      </main>
+    </div>
+  );
+};
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public: Sign-in */}
-        <Route
-          path="/sign-in"
-          element={
-            <SignedOut>
-              <RedirectToSignIn />
-            </SignedOut>
-          }
-        />
+        {/* Clerk default redirect alias */}
+        <Route path="/dashboard" element={<Navigate to="/" replace />} />
 
         {/* Protected: Onboarding */}
         <Route
           path="/onboarding"
           element={
-            <SignedIn>
-              <Onboarding />
-            </SignedIn>
+            <>
+              <SignedIn>
+                <Onboarding />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
           }
         />
-
-        {/* Clerk default redirect fallback */}
-        <Route path="/dashboard" element={<Navigate to="/" replace />} />
 
         {/* Protected: Main App */}
         <Route

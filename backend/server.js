@@ -77,6 +77,19 @@ app.post('/api/user/profile', async (req, res) => {
   }
 });
 
+app.get('/api/user/:clerkId', async (req, res) => {
+  try {
+    const profile = await UserProfile.findOne({ clerkId: req.params.clerkId });
+    if (!profile) {
+      return res.status(404).json({ status: 'not_found', message: 'Profile not found' });
+    }
+    res.json({ status: 'success', data: profile });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
