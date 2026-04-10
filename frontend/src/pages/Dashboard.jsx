@@ -138,16 +138,16 @@ const Dashboard = () => {
             <h2 className="text-emerald-400 font-semibold mb-3 flex items-center uppercase tracking-wide text-xs">
                <Activity className="w-4 h-4 mr-2" /> AI Diagnostic Summary
             </h2>
-            <p className="text-gray-200 text-lg leading-relaxed relative z-10">{report.summary}</p>
+            <p className="text-gray-200 text-lg leading-relaxed relative z-10">{report?.summary || "Summary text is missing from the database."}</p>
           </div>
 
           {/* Risk Gauges */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-lg">Predictive Risk Vectors</h3>
             <div className="grid grid-cols-3 gap-4">
-              <GaugeChart score={report.risk_scores.diabetes} color={getRiskColor(report.risk_scores.diabetes)} label="Diabetes" />
-              <GaugeChart score={report.risk_scores.hypertension} color={getRiskColor(report.risk_scores.hypertension)} label="Hypertension" />
-              <GaugeChart score={report.risk_scores.anemia} color={getRiskColor(report.risk_scores.anemia)} label="Anemia" />
+              <GaugeChart score={report?.risk_scores?.diabetes || 0} color={getRiskColor(report?.risk_scores?.diabetes || 0)} label="Diabetes" />
+              <GaugeChart score={report?.risk_scores?.hypertension || 0} color={getRiskColor(report?.risk_scores?.hypertension || 0)} label="Hypertension" />
+              <GaugeChart score={report?.risk_scores?.anemia || 0} color={getRiskColor(report?.risk_scores?.anemia || 0)} label="Anemia" />
             </div>
           </div>
 
@@ -157,21 +157,21 @@ const Dashboard = () => {
                <AlertTriangle className="w-6 h-6 text-fuchsia-500 mr-4 shrink-0 mt-1" />
                <div>
                   <h4 className="text-white font-medium mb-1">Diabetes Insight</h4>
-                  <p className="text-gray-400 text-sm">{report.diabetes_advice}</p>
+                  <p className="text-gray-400 text-sm">{report?.diabetes_advice || "No advice generated."}</p>
                </div>
             </div>
             <div className="bg-gray-900 border border-gray-800 p-5 rounded-2xl flex items-start">
                <Activity className="w-6 h-6 text-amber-500 mr-4 shrink-0 mt-1" />
                <div>
                   <h4 className="text-white font-medium mb-1">Hypertension Insight</h4>
-                  <p className="text-gray-400 text-sm">{report.hypertension_advice}</p>
+                  <p className="text-gray-400 text-sm">{report?.hypertension_advice || "No advice generated."}</p>
                </div>
             </div>
             <div className="bg-gray-900 border border-gray-800 p-5 rounded-2xl flex items-start">
                <ShieldAlert className="w-6 h-6 text-blue-500 mr-4 shrink-0 mt-1" />
                <div>
                   <h4 className="text-white font-medium mb-1">Anemia Insight</h4>
-                  <p className="text-gray-400 text-sm">{report.anemia_advice}</p>
+                  <p className="text-gray-400 text-sm">{report?.anemia_advice || "No advice generated."}</p>
                </div>
             </div>
           </div>
@@ -199,9 +199,9 @@ const Dashboard = () => {
                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-2" /> Lifestyle Routine
               </h3>
               <div className="space-y-3">
-                 {report.general_tips.split('\\n').filter(t => t.trim()).map((tip, i) => (
+                 {(Array.isArray(report.general_tips) ? report.general_tips : (report.general_tips || '').split('\n')).filter(t => t && t.trim()).map((tip, i) => (
                     <div key={i} className="flex items-start">
-                       <span className="w-1.5 h-1.5 bg-gray-500 rounded-full mt-2 mr-3 shrink-0" />
+                       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 mr-3 shrink-0" />
                        <span className="text-gray-400 text-sm leading-relaxed">{tip.replace(/^-/,'').trim()}</span>
                     </div>
                  ))}
