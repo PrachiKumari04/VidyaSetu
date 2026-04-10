@@ -5,6 +5,7 @@ import Step2Lifestyle from './onboarding/Step2Lifestyle';
 import Step3Diet from './onboarding/Step3Diet';
 import Step4History from './onboarding/Step4History';
 import { Activity } from 'lucide-react';
+import DisclaimerBanner from '../components/DisclaimerBanner';
 
 const Onboarding = () => {
   const { step, setStep } = useOnboardingStore();
@@ -84,6 +85,9 @@ const Onboarding = () => {
                 Secure • ICMR Standards • Confidential
             </p>
         </div>
+      </div>
+      <div className="w-full mt-12">
+        <DisclaimerBanner />
       </div>
     </div>
   );
