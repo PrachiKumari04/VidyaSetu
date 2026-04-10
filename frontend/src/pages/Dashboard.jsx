@@ -193,15 +193,42 @@ const Dashboard = () => {
                </div>
            </div>
 
+           {/* Step Tracker Placeholder */}
+           <div className="bg-gray-900 border border-gray-800 p-6 rounded-3xl group hover:border-emerald-500/30 transition-all">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-white font-semibold flex items-center">
+                   <Activity className="w-5 h-5 text-emerald-500 mr-2" /> Activity Pulse
+                </h3>
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 uppercase tracking-tighter">Connected</span>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <div className="text-3xl font-bold text-white tracking-tight">4,821</div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Daily Steps</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-emerald-500 font-bold">60%</div>
+                    <div className="text-[10px] text-gray-500 uppercase">Goal: 8,000</div>
+                  </div>
+                </div>
+                
+                <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full w-[60%] shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all duration-1000" />
+                </div>
+              </div>
+           </div>
+
            {/* General Tips */}
            <div className="bg-gray-900 border border-gray-800 p-6 rounded-3xl">
               <h3 className="text-white font-semibold mb-4 flex items-center">
                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-2" /> Lifestyle Routine
               </h3>
               <div className="space-y-3">
-                 {(Array.isArray(report.general_tips) ? report.general_tips : (report.general_tips || '').split('\n')).filter(t => t && t.trim()).map((tip, i) => (
-                    <div key={i} className="flex items-start">
-                       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 mr-3 shrink-0" />
+                 {(Array.isArray(report?.general_tips) ? report?.general_tips : (report?.general_tips || '').split('\n')).filter(t => t && t.trim()).map((tip, i) => (
+                    <div key={i} className="flex items-start group">
+                       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 mr-3 shrink-0 group-hover:scale-125 transition-transform" />
                        <span className="text-gray-400 text-sm leading-relaxed">{tip.replace(/^-/,'').trim()}</span>
                     </div>
                  ))}
