@@ -25,6 +25,7 @@ const Prescriptions = () => {
   const [history, setHistory] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [explanations, setExplanations] = useState({}); // drugPair -> explanation
+  const [feedbackStatus, setFeedbackStatus] = useState({}); // pairKey -> boolean
   const [loadingExpl, setLoadingExpl] = useState({});
   const [voicePlaying, setVoicePlaying] = useState(false);
   const [showVoiceToast, setShowVoiceToast] = useState(false);
@@ -41,6 +42,21 @@ const Prescriptions = () => {
       if (res.data.status === 'success') setHistory(res.data.data);
     } catch (err) {
       console.error("Fetch history failed:", err);
+    }
+  };
+
+  const handleFeedback = async (context, rating, query, response) => {
+    try {
+      await axios.post(`${API_URL}/feedback`, {
+        clerkId: user.id,
+        context,
+        query,
+        response,
+        rating
+      });
+      setFeedbackStatus(prev => ({ ...prev, [context]: true }));
+    } catch (err) {
+      console.error("Feedback error", err);
     }
   };
 
@@ -310,7 +326,7 @@ const Prescriptions = () => {
                       <ShieldAlert className="w-8 h-8 text-white" />
                       <div>
                          <h4 className="text-white font-black uppercase tracking-tighter text-lg">Urgent Safety Warning</h4>
-                         <p className="text-red-100 text-xs font-bold uppercase tracking-widest opacity-80">Critical interaction detected. Consult doctor immediately.</p>
+                         <p className="text-red-100 text-xs font-bold uppercase tracking-widest opacity-80">URGENT: Consult doctor immediately.</p>
                       </div>
                    </div>
                    <div className="hidden md:block px-4 py-1.5 bg-white/20 rounded-full text-[10px] font-black text-white uppercase tracking-widest">
@@ -382,7 +398,18 @@ const Prescriptions = () => {
                                 <Cpu className="w-4 h-4" /> AI Explanation (Plain Language)
                              </h4>
                              {explanations[pairKey] ? (
-                               <p className="text-gray-200 text-sm leading-relaxed font-medium italic pr-12">"{explanations[pairKey]}"</p>
+                                <div>
+                                   <p className="text-gray-200 text-sm leading-relaxed font-medium italic pr-12">"{explanations[pairKey]}"</p>
+                                   {!feedbackStatus[pairKey] ? (
+                                      <div className="flex items-center gap-3 mt-4 animate-in fade-in slide-in-from-left-2">
+                                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/50 mr-2">Helpful?</span>
+                                         <button onClick={() => handleFeedback(pairKey, 'up', pairKey, explanations[pairKey])} className="p-1.5 bg-white/5 hover:bg-emerald-500/20 text-emerald-500/50 hover:text-emerald-400 rounded-lg transition-all active:scale-95"><ThumbsUp className="w-4 h-4" /></button>
+                                         <button onClick={() => handleFeedback(pairKey, 'down', pairKey, explanations[pairKey])} className="p-1.5 bg-white/5 hover:bg-red-500/20 text-red-500/50 hover:text-red-400 rounded-lg transition-all active:scale-95"><ThumbsDown className="w-4 h-4" /></button>
+                                      </div>
+                                   ) : (
+                                      <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 mt-4 animate-in zoom-in"><CheckCircle className="w-3 h-3" /> Feedback Received</div>
+                                   )}
+                                </div>
                              ) : (
                                <button 
                                  onClick={() => getAIExplanation(item.allopathy_drug, drugB)}

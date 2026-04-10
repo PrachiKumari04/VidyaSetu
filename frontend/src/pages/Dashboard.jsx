@@ -182,7 +182,7 @@ const Dashboard = () => {
             onClick={handleExport}
             className="px-4 py-2 bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:text-blue-400 rounded-lg text-sm font-medium transition-colors flex items-center text-gray-300 shadow-xl"
           >
-             <Download className="w-4 h-4 mr-2" /> Export JSON
+             <Download className="w-4 h-4 mr-2" /> Export My Health Data
           </button>
           <button 
             onClick={generateReport}
@@ -302,13 +302,22 @@ const Dashboard = () => {
               <h3 className="text-white font-semibold mb-4 flex items-center">
                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-2" /> Lifestyle Routine
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-3 relative">
                  {(Array.isArray(report?.general_tips) ? report?.general_tips : (report?.general_tips || '').split('\n')).filter(t => t && t.trim()).map((tip, i) => (
                     <div key={i} className="flex items-start group">
                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 mr-3 shrink-0 group-hover:scale-125 transition-transform" />
                        <span className="text-gray-400 text-sm leading-relaxed">{tip.replace(/^-/,'').trim()}</span>
                     </div>
                  ))}
+                 {!feedbackStatus['Lifestyle'] ? (
+                    <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-800">
+                       <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 mr-2">Helpful?</span>
+                       <button onClick={() => handleFeedback('Lifestyle', 'up', 'General Tips', report?.general_tips)} className="p-1.5 bg-gray-800 hover:bg-emerald-500/10 text-gray-400 hover:text-emerald-400 rounded-lg transition-all active:scale-95"><ThumbsUp className="w-4 h-4" /></button>
+                       <button onClick={() => handleFeedback('Lifestyle', 'down', 'General Tips', report?.general_tips)} className="p-1.5 bg-gray-800 hover:bg-red-500/10 text-gray-400 hover:text-red-400 rounded-lg transition-all active:scale-95"><ThumbsDown className="w-4 h-4" /></button>
+                    </div>
+                 ) : (
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 mt-6 pt-4 border-t border-gray-800"><CheckCircle className="w-3 h-3" /> Feedback Received</div>
+                 )}
               </div>
            </div>
 
