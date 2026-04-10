@@ -220,7 +220,7 @@ const Prescriptions = () => {
                   {candidates.map((cand, i) => (
                     <div key={i} className="flex items-center justify-between p-4 bg-gray-950/80 border border-gray-800/50 rounded-2xl group hover:border-emerald-500/40 transition-all">
                        <div className="flex flex-col">
-                          <span className="text-[9px] text-gray-500 font-bold uppercase">Candidate</span>
+                          <span className="text-[9px] text-emerald-500 font-bold uppercase">Did you mean:</span>
                           <span className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
                             {cand.isMatch ? cand.matched : cand.original}
                           </span>

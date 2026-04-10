@@ -158,7 +158,7 @@ app.post('/api/ai/generate-report', async (req, res) => {
     const savedReport = await Report.findOneAndUpdate(
       { clerkId },
       reportData,
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
 
     res.json({ status: 'success', data: savedReport });
