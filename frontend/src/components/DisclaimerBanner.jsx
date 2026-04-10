@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const DisclaimerBanner = () => {
   return (
@@ -27,7 +28,7 @@ const DisclaimerBanner = () => {
         <div className="mt-12 flex flex-col md:flex-row justify-between items-center gap-4 text-gray-500 text-xs font-medium">
            <p>© 2026 VaidyaSetu. Bridge to Balanced Health.</p>
            <div className="flex gap-6">
-              <a href="#" className="hover:text-emerald-500 transition-colors">Privacy Policy</a>
+              <Link to="/privacy" className="hover:text-emerald-500 transition-colors">Privacy Policy</Link>
               <a href="#" className="hover:text-emerald-500 transition-colors">Terms of Service</a>
               <a href="#" className="hover:text-emerald-500 transition-colors">Contact Support</a>
            </div>

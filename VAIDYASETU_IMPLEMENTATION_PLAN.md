@@ -189,7 +189,7 @@ VaidyaSetu ("Bridge of the Healer") is an AI-powered platform that:
 *   **11.2 Homeopathy:** Verify Aspirin + Arnica Montana interaction.
 *   **11.3 Privacy Policy:** DPDP Act compliance.
 *   **11.4 Delete Account:** Remove all user data from MongoDB.
-*   **11.5 Pitch Prep:** Add ABDM/ABHA integration to scalability slides.
+*   **11.5 Pitch Prep:** Future integration with ABDM and ABHA ID for seamless health record portability.
 *   **11.6 AI Symptom Chatbot:** Floating icon for triage.
 
 ---
@@ -268,5 +268,5 @@ VaidyaSetu ("Bridge of the Healer") is an AI-powered platform that:
 4. **Live Demo:** Browser walkthrough.
 5. **Tech Stack:** MERN + Groq + Clerk + Google Fit + ICMR/IMPPAT/DrugBank Data.
 6. **Trust & Safety:** Disclaimers, tiered alerts, active learning.
-7. **Scalability:** RAG, ABDM/ABHA integration, full OCR.
+7. **Scalability:** RAG, Future integration with ABDM and ABHA ID for seamless health record portability, full OCR.
 8. **Impact:** Preventing adverse events at scale in India.

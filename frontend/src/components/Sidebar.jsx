@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Home, FileText, Activity, ShieldAlert, Settings, LogOut, AlertCircle } from 'lucide-react';
-import { UserButton, useClerk, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
+import { UserButton, useClerk, SignedIn, SignedOut, SignInButton } from '../clerkMock.jsx';
 
 /**
  * Sidebar component replicated from VaidyaSetu1

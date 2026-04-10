@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, RedirectToSignIn, useUser } from './clerkMock.jsx';
 import { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Prescriptions from './pages/Prescriptions';
+import Privacy from './pages/Privacy';
+import Chatbot from './components/Chatbot';
 import { Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -29,17 +31,22 @@ const AppLayout = () => {
           if (!profile.onboardingComplete) {
             navigate('/onboarding', { replace: true });
           }
+          // else: onboarding complete, show dashboard
         } else {
           // No profile found — send to onboarding
           navigate('/onboarding', { replace: true });
         }
       })
-      .catch(() => {
-        // On error (e.g. 404 no profile) — send to onboarding
-        navigate('/onboarding', { replace: true });
+      .catch((err) => {
+        // Only redirect on 404 (no profile). Network/server errors should not kick user out.
+        if (err.response?.status === 404) {
+          navigate('/onboarding', { replace: true });
+        }
+        // Otherwise, just show the dashboard and let individual pages handle their own data fetching
       })
       .finally(() => setChecking(false));
   }, [isLoaded, user]);
+
 
   if (checking) {
     return (
@@ -60,11 +67,13 @@ const AppLayout = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/prescriptions" element={<Prescriptions />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/vitals" element={<Dashboard />} />
             <Route path="/alerts" element={<Dashboard />} />
           </Routes>
         </main>
         <DisclaimerBanner />
+        <Chatbot />
       </div>
     </div>
   );

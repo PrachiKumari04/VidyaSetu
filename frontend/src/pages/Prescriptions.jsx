@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useUser } from '../clerkMock.jsx';
 import axios from 'axios';
 import { 
   FileText, ScanSearch, Upload, Search, AlertCircle, 
   ShieldAlert, Info, Download, Trash2, CheckCircle2, 
   RefreshCw, Loader2, Sparkles, ChevronDown, ChevronUp,
-  Clock, Cpu, Mic, Volume2
+  Clock, Cpu, Mic, Volume2, MapPin, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -321,7 +321,7 @@ const Prescriptions = () => {
 
               {/* High-Risk Red Banner (10.7) */}
               {interactions.some(i => i.severity?.toLowerCase() === 'high') && (
-                <div className="bg-red-600 animate-pulse py-4 px-8 rounded-3xl flex items-center justify-between shadow-[0_0_30px_rgba(220,38,38,0.4)] mb-8">
+                <div className="bg-red-600 animate-pulse py-4 px-8 rounded-3xl flex flex-col md:flex-row items-center justify-between shadow-[0_0_30px_rgba(220,38,38,0.4)] mb-8 gap-4 md:gap-0">
                    <div className="flex items-center gap-4">
                       <ShieldAlert className="w-8 h-8 text-white" />
                       <div>
@@ -329,8 +329,18 @@ const Prescriptions = () => {
                          <p className="text-red-100 text-xs font-bold uppercase tracking-widest opacity-80">URGENT: Consult doctor immediately.</p>
                       </div>
                    </div>
-                   <div className="hidden md:block px-4 py-1.5 bg-white/20 rounded-full text-[10px] font-black text-white uppercase tracking-widest">
-                      Action Required
+                   <div className="flex items-center gap-3">
+                      <a 
+                        href="https://www.google.com/maps/search/General+Physician+near+me"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-white text-red-600 hover:bg-gray-100 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer"
+                      >
+                         <MapPin className="w-4 h-4" /> Find Nearby Doctor
+                      </a>
+                      <div className="hidden md:block px-4 py-1.5 bg-white/20 rounded-full text-[10px] font-black text-white uppercase tracking-widest">
+                         Action Required
+                      </div>
                    </div>
                 </div>
               )}
