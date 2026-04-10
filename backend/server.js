@@ -5,7 +5,9 @@ const dotenv = require('dotenv');
 const { Groq } = require('groq-sdk');
 const UserProfile = require('./src/models/UserProfile');
 const Report = require('./src/models/Report');
+const InteractionHistory = require('./src/models/InteractionHistory');
 const { calculatePreliminaryRisk } = require('./src/utils/riskScorer');
+const { matchMedicines, checkInteractions } = require('./src/utils/interactionEngine');
 
 dotenv.config();
 
@@ -176,6 +178,85 @@ app.get('/api/reports/:clerkId', async (req, res) => {
     res.json({ status: 'success', data: report });
   } catch (error) {
     console.error('Get report error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// Phase 3: Interaction Checker Endpoints
+
+// 1. Medicine Fuzzy Matching
+app.post('/api/medicine/match', async (req, res) => {
+  try {
+    const { medicines } = req.body; // Array of strings
+    if (!medicines || !Array.isArray(medicines)) {
+      return res.status(400).json({ status: 'error', message: 'medicines array is required' });
+    }
+    const matches = matchMedicines(medicines);
+    res.json({ status: 'success', data: matches });
+  } catch (error) {
+    console.error('Medicine matching error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// 2. Interaction Detection
+app.post('/api/interaction/check', async (req, res) => {
+  try {
+    const { clerkId, confirmedMedicines } = req.body;
+    if (!confirmedMedicines || !Array.isArray(confirmedMedicines)) {
+      return res.status(400).json({ status: 'error', message: 'confirmedMedicines array is required' });
+    }
+
+    const findings = checkInteractions(confirmedMedicines);
+    
+    // Save to history if clerkId is provided
+    if (clerkId) {
+       await InteractionHistory.create({
+         clerkId,
+         confirmedMedicines,
+         foundInteractions: findings,
+       });
+    }
+
+    res.json({ status: 'success', data: findings });
+  } catch (error) {
+    console.error('Interaction check error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// 3. AI Plain-Language Explanation
+app.post('/api/ai/explain-interaction', async (req, res) => {
+  try {
+    const { drug1, drug2 } = req.body;
+    
+    const prompt = `
+    Explain to a patient in simple, compassionate terms why taking ${drug1} and ${drug2} together might be dangerous. 
+    Keep it strictly under 80 words. Focus on what they might feel and what they should do.
+    `;
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'system', content: "You are VaidyaSetu AI, a health safety assistant." }, { role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+    });
+
+    res.json({ 
+      status: 'success', 
+      explanation: completion.choices[0]?.message?.content || 'Consult your doctor immediately regarding this combination.' 
+    });
+  } catch (error) {
+    console.error('AI explanation error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// 4. Interaction History Retrieval
+app.get('/api/interaction/history/:clerkId', async (req, res) => {
+  try {
+    const history = await InteractionHistory.find({ clerkId: req.params.clerkId }).sort({ timestamp: -1 });
+    res.json({ status: 'success', data: history });
+  } catch (error) {
+    console.error('Get history error:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 });

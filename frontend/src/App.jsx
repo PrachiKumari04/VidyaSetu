@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
+import Prescriptions from './pages/Prescriptions';
 import { Loader2 } from 'lucide-react';
 import axios from 'axios';
 
@@ -55,7 +56,7 @@ const AppLayout = () => {
       <main className="flex-1 p-4 sm:p-8 md:p-12 w-full overflow-auto">
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/prescriptions" element={<Dashboard />} />
+          <Route path="/prescriptions" element={<Prescriptions />} />
           <Route path="/vitals" element={<Dashboard />} />
           <Route path="/alerts" element={<Dashboard />} />
         </Routes>

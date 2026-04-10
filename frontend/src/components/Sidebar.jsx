@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { Home, FileText, Activity, ShieldAlert, Settings, LogOut } from 'lucide-react';
+import { Home, FileText, Activity, ShieldAlert, Settings, LogOut, AlertCircle } from 'lucide-react';
 import { UserButton, useClerk, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 
 /**
@@ -16,9 +16,9 @@ const Sidebar = () => {
 
   const navItems = [
     { to: '/', icon: Home, label: 'Dashboard' },
-    { to: '/prescriptions', icon: FileText, label: 'Prescriptions' },
+    { to: '/prescriptions', icon: ShieldAlert, label: 'Safety Bridge' },
     { to: '/vitals', icon: Activity, label: 'My Vitals' },
-    { to: '/alerts', icon: ShieldAlert, label: 'Safety Alerts' },
+    { to: '/alerts', icon: AlertCircle, label: 'Alerts' },
   ];
 
   return (
