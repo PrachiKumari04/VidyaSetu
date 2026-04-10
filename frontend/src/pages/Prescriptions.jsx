@@ -29,7 +29,7 @@ const Prescriptions = () => {
   const [loadingExpl, setLoadingExpl] = useState({});
   const [voicePlaying, setVoicePlaying] = useState(false);
   const [showVoiceToast, setShowVoiceToast] = useState(false);
-  const voiceAudioUrl = "https://www.soundjay.com/buttons/beep-01a.mp3"; // Using 3s placeholder beep for "Warfarin aur Guggul"
+  const voiceAudioUrl = null; // No longer needed — using real SpeechRecognition
 
   // Fetch History
   useEffect(() => {
@@ -69,16 +69,42 @@ const Prescriptions = () => {
     }, 2000);
   };
 
-  const handleVoiceSimulation = () => {
-    setVoicePlaying(true);
-    new Audio(voiceAudioUrl).play();
-    
-    setTimeout(() => {
-      setVoicePlaying(false);
-      setInputText("Warfarin, Guggul");
+  const handleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN'; // Indian English for medicine names
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onstart = () => {
+      setVoicePlaying(true);
       setShowVoiceToast(true);
-      setTimeout(() => setShowVoiceToast(false), 3000);
-    }, 3000);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInputText(prev => prev ? `${prev}, ${transcript}` : transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed') {
+        alert('Microphone access denied. Please allow microphone permissions and try again.');
+      }
+    };
+
+    recognition.onend = () => {
+      setVoicePlaying(false);
+      setTimeout(() => setShowVoiceToast(false), 2000);
+    };
+
+    recognition.start();
   };
 
   // 9.2 Fuzzy Matching
@@ -222,7 +248,7 @@ const Prescriptions = () => {
                  Manual Overlay
                </div>
                 <button 
-                  onClick={handleVoiceSimulation}
+                  onClick={handleVoiceInput}
                   disabled={voicePlaying}
                   className={`absolute bottom-4 left-4 p-2 rounded-full transition-all ${voicePlaying ? 'bg-emerald-500 text-white animate-pulse' : 'bg-gray-800 text-gray-400 hover:text-emerald-500'}`}
                   title="Start Voice Intake"
