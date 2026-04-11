@@ -87,7 +87,7 @@ const ProfileEditor = () => {
   const [intentData, setIntentData] = useState({
     intent: 'real_change',
     notes: '',
-    changeDate: new Date().toISOString().split('T')[0]
+    changeDate: new Date().toISOString()
   });
 
   // Expand all sections by default for full visibility

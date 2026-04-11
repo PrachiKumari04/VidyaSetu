@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const UserProfile = require('../models/UserProfile');
+const History = require('../models/History');
 const Report = require('../models/Report');
 const InteractionHistory = require('../models/InteractionHistory');
 const Feedback = require('../models/Feedback');
+const { calculateDataQuality } = require('../utils/dataQualityWatcher');
 
 // Initial Profile Save (Onboarding)
 router.post('/profile', async (req, res) => {
@@ -36,9 +38,35 @@ router.post('/profile', async (req, res) => {
 
     const profile = await UserProfile.findOneAndUpdate(
       { clerkId },
-      nestedData,
+      { $set: nestedData },
       { new: true, upsert: true }
     );
+
+    // LOG HISTORY for onboarding/initial save
+    const historyEntries = [];
+    fields.forEach(f => {
+      if (profileData[f] !== undefined) {
+        historyEntries.push({
+          clerkId,
+          field: f,
+          oldValue: null,
+          newValue: profileData[f],
+          changeType: 'initial',
+          source: 'user',
+          timestamp: new Date()
+        });
+      }
+    });
+
+    if (historyEntries.length > 0) {
+      await History.insertMany(historyEntries);
+      
+      // Update Data Quality
+      const dq = calculateDataQuality(profile);
+      profile.dataQualityScore = dq.score;
+      profile.dataQualityLabel = dq.label;
+      await profile.save();
+    }
 
     res.json({
       status: 'success',
@@ -57,6 +85,7 @@ router.delete('/:clerkId', async (req, res) => {
     const clerkId = req.params.clerkId;
     await Promise.all([
       UserProfile.deleteOne({ clerkId }),
+      History.deleteMany({ clerkId }),
       Report.deleteMany({ clerkId }),
       InteractionHistory.deleteMany({ clerkId }),
       Feedback.deleteMany({ clerkId })

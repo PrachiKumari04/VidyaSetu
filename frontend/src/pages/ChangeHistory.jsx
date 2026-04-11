@@ -60,16 +60,18 @@ const ChangeHistory = () => {
     }
   };
 
-  const filteredHistory = history.filter(item => {
-    if (filter === 'all') return true;
-    return item.changeType === filter;
-  });
+  const filteredHistory = history
+     .filter(item => {
+       if (filter === 'all') return true;
+       return item.changeType === filter;
+     })
+     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Newest first
 
   const weightData = history
     .filter(item => item.field === 'weight')
-    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) // Chart needs ascending
     .map(item => ({
-      date: new Date(item.timestamp).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+      date: new Date(item.timestamp).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' }),
       weight: item.newValue,
       originalDate: item.timestamp,
       type: item.changeType,
@@ -228,8 +230,8 @@ const ChangeHistory = () => {
                   </td>
                   <td className="px-6 py-5">
                     <div className="text-sm">
-                       <p className="text-white font-medium">{new Date(item.timestamp).toLocaleDateString()}</p>
-                       <p className="text-gray-500 text-[10px]">{new Date(item.timestamp).toLocaleTimeString()}</p>
+                       <p className="text-white font-medium">{new Date(item.timestamp).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+                       <p className="text-gray-500 text-[10px]">{new Date(item.timestamp).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                   </td>
                   <td className="px-6 py-5">
