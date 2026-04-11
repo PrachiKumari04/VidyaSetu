@@ -49,6 +49,34 @@ const Step1Biometrics = () => {
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-2 flex items-center">
             <User className="w-4 h-4 mr-2 text-emerald-500" />
+            First Name
+          </label>
+          <input
+            type="text"
+            value={formData.firstName || ''}
+            onChange={(e) => updateFormData({ firstName: e.target.value })}
+            className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-medium"
+            placeholder="e.g. Rahul"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-2 flex items-center">
+            <User className="w-4 h-4 mr-2 text-emerald-500" />
+            Last Name
+          </label>
+          <input
+            type="text"
+            value={formData.lastName || ''}
+            onChange={(e) => updateFormData({ lastName: e.target.value })}
+            className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-medium"
+            placeholder="e.g. Sharma"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-2 flex items-center">
+            <User className="w-4 h-4 mr-2 text-emerald-500" />
             Age
           </label>
           <input
@@ -123,7 +151,7 @@ const Step1Biometrics = () => {
 
       <button
         onClick={() => setStep(2)}
-        disabled={!formData.age || !formData.gender || !formData.height || !formData.weight}
+        disabled={!formData.firstName || !formData.lastName || !formData.age || !formData.gender || !formData.height || !formData.weight}
         className="w-full mt-8 py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all flex items-center justify-center group shadow-lg shadow-emerald-500/10"
       >
         Next Step

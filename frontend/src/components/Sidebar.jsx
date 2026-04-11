@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Home, FileText, Activity, ShieldAlert, Settings, LogOut, AlertCircle, UserCircle } from 'lucide-react';
-import { UserButton, useClerk, SignedIn, SignedOut, SignInButton } from '../clerkMock.jsx';
+import { UserButton, useClerk, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 
 /**
  * Sidebar component replicated from VaidyaSetu1
@@ -20,6 +20,7 @@ const Sidebar = () => {
     { to: '/prescriptions', icon: ShieldAlert, label: 'Safety Bridge' },
     { to: '/vitals', icon: Activity, label: 'My Vitals' },
     { to: '/alerts', icon: AlertCircle, label: 'Alerts' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   return (
@@ -71,20 +72,22 @@ const Sidebar = () => {
         {/* Desktop Footer Auth Controls */}
         <div className="hidden md:block space-y-4 pt-6 mt-auto">
           <SignedIn>
-            <div className="flex items-center justify-between px-4 py-3 bg-gray-800/30 rounded-xl border border-gray-700/50">
-              <UserButton 
-                showName 
-                appearance={{ 
-                  elements: { 
-                    userButtonAvatarBox: "w-8 h-8", 
-                    userButtonBox: "flex-row-reverse",
-                    userButtonOuterIdentifier: "text-gray-300 font-medium" 
-                  } 
-                }} 
-              />
-              <Link to="/profile" className="text-gray-400 hover:text-emerald-500 transition-colors" title="My Health Profile">
-                <UserCircle className="w-5 h-5" />
-              </Link>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-800/30 rounded-xl border border-gray-700/50">
+                <UserButton 
+                  showName 
+                  appearance={{ 
+                    elements: { 
+                      userButtonAvatarBox: "w-8 h-8", 
+                      userButtonBox: "flex-row-reverse",
+                      userButtonOuterIdentifier: "text-gray-300 font-medium" 
+                    } 
+                  }} 
+                />
+                <Link to="/profile" className="text-gray-400 hover:text-emerald-500 transition-colors" title="My Health Profile">
+                  <UserCircle className="w-5 h-5" />
+                </Link>
+              </div>
             </div>
           </SignedIn>
           <SignedOut>

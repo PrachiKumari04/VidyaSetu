@@ -8,9 +8,4 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
-  resolve: {
-    alias: {
-      '@clerk/clerk-react': path.resolve(__dirname, './src/clerkMock.jsx'),
-    },
-  },
 })

@@ -53,6 +53,9 @@ router.post('/generate-report', async (req, res) => {
     const prompt = `
     You are VaidyaSetu AI, a compassionate health assistant for Indian users. 
     Analyze this user profile and preliminary risk scores.
+
+    IMPORTANT RULES FOR TONE AND PRONOUNS:
+    Always speak directly to the user using "you" or "your". Never use third-person pronouns like "his", "her", "he", or "she" to refer to the user.
     
     Profile: ${JSON.stringify(flatProfile)}
     Risk Scores: ${JSON.stringify(riskScores)}

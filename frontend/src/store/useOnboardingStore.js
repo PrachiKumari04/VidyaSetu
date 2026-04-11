@@ -6,7 +6,9 @@ const useOnboardingStore = create(
     (set) => ({
       step: 1,
       formData: {
-        // Step 1: Biometrics
+        // Step 1: Identity & Biometrics
+        firstName: '',
+        lastName: '',
         age: '',
         gender: '',
         height: '',
@@ -45,6 +47,8 @@ const useOnboardingStore = create(
       resetOnboarding: () => set({ 
         step: 1, 
         formData: {
+          firstName: '',
+          lastName: '',
           age: '',
           gender: '',
           height: '',

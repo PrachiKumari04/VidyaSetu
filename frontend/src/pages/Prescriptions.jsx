@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '../clerkMock.jsx';
+import { useUser } from '@clerk/clerk-react';
 import axios from 'axios';
 import { 
   FileText, ScanSearch, Upload, Search, AlertCircle, 

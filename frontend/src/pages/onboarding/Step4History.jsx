@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUser } from '../../clerkMock.jsx';
+import { useUser } from '@clerk/clerk-react';
 import CreatableSelect from 'react-select/creatable';
 import useOnboardingStore from '../../store/useOnboardingStore';
 import { ChevronLeft, ShieldCheck, AlertCircle, Check } from 'lucide-react';
@@ -57,6 +57,7 @@ const Step4History = () => {
     try {
       const payload = {
         ...formData,
+        name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
         clerkId: user.id,
       };
       

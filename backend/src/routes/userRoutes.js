@@ -18,7 +18,7 @@ router.post('/profile', async (req, res) => {
     // Convert flat data to nested structure for onboarding
     const nestedData = { clerkId, onboardingComplete: true };
     const fields = [
-      'age', 'gender', 'height', 'weight', 'bmi', 'bmiCategory',
+      'name', 'age', 'gender', 'height', 'weight', 'bmi', 'bmiCategory',
       'activityLevel', 'sleepHours', 'stressLevel', 'isSmoker', 'alcoholConsumption',
       'dietType', 'sugarIntake', 'saltIntake', 'eatsLeafyGreens', 'eatsFruits', 'junkFoodFrequency',
       'allergies', 'medicalHistory', 'otherConditions'

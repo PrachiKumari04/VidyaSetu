@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useUser } from '../clerkMock.jsx';
+import { useUser } from '@clerk/clerk-react';
 import axios from 'axios';
 import CreatableSelect from 'react-select/creatable';
 import { 
@@ -76,7 +76,7 @@ const ProfileEditor = () => {
   
   // FORM STATE: Using strings for numbers to prevent cursor jumping/NaN issues
   const [formData, setFormData] = useState({
-    age: '', gender: '', height: '', weight: '',
+    name: '', age: '', gender: '', height: '', weight: '',
     activityLevel: '', sleepHours: '', stressLevel: '', isSmoker: false, alcoholConsumption: '',
     dietType: '', sugarIntake: '', saltIntake: '', junkFoodFrequency: '', eatsLeafyGreens: false, eatsFruits: false,
     allergies: [], medicalHistory: [], otherConditions: ''
@@ -112,7 +112,30 @@ const ProfileEditor = () => {
               }
             });
             setFormData(prev => ({ ...prev, ...flatData }));
-            hasLoadedInitial.current = true;
+            if (!hasLoadedInitial.current) {
+              setFormData({
+                name: p.name?.value || '',
+                age: p.age?.value || '',
+                gender: p.gender?.value || '',
+                height: p.height?.value || '',
+                weight: p.weight?.value || '',
+                activityLevel: p.activityLevel?.value || '',
+                sleepHours: p.sleepHours?.value || '',
+                stressLevel: p.stressLevel?.value || '',
+                isSmoker: p.isSmoker?.value || false,
+                alcoholConsumption: p.alcoholConsumption?.value || '',
+                dietType: p.dietType?.value || '',
+                sugarIntake: p.sugarIntake?.value || '',
+                saltIntake: p.saltIntake?.value || '',
+                junkFoodFrequency: p.junkFoodFrequency?.value || '',
+                eatsLeafyGreens: p.eatsLeafyGreens?.value || false,
+                eatsFruits: p.eatsFruits?.value || false,
+                allergies: p.allergies?.value || [],
+                medicalHistory: p.medicalHistory?.value || [],
+                otherConditions: p.otherConditions?.value || ''
+              });
+              hasLoadedInitial.current = true;
+            }
           }
         })
         .finally(() => setLoading(false));

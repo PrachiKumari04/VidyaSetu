@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useUser } from '../clerkMock.jsx';
+import { useUser } from '@clerk/clerk-react';
 import axios from 'axios';
 import { Activity, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert, Cpu, ThumbsUp, ThumbsDown, Download, Scan, Trash2 } from 'lucide-react';
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
@@ -193,9 +193,11 @@ const Dashboard = () => {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Health Ecosystem</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Welcome, {getProfileVal('name') || user?.fullName || 'User'}
+          </h1>
           <p className="text-gray-400">
-            Analysis completed on {report?.createdAt ? new Date(report.createdAt).toLocaleDateString() : 'N/A'}
+            Health Ecosystem • Analysis completed on {report?.createdAt ? new Date(report.createdAt).toLocaleDateString() : 'N/A'}
           </p>
         </div>
         <div className="flex flex-wrap gap-4">

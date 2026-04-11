@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '../clerkMock.jsx';
+import { useUser } from '@clerk/clerk-react';
 import axios from 'axios';
 import { 
   User, Calendar, Scale, Activity, Droplets, Utensils, AlertTriangle, 
@@ -131,27 +131,20 @@ const HealthProfile = () => {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-            My <span className="text-emerald-500">Health Profile</span>
+          <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">
+            My Health Profile <span className="text-emerald-500">: {profile?.name?.value || user?.fullName || 'User'}</span>
           </h1>
-          <p className="text-gray-400 mt-2 flex items-center">
-            <Info size={16} className="mr-2 text-emerald-500" />
-            Last detailed update: {getRelativeTime(profile.createdAt)}
+          <p className="text-gray-500 mt-2 font-medium italic max-w-lg">
+            A comprehensive, real-time overview of your foundational health metrics and physiological parameters.
           </p>
         </div>
-        
         <div className="flex flex-wrap gap-3">
           <Link to="/history" className="flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-gray-200 text-sm font-medium transition-all group">
-            <History size={16} className="mr-2 group-hover:rotate-[-45deg] transition-transform" />
+            <History size={16} className="mr-2 group-hover:-rotate-45 transition-transform" />
             View History
           </Link>
-          <button className="flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-gray-200 text-sm font-medium transition-all">
-            <Download size={16} className="mr-2" />
-            Export Data
-          </button>
-          <Link to="/profile/edit" className="flex items-center px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/20 transition-all scale-100 hover:scale-[1.02] active:scale-95">
-            <Edit3 size={16} className="mr-2" />
-            Edit Profile
+          <Link to="/profile/edit" className="flex items-center px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/20 transition-all active:scale-95 group">
+             <Edit3 size={16} className="mr-2 group-hover:scale-110 transition-transform" /> Update Matrix
           </Link>
         </div>
       </div>
@@ -196,6 +189,7 @@ const HealthProfile = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Biometrics */}
         <SummarySection icon={Scale} title="Basic Biometrics" lastUpdated={profile.weight?.lastUpdated}>
+          {profile.name?.value && <DataItem label="Name" value={profile.name.value} />}
           <DataItem label="Age" value={profile.age?.value} unit="years" />
           <DataItem label="Gender" value={profile.gender?.value} />
           <DataItem label="Height" value={profile.height?.value} unit="cm" />

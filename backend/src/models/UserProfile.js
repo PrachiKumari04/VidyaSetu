@@ -20,6 +20,7 @@ const UserProfileSchema = new mongoose.Schema({
   },
   
   // Step 1: Biometrics
+  name: FieldSchema,
   age: FieldSchema,
   gender: FieldSchema,
   height: FieldSchema, // value in cm
