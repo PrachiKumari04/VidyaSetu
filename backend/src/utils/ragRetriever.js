@@ -22,23 +22,53 @@ async function generateQueryEmbedding(text) {
   return vector;
 }
 
-async function performVectorSearch(queryVector, filters = {}) {
+async function performVectorSearch(queryVector, medicines = []) {
   const db = mongoose.connection.db;
   const collection = db.collection('knowledge_chunks');
+  
+  // Post-filtering logic for accuracy
+  const filterQuery = medicines.length > 0 ? {
+    $or: medicines.map(med => ({
+      text: { $regex: med, $options: 'i' }
+    }))
+  } : {};
+
+  // Standard Pipeline (Safe)
   const pipeline = [
     {
       $vectorSearch: {
         index: 'vector_index',
         path: 'embedding',
         queryVector,
-        numCandidates: 60, // Optimized for latency
-        limit: 8, // Leaner context
-        ...(filters.content_type && { filter: { content_type: filters.content_type } })
+        numCandidates: 100,
+        limit: 40 
       }
     },
-    { $project: { _id: 0, text: 1, source_database: 1, document_title: 1, content_type: 1, score: { $meta: 'vectorSearchScore' } } }
+    { $match: filterQuery }, // Filter by medicine name in regular $match stage
+    { $limit: 10 },
+    { $project: { _id: 0, text: 1, source_database: 1, document_title: 1, score: { $meta: 'vectorSearchScore' } } }
   ];
-  return await collection.aggregate(pipeline).toArray();
+
+  try {
+    return await collection.aggregate(pipeline).toArray();
+  } catch (err) {
+    console.warn(`[RAG-Fallback] Primary aggregation failed: ${err.message}. Attempting recovery...`);
+    
+    // Fallback: Simple Vector Search (No match filtering)
+    const fallbackPipeline = [
+      {
+        $vectorSearch: {
+          index: 'vector_index',
+          path: 'embedding',
+          queryVector,
+          numCandidates: 50,
+          limit: 10
+        }
+      },
+      { $project: { _id: 0, text: 1, source_database: 1, document_title: 1, score: { $meta: 'vectorSearchScore' } } }
+    ];
+    return await collection.aggregate(fallbackPipeline).toArray();
+  }
 }
 
 function filterAndRankChunks(chunks, medicineNames = []) {
@@ -120,68 +150,67 @@ function prepareGroqContext(combinedKnowledge, interactionMentions = [], medicin
   return context.slice(0, MAX_CONTEXT_CHARS);
 }
 
+/**
+ * Phase 3 Step 12: Multi-Drug Interaction Logic (Pairwise)
+ */
 async function retrieveRelevantKnowledge(medicines = []) {
+  console.log(`[RAG-Debug] retrieveRelevantKnowledge started for: ${medicines.join(', ')}`);
   if (!medicines || medicines.length === 0) return null;
   const startTime = Date.now();
-  const queryPhrase = `interaction between ${medicines.join(' and ')} mechanism adverse effects`;
   
-  // -- START CONCURRENT PIPELINE --
-  // 1. Embedding generation (CPU Bound)
-  // 2. Clinical Data Retrieval (IO Bound - RxNav/OpenFDA)
-  const embeddingPromise = generateQueryEmbedding(queryPhrase);
-  
-  const clinicalDataStartTime = Date.now();
-  const apiDataPromise = Promise.allSettled(
-    medicines.map(drug => {
-      rateLimiter.check();
-      return fetchDrugData(drug);
-    })
-  ).then(results => results.filter(o => o.status === 'fulfilled').map(o => o.value));
+  // Generate pairs for targeted search
+  const pairs = [];
+  for (let i = 0; i < medicines.length; i++) {
+    for (let j = i + 1; j < medicines.length; j++) {
+      pairs.push([medicines[i], medicines[j]]);
+    }
+  }
 
-  // 3. Wait for embedding to trigger Vector Search
-  const queryVector = await embeddingPromise;
-  const vectorSearchStartTime = Date.now();
-  const rawChunksPromise = performVectorSearch(queryVector);
+  // If only 1 drug, just search for that drug's profile
+  const searchTargets = pairs.length > 0 ? pairs : [[medicines[0]]];
+
+  const resultsPool = await Promise.all(searchTargets.map(async (target) => {
+    const queryPhrase = `interaction mechanism adverse effect of ${target.join(' and ')}`;
+    const queryVector = await generateQueryEmbedding(queryPhrase);
+    const chunks = await performVectorSearch(queryVector, target);
+    return { target: target.join(' + '), chunks };
+  }));
+
+  // Aggregate and deduplicate chunks
+  const allChunks = [];
+  const seenTexts = new Set();
   
-  // 4. Parallel RxNav direct interaction check (using RxCUIs once available)
-  const directInteractionsPromise = apiDataPromise.then(apiData => {
-    const rxcuis = apiData.map(d => d.rxcui).filter(id => id);
-    if (rxcuis.length < 2) return [];
-    return getInteractionsBetween(rxcuis).catch(err => {
-      console.warn(`[RxNav] Parallel Interaction lookup failed: ${err.message}`);
-      return [];
+  resultsPool.forEach(res => {
+    res.chunks.forEach(chunk => {
+      if (!seenTexts.has(chunk.text)) {
+        allChunks.push(chunk);
+        seenTexts.add(chunk.text);
+      }
     });
   });
 
-  // Wait for the remaining IO tasks
-  const [rawChunks, apiData, directInteractions] = await Promise.all([
-    rawChunksPromise,
-    apiDataPromise,
-    directInteractionsPromise
-  ]);
+  // Clinical Data (RxNav/OpenFDA) is still per-drug
+  const apiData = await Promise.all(
+    medicines.map(drug => fetchDrugData(drug).catch(() => null))
+  ).then(res => res.filter(r => r));
 
-  const vectorSearchDuration = Date.now() - vectorSearchStartTime;
-  const clinicalDataDuration = Date.now() - clinicalDataStartTime;
-  
-  // -- PROCESSING --
-  const { ranked } = filterAndRankChunks(rawChunks, medicines);
+  const rxcuis = apiData.map(d => d.rxcui).filter(id => id);
+  const directInteractions = rxcuis.length >= 2 ? await getInteractionsBetween(rxcuis).catch(() => []) : [];
+
+  const { ranked } = filterAndRankChunks(allChunks, medicines);
   const mentions = extractInteractionMentions(ranked, medicines);
   const combined = combineKnowledgeSources(ranked, apiData);
   combined.directClinicalMatches = directInteractions;
 
   const groqContext = prepareGroqContext(combined, mentions, medicines);
-  const totalDuration = Date.now() - startTime;
   
-  console.log(`[RAG] Latency Diagnostics: Vector(${vectorSearchDuration}ms) | Clinical(${clinicalDataDuration}ms) | Total(${totalDuration}ms)`);
-
   return { 
-    queryPhrase, 
-    chunksRetrieved: rawChunks.length, 
-    chunksAfterFilter: ranked.length, 
+    medicines,
+    chunksRetrieved: allChunks.length, 
     interactionMentions: mentions, 
     combined, 
     groqContext,
-    totalDuration
+    totalDuration: Date.now() - startTime
   };
 }
 

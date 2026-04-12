@@ -9,11 +9,10 @@ const Step3Diet = () => {
     <button
       type="button"
       onClick={() => onClick(value)}
-      className={`flex-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-center ${
-        current === value
+      className={`flex-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-center ${current === value
           ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
           : 'bg-gray-950 border-gray-800 text-gray-400 hover:border-gray-600'
-      }`}
+        }`}
     >
       {Icon && <Icon className="w-4 h-4 mr-2" />}
       {label}
@@ -44,26 +43,26 @@ const Step3Diet = () => {
       {/* Sugar & Salt */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-           <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
-             <Coffee className="w-4 h-4 mr-2 text-emerald-500" />
-             Sugar Intake
-           </label>
-           <div className="flex gap-2">
-             {['Low', 'Medium', 'High'].map((v) => (
-               <OptionButton key={v} label={v} value={v} current={formData.sugarIntake} onClick={(val) => updateFormData({ sugarIntake: val })} />
-             ))}
-           </div>
+          <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
+            <Coffee className="w-4 h-4 mr-2 text-emerald-500" />
+            Sugar Intake
+          </label>
+          <div className="flex gap-2">
+            {['Low', 'Medium', 'High'].map((v) => (
+              <OptionButton key={v} label={v} value={v} current={formData.sugarIntake} onClick={(val) => updateFormData({ sugarIntake: val })} />
+            ))}
+          </div>
         </div>
         <div>
-           <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
-             <Cookie className="w-4 h-4 mr-2 text-emerald-500" />
-             Salt Intake
-           </label>
-           <div className="flex gap-2">
-             {['Low', 'Medium', 'High'].map((v) => (
-               <OptionButton key={v} label={v} value={v} current={formData.saltIntake} onClick={(val) => updateFormData({ saltIntake: val })} />
-             ))}
-           </div>
+          <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
+            <Cookie className="w-4 h-4 mr-2 text-emerald-500" />
+            Salt Intake
+          </label>
+          <div className="flex gap-2">
+            {['Low', 'Medium', 'High'].map((v) => (
+              <OptionButton key={v} label={v} value={v} current={formData.saltIntake} onClick={(val) => updateFormData({ saltIntake: val })} />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -89,22 +88,22 @@ const Step3Diet = () => {
       {/* Greens & Fruits */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-           <label className="block text-sm font-medium text-gray-400 mb-4">
-             Regular Leafy Greens?
-           </label>
-           <div className="flex gap-3">
-             <OptionButton label="Yes" value={true} current={formData.eatsLeafyGreens} onClick={(v) => updateFormData({ eatsLeafyGreens: v })} />
-             <OptionButton label="No" value={false} current={formData.eatsLeafyGreens} onClick={(v) => updateFormData({ eatsLeafyGreens: v })} />
-           </div>
+          <label className="block text-sm font-medium text-gray-400 mb-4">
+            Regular Leafy Greens?
+          </label>
+          <div className="flex gap-3">
+            <OptionButton label="Yes" value={true} current={formData.eatsLeafyGreens} onClick={(v) => updateFormData({ eatsLeafyGreens: v })} />
+            <OptionButton label="No" value={false} current={formData.eatsLeafyGreens} onClick={(v) => updateFormData({ eatsLeafyGreens: v })} />
+          </div>
         </div>
         <div>
-           <label className="block text-sm font-medium text-gray-400 mb-4">
-             Regular Fresh Fruits?
-           </label>
-           <div className="flex gap-3">
-             <OptionButton label="Yes" value={true} current={formData.eatsFruits} onClick={(v) => updateFormData({ eatsFruits: v })} />
-             <OptionButton label="No" value={false} current={formData.eatsFruits} onClick={(v) => updateFormData({ eatsFruits: v })} />
-           </div>
+          <label className="block text-sm font-medium text-gray-400 mb-4">
+            Regular Fresh Fruits?
+          </label>
+          <div className="flex gap-3">
+            <OptionButton label="Yes" value={true} current={formData.eatsFruits} onClick={(v) => updateFormData({ eatsFruits: v })} />
+            <OptionButton label="No" value={false} current={formData.eatsFruits} onClick={(v) => updateFormData({ eatsFruits: v })} />
+          </div>
         </div>
       </div>
 

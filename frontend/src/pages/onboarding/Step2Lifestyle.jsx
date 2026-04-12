@@ -9,11 +9,10 @@ const Step2Lifestyle = () => {
     <button
       type="button"
       onClick={() => onClick(value)}
-      className={`flex-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-center ${
-        current === value
+      className={`flex-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-center ${current === value
           ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
           : 'bg-gray-950 border-gray-800 text-gray-400 hover:border-gray-600'
-      }`}
+        }`}
     >
       {Icon && <Icon className="w-4 h-4 mr-2" />}
       {label}
@@ -81,25 +80,25 @@ const Step2Lifestyle = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-           <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
-             <Cigarette className="w-4 h-4 mr-2 text-emerald-500" />
-             Smoking Habit
-           </label>
-           <div className="flex gap-3">
-             <OptionButton label="Yes" value={true} current={formData.isSmoker} onClick={(v) => updateFormData({ isSmoker: v })} />
-             <OptionButton label="No" value={false} current={formData.isSmoker} onClick={(v) => updateFormData({ isSmoker: v })} />
-           </div>
+          <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
+            <Cigarette className="w-4 h-4 mr-2 text-emerald-500" />
+            Smoking Habit
+          </label>
+          <div className="flex gap-3">
+            <OptionButton label="Yes" value={true} current={formData.isSmoker} onClick={(v) => updateFormData({ isSmoker: v })} />
+            <OptionButton label="No" value={false} current={formData.isSmoker} onClick={(v) => updateFormData({ isSmoker: v })} />
+          </div>
         </div>
         <div>
-           <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
-             <Wine className="w-4 h-4 mr-2 text-emerald-500" />
-             Alcohol Consumption
-           </label>
-           <div className="flex gap-3">
-             {['Never', 'Occasionally', 'Frequently'].map((v) => (
-               <OptionButton key={v} label={v} value={v} current={formData.alcoholConsumption} onClick={(val) => updateFormData({ alcoholConsumption: val })} />
-             ))}
-           </div>
+          <label className="block text-sm font-medium text-gray-400 mb-4 flex items-center">
+            <Wine className="w-4 h-4 mr-2 text-emerald-500" />
+            Alcohol Consumption
+          </label>
+          <div className="flex gap-3">
+            {['Never', 'Occasionally', 'Frequently'].map((v) => (
+              <OptionButton key={v} label={v} value={v} current={formData.alcoholConsumption} onClick={(val) => updateFormData({ alcoholConsumption: val })} />
+            ))}
+          </div>
         </div>
       </div>
 

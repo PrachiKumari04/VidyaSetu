@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Mic, Volume2 } from 'lucide-react';
 import { useUser } from '@clerk/clerk-react';
 import axios from 'axios';
 
@@ -13,6 +13,7 @@ const Chatbot = () => {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -59,6 +60,42 @@ const Chatbot = () => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev ? `${prev} ${transcript}` : transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed') {
+        alert('Microphone access denied. Please allow microphone permissions and try again.');
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
   return (
@@ -128,21 +165,31 @@ const Chatbot = () => {
 
         {/* Input */}
         <div className="p-4 bg-gray-900 border-t border-gray-800">
-          <div className="relative flex items-center">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Describe your symptoms..."
-              className="w-full bg-gray-800 text-white rounded-xl pl-4 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm h-12 flex items-center"
-              rows={1}
-            />
+          <div className="relative flex items-center gap-2">
+            <div className="relative flex-1">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isListening ? "Listening..." : "Describe your symptoms..."}
+                className={`w-full bg-gray-800 text-white rounded-xl pl-4 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm h-12 flex items-center transition-all ${isListening ? 'ring-2 ring-blue-500 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
+                rows={1}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || loading || isListening}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-blue-500 hover:text-blue-400 disabled:text-gray-600 disabled:hover:text-gray-600 transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
             <button
-              onClick={handleSend}
-              disabled={!input.trim() || loading}
-              className="absolute right-2 p-2 text-blue-500 hover:text-blue-400 disabled:text-gray-600 disabled:hover:text-gray-600 transition-colors"
+              onClick={handleVoiceInput}
+              disabled={loading || isListening}
+              className={`p-3 rounded-xl transition-all shadow-lg ${isListening ? 'bg-blue-500 text-white animate-pulse' : 'bg-gray-800 text-gray-400 hover:text-blue-500 border border-gray-700'}`}
+              title="Speak symptoms"
             >
-              <Send className="w-4 h-4" />
+              {isListening ? <Volume2 className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
           </div>
         </div>

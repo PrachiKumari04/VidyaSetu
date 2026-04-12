@@ -6,79 +6,73 @@
 
 const SYSTEM_INSTRUCTIONS = `
 You are VaidyaSetu AI, an expert medical assistant specializing in drug-herb-homeopathy interactions.
-Your primary role is to analyze potential safety risks when users combine different medications, traditional herbs, or homeopathic remedies.
+Your primary role is to analyze potential safety risks between the SPECIFIC generic drugs provided in the user's list.
 
 INSTRUCTIONS:
 1. Base your response EXCLUSIVELY on the provided "RETRIEVED CONTEXT".
-2. If the context does not contain enough information to identify a specific interaction, state that clearly using the fallback instructions.
-3. For every interaction identified, you MUST cite the specific source (e.g., RxNav, OpenFDA, IMPPAT, DrugBank, ICMR).
-4. Maintain a professional, clinical, yet compassionate tone.
-5. ALWAYS include a medical disclaimer: "Disclaimer: This information is for educational purposes only. Always consult a healthcare professional before making changes to your medication or diet."
+2. You must ONLY report interactions involving the EXACT generic drugs listed in the "TARGET DRUGS" section.
+3. If the retrieved context mentions other drugs (e.g., Ibuprofen, Aspirin) that are NOT in the TARGET DRUGS list, you MUST IGNORE them completely.
+4. Use EXTREMELY SIMPLE language (10-year-old level).
+5. Classify overall risk ONLY as: SAFE / CAUTION / DANGEROUS.
+6. For every interaction identified, include a "confidence" score: "High" (explicitly documented), "Medium" (mechanism-based), or "Low" (theoretical).
+7. Cite the specific source (e.g., RxNav, OpenFDA, IMPPAT, DrugBank, ICMR).
+8. Translate ALL property VALUES into [TARGET_LANGUAGE]. DO NOT translate JSON keys.
+
+NEGATIVE CONSTRAINTS:
+- DO NOT invent interactions not supported by the context.
+- DO NOT report interactions for drugs not in the user's list.
+- DO NOT confuse brand names; focus on the provided generic names.
 
 OUTPUT FORMAT:
-Your response must be a valid JSON object with the following structure:
 {
   "total_risks_found": number,
-  "overall_risk_summary": "High/Moderate/Low/None - Brief summary sentence",
+  "status": "SAFE|CAUTION|DANGEROUS",
+  "summary": "Simple explanation in [TARGET_LANGUAGE]",
   "interactions": [
     {
-      "medicines_involved": ["Drug A", "Herb B"],
+      "medicines_involved": ["Generic Drug A", "Generic Drug B"],
       "severity": "Critical/High/Moderate/Minor",
-      "effect": "Description of what happens",
-      "mechanism": "Explanation of how the interaction works",
-      "recommendation": "Safety advice (e.g., Avoid, Consult Doctor, Monitor)",
-      "source_citation": "Name of the database or document"
+      "confidence": "High/Medium/Low",
+      "effect": "Description in [TARGET_LANGUAGE]",
+      "mechanism": "How it works in [TARGET_LANGUAGE]",
+      "recommendation": "Advice in [TARGET_LANGUAGE]",
+      "source_citation": "Source Name"
     }
   ],
-  "disclaimer": "The mandatory medical disclaimer"
-}
-`;
-
-const FALLBACK_PROMPT = `
-You are VaidyaSetu AI. No specific interaction data was found in our current clinical databases (RxNav, OpenFDA, IMPPAT, DrugBank, ICMR) for the medicines provided.
-
-INSTRUCTIONS:
-1. State that no known interactions were found in the available databases.
-2. Provide a standard cautionary reminder that the absence of data does not guarantee safety.
-3. Include the mandatory medical disclaimer.
-4. Suggest consulting a healthcare professional.
-
-OUTPUT FORMAT:
-{
-  "total_risks_found": 0,
-  "overall_risk_summary": "No known interactions found in current databases.",
-  "interactions": [],
-  "disclaimer": "Disclaimer: This information is for educational purposes only. Always consult a healthcare professional before making changes to your medication or diet."
+  "disclaimer": "Medical disclaimer in [TARGET_LANGUAGE]"
 }
 `;
 
 /**
- * Step 48-51: Compiles the RAG prompt with retrieved context
+ * Compiles the RAG prompt with retrieved context and target language
  */
-function compileRagPrompt(medicines, context) {
+function compileRagPrompt(medicines, context, language = 'English') {
+  const instructionsWithLang = SYSTEM_INSTRUCTIONS.replace(/\[TARGET_LANGUAGE\]/g, language);
+
   if (!context || context.trim().length < 50) {
     return {
-      system: SYSTEM_INSTRUCTIONS,
-      user: `Medicines to check: ${medicines.join(', ')}\n\n[NO RELEVANT CONTEXT FOUND]\n\nPlease follow the fallback instructions.`
+      system: instructionsWithLang,
+      user: `Medicines to check: ${medicines.join(', ')}\n\n[NO RELEVANT CONTEXT FOUND]\n\nPlease provide a general safety reminder and disclaimer in ${language}. Use the status "CAUTION" and suggest consulting a doctor.`
     };
   }
 
   return {
-    system: SYSTEM_INSTRUCTIONS,
+    system: instructionsWithLang,
     user: `
-USER QUERY: 
-Analyze the safety and potential interactions for combining: ${medicines.join(', ')}
+TARGET DRUGS (GENERIC NAMES):
+${medicines.join(', ')}
 
 RETRIEVED CONTEXT:
 ${context}
 
-Generate the safety report in the required JSON format.
+Instructions:
+Analyze potential safety risks ONLY for the TARGET DRUGS listed above. 
+Generate the report in the required JSON format and in ${language}.
 `
   };
 }
 
 module.exports = {
   compileRagPrompt,
-  SYSTEM_INSTRUCTIONS,
-  FALLBACK_PROMPT
+  SYSTEM_INSTRUCTIONS
 };

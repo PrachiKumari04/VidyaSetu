@@ -20,19 +20,19 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 // POST /api/rag/check-safety
 router.post('/check-safety', async (req, res) => {
   try {
-    const { medicines } = req.body;
+    const { medicines, language = 'English' } = req.body;
 
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
       return res.status(400).json({ status: 'error', message: 'medicines array is required.' });
     }
 
-    console.log(`[RAG-Safety] Starting High-Speed Analysis: ${medicines.join(', ')}`);
+    console.log(`[RAG-Safety] Starting High-Speed Analysis (${language}): ${medicines.join(', ')}`);
 
     // 1. Unified Parallel Retrieval (Covers Vector Store + Live APIs + Direct RxNav)
     const ragResult = await retrieveRelevantKnowledge(medicines);
 
-    // 2. Compile RAG Prompt
-    const prompt = compileRagPrompt(medicines, ragResult.groqContext);
+    // 2. Compile RAG Prompt with language support
+    const prompt = compileRagPrompt(medicines, ragResult.groqContext, language);
 
     // 3. Resilient Groq Call (Fallback Logic)
     let report = null;

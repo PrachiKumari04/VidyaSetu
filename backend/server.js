@@ -16,6 +16,7 @@ const ragRoutes = require('./src/routes/ragRoutes');
 const fitnessRoutes = require('./src/routes/fitnessRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
 const feedbackRoutes = require('./src/routes/feedbackRoutes');
+const ocrRoutes = require('./src/routes/ocrRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,6 +41,7 @@ app.use('/api/rag', ragRoutes);
 app.use('/api/fitness', fitnessRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/ocr', ocrRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -52,4 +54,14 @@ app.get('/api/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  
+  // RAG Pipeline Integrity Check
+  try {
+    const { retrieveRelevantKnowledge } = require('./src/utils/ragRetriever');
+    if (typeof retrieveRelevantKnowledge === 'function') {
+      console.log('✅ RAG Engine: Module loaded successfully.');
+    }
+  } catch (err) {
+    console.error('❌ RAG Engine: Integrity check failed:', err.message);
+  }
 });
