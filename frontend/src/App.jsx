@@ -20,8 +20,13 @@ import ProfileEditor from './pages/ProfileEditor';
 import ChangeHistory from './pages/ChangeHistory';
 import Prescriptions from './pages/Prescriptions';
 import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
+import Alerts from './pages/Alerts';
+import Vitals from './pages/Vitals';
+import MedicationSchedule from './pages/MedicationSchedule';
+import AlertSettings from './pages/AlertSettings';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
@@ -48,6 +53,15 @@ const AppLayout = () => {
     if (!isLoaded || !user) {
         if (isLoaded && !user) setChecking(false);
         return;
+    }
+
+    // Step 63: Register Push Service Worker Foundation
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+       window.addEventListener('load', () => {
+         navigator.serviceWorker.register('/sw.js').then(reg => {
+           console.log('[SW] Service Worker Registered:', reg.scope);
+         }).catch(err => console.error('[SW] Registration failed:', err));
+       });
     }
 
     axios.get(`${API_URL}/profile/${user.id}`)
@@ -103,8 +117,11 @@ const AppLayout = () => {
             <Route path="/history" element={<ChangeHistory />} />
             <Route path="/prescriptions" element={<Prescriptions />} />
             <Route path="/privacy" element={<Privacy />} />
-            <Route path="/vitals" element={<Dashboard />} />
-            <Route path="/alerts" element={<Dashboard />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/vitals" element={<Vitals />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/alerts/settings" element={<AlertSettings />} />
+            <Route path="/medications" element={<MedicationSchedule />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>

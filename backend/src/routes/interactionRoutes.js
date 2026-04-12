@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { matchMedicines, checkInteractions } = require('../utils/interactionEngine');
 const InteractionHistory = require('../models/InteractionHistory');
+const alertService = require('../services/alertService');
 const { Groq } = require('groq-sdk');
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -30,6 +31,9 @@ router.post('/check', async (req, res) => {
     const findings = checkInteractions(confirmedMedicines);
     if (clerkId) {
        await InteractionHistory.create({ clerkId, confirmedMedicines, foundInteractions: findings });
+       
+       // Trigger alert if high severity interactions are found
+       await alertService.triggerInteractionAlert(clerkId, findings);
     }
     res.json({ status: 'success', data: findings });
   } catch (error) {

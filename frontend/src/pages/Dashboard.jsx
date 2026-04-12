@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import axios from 'axios';
-import { Activity, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert, Cpu, ThumbsUp, ThumbsDown, Download, Scan, Trash2 } from 'lucide-react';
+import { Activity, RefreshCw, AlertTriangle, CheckCircle, ShieldAlert, Cpu, ThumbsUp, ThumbsDown, Download, Scan, Trash2, HeartPulse, Droplets } from 'lucide-react';
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import BodyScan3D from '../components/BodyScan3D';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -44,15 +44,24 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [feedbackStatus, setFeedbackStatus] = useState({}); // context -> true/false
 
-  const fetchReport = async () => {
+  const [latestVitals, setLatestVitals] = useState([]);
+
+  const fetchData = async () => {
     try {
-      const res = await axios.get(`${API_URL}/reports/${user.id}`);
-      if (res.data.status === 'success') {
-        setReport(res.data.data);
+      const [reportRes, vitalsRes] = await Promise.all([
+        axios.get(`${API_URL}/reports/${user.id}`).catch(() => null),
+        axios.get(`${API_URL}/vitals/latest/${user.id}`).catch(() => null)
+      ]);
+      
+      if (reportRes?.data?.status === 'success') {
+        setReport(reportRes.data.data);
+      }
+      if (vitalsRes?.data?.status === 'success') {
+        setLatestVitals(vitalsRes.data.data);
       }
     } catch (err) {
       if (err.response?.status !== 404) {
-        console.error("Error fetching report:", err);
+        console.error("Error fetching data:", err);
       }
     } finally {
       setLoading(false);
@@ -60,7 +69,12 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (user) fetchReport();
+    if (user) {
+       fetchData();
+       // Cross-Device Sync Polling (30s interval)
+       const syncInterval = setInterval(fetchData, 30000);
+       return () => clearInterval(syncInterval);
+    }
   }, [user]);
 
   const generateReport = async () => {
@@ -87,7 +101,7 @@ const Dashboard = () => {
           clerkId: user.id, 
           accessToken: tokenResponse.access_token 
         });
-        if (res.data.status === 'success') fetchReport();
+        if (res.data.status === 'success') fetchData();
       } catch (err) {
         console.error("Fitness sync failed:", err);
       } finally {
@@ -282,6 +296,34 @@ const Dashboard = () => {
                   />
                </div>
            </div>
+
+           {/* Latest Vitals Integration (Step 82) */}
+           {latestVitals && latestVitals.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-[2.5rem] shadow-xl group hover:border-emerald-500/30 transition-all">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-gray-900 dark:text-white font-semibold flex items-center">
+                     <HeartPulse className="w-5 h-5 text-rose-500 mr-2" /> Vitals Telemetry
+                  </h3>
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" title="Live Sync Active" />
+                </div>
+                <div className="space-y-4">
+                  {latestVitals.slice(0, 3).map((vital) => (
+                    <div key={vital.type} className="flex justify-between items-end p-4 bg-gray-50 dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-gray-800">
+                       <div>
+                          <div className="text-[10px] text-gray-500 uppercase font-black tracking-widest">{vital.type.replace('_', ' ')}</div>
+                          <div className="text-xl font-black text-gray-900 dark:text-white mt-1">
+                             {typeof vital.value === 'object' ? `${vital.value.systolic}/${vital.value.diastolic}` : vital.value}
+                             <span className="text-xs text-gray-400 font-bold ml-1">{vital.unit}</span>
+                          </div>
+                       </div>
+                       <div className="text-[9px] font-bold text-gray-400">
+                          {new Date(vital.timestamp).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+           )}
 
            {/* Step Tracker Placeholder */}
            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-3xl group hover:border-emerald-500/30 transition-all shadow-xl">

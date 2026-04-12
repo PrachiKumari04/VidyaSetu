@@ -3,6 +3,7 @@ const router = express.Router();
 const { Groq } = require('groq-sdk');
 const UserProfile = require('../models/UserProfile');
 const Report = require('../models/Report');
+const Vital = require('../models/Vital');
 const { calculatePreliminaryRisk } = require('../utils/riskScorer');
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -50,20 +51,32 @@ router.post('/generate-report', async (req, res) => {
       `;
     }
 
+    // --- Step 84: Vitals to AI Insights Integration ---
+    const recentVitals = await Vital.find({ clerkId }).sort({ timestamp: -1 }).limit(5);
+    let vitalsContext = "";
+    if (recentVitals.length > 0) {
+      vitalsContext = `
+      RECENT VITALS SNAPSHOT:
+      ${JSON.stringify(recentVitals.map(v => ({ type: v.type, value: v.value, unit: v.unit, date: v.timestamp })))}
+      Please incorporate these physiological trends into your insights if they show concerning patterns.
+      `;
+    }
+
     const prompt = `
     You are VaidyaSetu AI, a compassionate health assistant for Indian users. 
-    Analyze this user profile and preliminary risk scores.
+    Analyze this user profile, preliminary risk scores, and recent vitals telemetry.
 
     IMPORTANT RULES FOR TONE AND PRONOUNS:
     Always speak directly to the user using "you" or "your". Never use third-person pronouns like "his", "her", "he", or "she" to refer to the user.
     
     Profile: ${JSON.stringify(flatProfile)}
     Risk Scores: ${JSON.stringify(riskScores)}
+    ${vitalsContext}
     ${changeInstruction}
     
     Output a valid JSON object matching exactly this schema:
     {
-      "summary": "2-sentence warm, slightly clinical summary of their health status",
+      "summary": "2-sentence warm, slightly clinical summary of their health status incorporating recent vital trends if present",
       "diabetes_advice": "Actionable advice based on their diabetes risk",
       "hypertension_advice": "Actionable advice based on their hypertension risk",
       "anemia_advice": "Actionable advice based on their anemia risk",

@@ -3,6 +3,10 @@ import { NavLink, Link } from 'react-router-dom';
 import { Home, FileText, Activity, ShieldAlert, Settings, LogOut, AlertCircle, UserCircle } from 'lucide-react';
 import { UserButton, useClerk, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '@clerk/clerk-react';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 /**
  * Sidebar component replicated from VaidyaSetu1
@@ -15,6 +19,26 @@ import { useTheme } from '../context/ThemeContext';
 const Sidebar = () => {
   const { signOut } = useClerk();
   const { theme } = useTheme();
+  const { user } = useUser();
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (user) {
+      const fetchCount = async () => {
+        try {
+          const res = await axios.get(`${API_URL}/alerts/${user.id}/count`);
+          if (res.data.status === 'success') {
+            setUnreadCount(res.data.data.count);
+          }
+        } catch (err) {
+          console.error("Sidebar count fetch failed", err);
+        }
+      };
+      fetchCount();
+      const interval = setInterval(fetchCount, 60000); // Polling every 1 min
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   const navItems = [
     { to: '/', icon: Home, label: 'Dashboard' },
@@ -59,7 +83,7 @@ const Sidebar = () => {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex whitespace-nowrap items-center px-4 py-2 md:py-3 rounded-xl transition-all duration-200 ${
+                `flex whitespace-nowrap items-center px-4 py-2 md:py-3 rounded-xl transition-all duration-200 relative ${
                   isActive
                     ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-gray-800/50 active-link'
                     : 'text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-gray-800/30'
@@ -68,6 +92,11 @@ const Sidebar = () => {
             >
               <item.icon className="w-4 md:w-5 h-4 md:h-5 mr-2 md:mr-3" />
               <span className="font-medium text-sm md:text-base">{item.label}</span>
+              {item.to === '/alerts' && unreadCount > 0 && (
+                 <span className="absolute right-2 md:right-4 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full animate-bounce">
+                    {unreadCount}
+                 </span>
+              )}
             </NavLink>
           ))}
         </nav>

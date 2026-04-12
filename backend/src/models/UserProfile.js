@@ -67,6 +67,22 @@ const UserProfileSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+
+  // Step 5: Platform Settings (Phase 1)
+  settings: {
+    language: { type: String, default: 'English' },
+    theme: { type: String, enum: ['light', 'dark', 'system'], default: 'dark' },
+    fontSize: { type: String, enum: ['small', 'medium', 'large'], default: 'medium' },
+    highContrast: { type: Boolean, default: false },
+    reduceAnimations: { type: Boolean, default: false },
+    voiceGuidance: { type: Boolean, default: false },
+    measurementUnits: { type: String, enum: ['metric', 'imperial'], default: 'metric' },
+    glucoseUnits: { type: String, enum: ['mg/dL', 'mmol/L'], default: 'mg/dL' },
+    defaultReminderTime: { type: String, default: '08:00 AM' },
+    reminderSound: { type: String, default: 'Chime' },
+    snoozeDuration: { type: Number, default: 10 }, // minutes
+    refillAlertThreshold: { type: Number, default: 7 } // days
   }
 });
 

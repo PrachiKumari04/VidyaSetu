@@ -17,6 +17,15 @@ const fitnessRoutes = require('./src/routes/fitnessRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
 const feedbackRoutes = require('./src/routes/feedbackRoutes');
 const ocrRoutes = require('./src/routes/ocrRoutes');
+const vitalsRoutes = require('./src/routes/vitalsRoutes');
+const labRoutes = require('./src/routes/labRoutes');
+const goalsRoutes = require('./src/routes/goalsRoutes');
+const alertRoutes = require('./src/routes/alertRoutes');
+const preferenceRoutes = require('./src/routes/preferenceRoutes');
+const medicationRoutes = require('./src/routes/medicationRoutes');
+const governanceRoutes = require('./src/routes/governanceRoutes');
+const { runReminderService } = require('./src/services/reminderService');
+const initCronJobs = require('./src/scripts/cronJobs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,6 +51,13 @@ app.use('/api/fitness', fitnessRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/ocr', ocrRoutes);
+app.use('/api/vitals', vitalsRoutes);
+app.use('/api/lab-results', labRoutes);
+app.use('/api/goals', goalsRoutes);
+app.use('/api/alerts', alertRoutes);
+app.use('/api/preferences', preferenceRoutes);
+app.use('/api/medications', medicationRoutes);
+app.use('/api/governance', governanceRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -54,6 +70,10 @@ app.get('/api/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  
+  // Start the background monitoring heartbeat (Step 59, 60)
+  runReminderService();
+  initCronJobs(); // Step 86: Start background cron jobs
   
   // RAG Pipeline Integrity Check
   try {

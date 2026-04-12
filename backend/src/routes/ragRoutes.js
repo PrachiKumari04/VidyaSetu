@@ -12,15 +12,15 @@ const express = require('express');
 const router = express.Router();
 const { Groq } = require('groq-sdk');
 const { retrieveRelevantKnowledge } = require('../utils/ragRetriever');
-const { fetchDrugData, rateLimiter } = require('./realtimeInteractionRoutes');
 const { compileRagPrompt } = require('../utils/ragPromptEngine');
+const Alert = require('../models/Alert');
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // POST /api/rag/check-safety
 router.post('/check-safety', async (req, res) => {
   try {
-    const { medicines, language = 'English' } = req.body;
+    const { medicines, language = 'English', clerkId } = req.body;
 
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
       return res.status(400).json({ status: 'error', message: 'medicines array is required.' });
@@ -72,6 +72,26 @@ router.post('/check-safety', async (req, res) => {
         }
       } else {
         throw err; // Rethrow non-rate-limit errors
+      }
+    }
+
+    // Step 57: Generate Alert for Severe Interactions if clerkId provided
+    if (clerkId && report && (report.severity === 'Severe' || report.severity === 'High Risk' || report.hasInteraction)) {
+      try {
+        const alertObj = {
+          clerkId,
+          type: 'interaction_detected',
+          priority: report.severity === 'Severe' ? 'critical' : 'high',
+          title: `Safety Warning: ${report.severity} Interaction`,
+          description: report.summary || `A potential safety risk was detected between ${medicines.join(' and ')}.`,
+          actionUrl: '/safety-bridge',
+          actionText: 'Review Analysis'
+        };
+        const newAlert = new Alert(alertObj);
+        await newAlert.save();
+        console.log(`[ALERT] Interaction alert generated for ${clerkId}`);
+      } catch (err) {
+        console.error('[ALERT] Failed to save interaction alert:', err.message);
       }
     }
 

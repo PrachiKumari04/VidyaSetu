@@ -183,4 +183,99 @@ router.put('/history/:id/reclassify', async (req, res) => {
   }
 });
 
+// Update Platform Settings (Phase 1)
+router.patch('/settings/:clerkId', async (req, res) => {
+  try {
+    const { settings } = req.body;
+    if (!settings) {
+      return res.status(400).json({ status: 'error', message: 'Settings are required' });
+    }
+
+    const profile = await UserProfile.findOneAndUpdate(
+      { clerkId: req.params.clerkId },
+      { $set: { settings: settings } },
+      { new: true }
+    );
+
+    if (!profile) {
+      return res.status(404).json({ status: 'error', message: 'Profile not found' });
+    }
+
+    res.json({
+      status: 'success',
+      message: 'Platform settings updated',
+      data: profile.settings
+    });
+  } catch (error) {
+    console.error('Update settings error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+const Vital = require('../models/Vital');
+const LabResult = require('../models/LabResult');
+const HealthGoal = require('../models/HealthGoal');
+const Alert = require('../models/Alert');
+
+/**
+ * @route GET /api/profile/export/:clerkId
+ * @desc  Consolidate and export all user health data as JSON
+ */
+router.get('/export/:clerkId', async (req, res) => {
+  try {
+    const clerkId = req.params.clerkId;
+    const [profile, history, reports, vitals, labResults, goals, alerts] = await Promise.all([
+      UserProfile.findOne({ clerkId }),
+      History.find({ clerkId }),
+      Report.find({ clerkId }),
+      Vital.find({ clerkId }),
+      LabResult.find({ clerkId }),
+      HealthGoal.find({ clerkId }),
+      Alert.find({ clerkId })
+    ]);
+
+    const exportData = {
+      profile,
+      medicalHistory: history,
+      aiReports: reports,
+      vitals,
+      labResults,
+      goals,
+      alerts,
+      exportedAt: new Date()
+    };
+
+    res.json({ status: 'success', data: exportData });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+/**
+ * @route DELETE /api/profile/account/:clerkId
+ * @desc  Permanently delete all data associated with a user
+ */
+router.delete('/account/:clerkId', async (req, res) => {
+  try {
+    const clerkId = req.params.clerkId;
+    
+    // Cascade deletion
+    await Promise.all([
+      UserProfile.deleteOne({ clerkId }),
+      History.deleteMany({ clerkId }),
+      Report.deleteMany({ clerkId }),
+      Vital.deleteMany({ clerkId }),
+      LabResult.deleteMany({ clerkId }),
+      HealthGoal.deleteMany({ clerkId }),
+      Alert.deleteMany({ clerkId }),
+      require('../models/AlertPreference').deleteOne({ clerkId }),
+      require('../models/InteractionHistory').deleteMany({ clerkId })
+    ]);
+
+    res.json({ status: 'success', message: 'Account and all health records deleted permanently.' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
 module.exports = router;

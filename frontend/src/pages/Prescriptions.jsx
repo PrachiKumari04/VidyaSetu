@@ -40,9 +40,12 @@ const Prescriptions = () => {
 
   const voiceAudioUrl = null; // No longer needed — using real SpeechRecognition
 
-  // Fetch History
   useEffect(() => {
-    if (user) fetchHistory();
+    if (user) {
+      fetchHistory();
+      const syncInterval = setInterval(fetchHistory, 30000); // Step 85: Sync Polling
+      return () => clearInterval(syncInterval);
+    }
   }, [user]);
 
   const fetchHistory = async () => {
@@ -266,6 +269,21 @@ const Prescriptions = () => {
         if (isFallback && processedInteractions.length > 0) {
           setExpandedId(processedInteractions[0].id);
         }
+
+        // --- Step 83: Alert Bridge Integration ---
+        const criticalAlerts = processedInteractions.filter(i => 
+          i.severity?.toLowerCase() === 'high' || i.severity?.toLowerCase() === 'critical'
+        );
+        criticalAlerts.forEach(interaction => {
+           axios.post(`${API_URL}/alerts`, {
+              clerkId: user.id,
+              type: 'INTERACTION',
+              priority: 'critical',
+              title: `Critical Risk: ${interaction.allopathy_drug}`,
+              description: `Severe interaction found between ${interaction.allopathy_drug} and ${interaction.ayurveda_herb?.[0] || 'substance'}. Action required.`,
+              source: 'Safety Bridge Engine'
+           }).catch(console.error);
+        });
 
         fetchHistory();
       }
