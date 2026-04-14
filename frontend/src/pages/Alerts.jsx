@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Bell, AlertTriangle, ShieldAlert, Heart, Activity, 
@@ -12,6 +13,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 const Alerts = () => {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('unread'); // unread, critical, all
@@ -56,13 +58,32 @@ const Alerts = () => {
 
   const markAllRead = async () => {
     try {
-      // Logic for bulk mark read if endpoint exists, else iterate
-      const unread = alerts.filter(a => a.status === 'unread');
-      await Promise.all(unread.map(a => axios.patch(`${API_URL}/alerts/${a._id}/read`)));
+      await axios.patch(`${API_URL}/alerts/${user.id}/read-all`);
       setAlerts(alerts.map(a => ({ ...a, status: 'read' })));
     } catch (err) {
       console.error("Mark all read failed", err);
     }
+  };
+
+  const [feedbackStatus, setFeedbackStatus] = useState({});
+
+  const handleAlertFeedback = async (alertId, rating) => {
+    try {
+      await axios.post(`${API_URL}/alerts/${alertId}/feedback`, { rating });
+      setFeedbackStatus(prev => ({ ...prev, [alertId]: true }));
+    } catch (err) {
+      console.error('Feedback failed', err);
+    }
+  };
+
+  const getProtocolRoute = (alert) => {
+    const t = (alert.type || '').toLowerCase();
+    if (t.includes('interaction') || t === 'interaction_detected') return '/prescriptions';
+    if (t.includes('vital') || t === 'vital_out_of_range') return '/vitals';
+    if (t.includes('medication') || t === 'medication_reminder') return '/medicines';
+    if (t.includes('lab') || t === 'lab_test_due') return '/vitals';
+    if (t.includes('profile') || t === 'profile_incomplete') return '/profile';
+    return alert.actionUrl || '/';
   };
 
   const filteredAlerts = alerts
@@ -244,6 +265,10 @@ const Alerts = () => {
                        <Trash2 className="w-5 h-5" />
                     </button>
                     <button 
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         navigate(getProtocolRoute(alert));
+                       }}
                        className={`px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${alert.status === 'unread' ? 'bg-emerald-600 text-white shadow-lg lg:group-hover:translate-x-1' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}
                     >
                        Full Protocol <ChevronRight className="w-4 h-4" />
@@ -302,13 +327,32 @@ const Alerts = () => {
                      <h5 className="text-[10px] font-black uppercase text-gray-400 tracking-[0.3em]">AI Protocol Recommendations</h5>
                      <ul className="space-y-3">
                         {selectedAlert.priority === 'critical' ? (
-                          <li className="flex items-start gap-3 text-sm font-bold text-red-500">
-                             <AlertOctagon className="w-5 h-5 shrink-0" /> Immediate physician follow-up required.
-                          </li>
+                          <>
+                            <li className="flex items-start gap-3 text-sm font-bold text-red-500">
+                               <AlertOctagon className="w-5 h-5 shrink-0" /> Immediate physician follow-up required. Do not adjust medications without consulting your doctor.
+                            </li>
+                            <li className="flex items-start gap-3 text-sm text-gray-500">
+                               <Heart className="w-5 h-5 shrink-0 text-red-400" /> Monitor vitals closely every 2 hours until stabilized.
+                            </li>
+                          </>
+                        ) : selectedAlert.priority === 'high' ? (
+                          <>
+                            <li className="flex items-start gap-3 text-sm font-bold text-orange-500">
+                               <AlertTriangle className="w-5 h-5 shrink-0" /> Schedule a physician consultation within 24-48 hours.
+                            </li>
+                            <li className="flex items-start gap-3 text-sm text-gray-500">
+                               <Activity className="w-5 h-5 shrink-0 text-orange-400" /> Log vitals more frequently to track trends.
+                            </li>
+                          </>
                         ) : (
-                          <li className="flex items-start gap-3 text-sm font-bold text-emerald-500">
-                             <CheckCircle2 className="w-5 h-5 shrink-0" /> Routine monitoring active. Follow log interval guidance.
-                          </li>
+                          <>
+                            <li className="flex items-start gap-3 text-sm font-bold text-emerald-500">
+                               <CheckCircle2 className="w-5 h-5 shrink-0" /> Routine monitoring active. Follow log interval guidance.
+                            </li>
+                            <li className="flex items-start gap-3 text-sm text-gray-500">
+                               <Info className="w-5 h-5 shrink-0 text-blue-400" /> Keep logging vitals at regular intervals for better AI predictions.
+                            </li>
+                          </>
                         )}
                         <li className="flex items-start gap-3 text-sm text-gray-500">
                            <RefreshCw className="w-5 h-5 shrink-0" /> System will auto-reevaluate on next biometric log.
@@ -316,21 +360,27 @@ const Alerts = () => {
                      </ul>
                   </div>
                   <div className="flex gap-4 items-center">
-                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Relevance Feedback</span>
-                      <button className="p-2 bg-gray-50 dark:bg-gray-950 rounded-lg hover:text-emerald-500 transition-colors"><ThumbsUp className="w-4 h-4" /></button>
-                      <button className="p-2 bg-gray-50 dark:bg-gray-950 rounded-lg hover:text-red-500 transition-colors"><ThumbsDown className="w-4 h-4" /></button>
+                      <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Was this alert helpful?</span>
+                      {feedbackStatus[selectedAlert._id] ? (
+                        <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Feedback Received</span>
+                      ) : (
+                        <>
+                          <button onClick={() => handleAlertFeedback(selectedAlert._id, 'helpful')} className="p-2 bg-gray-50 dark:bg-gray-950 rounded-lg hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"><ThumbsUp className="w-4 h-4" /></button>
+                          <button onClick={() => handleAlertFeedback(selectedAlert._id, 'not_helpful')} className="p-2 bg-gray-50 dark:bg-gray-950 rounded-lg hover:text-red-500 hover:bg-red-500/10 transition-colors"><ThumbsDown className="w-4 h-4" /></button>
+                        </>
+                      )}
                   </div>
                </div>
 
                <div className="p-10 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 flex gap-4">
                   <button 
                     onClick={() => {
-                        if (selectedAlert.actionUrl) window.location.href = selectedAlert.actionUrl;
+                        navigate(getProtocolRoute(selectedAlert));
                         setSelectedAlert(null);
                     }}
                     className="flex-1 py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition-all shadow-xl uppercase tracking-widest text-xs active:scale-95"
                   >
-                    {selectedAlert.actionText || 'Acknowledge Protocol'}
+                    {selectedAlert.actionText || 'View Full Protocol'}
                   </button>
                   <button 
                     onClick={() => dismissAlert(selectedAlert._id)}

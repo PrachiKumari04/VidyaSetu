@@ -92,7 +92,7 @@ html:not(.dark) p, html:not(.dark) span:not(.text-emerald-500) {
 }
 
 /* Force override common Tailwind dark utility classes in light mode */
-html:not(.dark) .bg-gray-950, html:not(.dark) .bg-[#030712] {
+html:not(.dark) .bg-gray-950 {
   background-color: #f8fafc !important;
 }
 
