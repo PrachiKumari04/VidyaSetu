@@ -237,4 +237,17 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+/**
+ * @route DELETE /api/vitals/purge/:clerkId
+ * @desc  Delete ALL vital readings for a user
+ */
+router.delete('/purge/:clerkId', async (req, res) => {
+  try {
+    await Vital.deleteMany({ clerkId: req.params.clerkId });
+    res.json({ status: 'success', message: 'All vitals purged successfully.' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
 module.exports = router;
