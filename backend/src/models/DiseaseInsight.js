@@ -77,7 +77,20 @@ const DiseaseInsightSchema = new mongoose.Schema({
   reviewedAt: {
     type: Date
   },
-  rawInputData: mongoose.Schema.Types.Mixed // Snapshot of data used for this calc
+  rawInputData: mongoose.Schema.Types.Mixed, // Snapshot of data used for this calc
+  // Questionnaire data
+  questionnaireAnswers: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+  questionnaireCompletedAt: {
+    type: Date,
+    default: null
+  },
+  questionnaireVersion: {
+    type: String,
+    default: '1.0.0'
+  }
 });
 
 // Compound index for unique user-disease insights

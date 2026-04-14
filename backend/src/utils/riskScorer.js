@@ -484,7 +484,99 @@ function calculateDetailedInsights(profile, diseaseId) {
             break;
 
         default:
-            if (bmi > 27.5) addFactor('bmi_high', 'High BMI', bmi, 15, 'increase', 'Risk factor for most NCDs.', 'demographic');
+            // Enhanced default case for all other diseases
+            let defaultScore = 10; // Baseline population risk
+            
+            // ALWAYS show baseline factor
+            const prevalenceData = PREVALENCE_DATA[diseaseId];
+            if (prevalenceData) {
+                addFactor('baseline_population', 'Baseline Population Risk', 
+                    `${prevalenceData.prevalence || '10'}% prevalence`, 
+                    10, 'increase', 
+                    `Indian population prevalence based on national surveys.`, 
+                    'demographic');
+            } else {
+                addFactor('baseline_population', 'Baseline Population Risk', 
+                    '10% prevalence', 
+                    10, 'increase', 
+                    `Baseline risk for ${diseaseId.replace('_', ' ')} in general population.`, 
+                    'demographic');
+            }
+            
+            // Age Factor (applies to most diseases)
+            if (age >= 45 && age < 60) {
+                defaultScore += 15;
+                addFactor('default_age', 'Middle Age', `${age} years`, 15, 'increase', 'Risk increases for many conditions after 45.', 'demographic');
+            } else if (age >= 60) {
+                defaultScore += 25;
+                addFactor('default_age_senior', 'Senior Age', `${age} years`, 25, 'increase', 'Significantly elevated risk for many conditions.', 'demographic');
+            } else if (age < 45) {
+                // Young age is protective
+                defaultScore -= 5;
+                protective.push({ id: 'default_age_young', name: 'Young Age', displayValue: `${age} years`, impact: 5 });
+            }
+            
+            // BMI Factor
+            if (bmi >= 25 && bmi < 30) {
+                defaultScore += 10;
+                addFactor('default_bmi_overweight', 'Overweight', `BMI: ${bmi.toFixed(1)}`, 10, 'increase', 'Elevated BMI increases risk for many conditions.', 'demographic');
+            } else if (bmi >= 30) {
+                defaultScore += 20;
+                addFactor('default_bmi_obese', 'Obesity', `BMI: ${bmi.toFixed(1)}`, 20, 'increase', 'Obesity is a major risk factor for chronic diseases.', 'demographic');
+            } else if (bmi >= 18.5 && bmi < 25) {
+                // Normal BMI is protective
+                defaultScore -= 10;
+                protective.push({ id: 'default_normal_bmi', name: 'Normal BMI', displayValue: `BMI: ${bmi.toFixed(1)}`, impact: 10 });
+            }
+            
+            // Smoking
+            if (profile.isSmoker?.value === true) {
+                defaultScore += 15;
+                addFactor('default_smoking', 'Current Smoker', 'Yes', 15, 'increase', 'Smoking increases risk for multiple diseases.', 'lifestyle');
+            } else if (profile.isSmoker?.value === false) {
+                // Non-smoker is protective
+                defaultScore -= 10;
+                protective.push({ id: 'default_non_smoker', name: 'Non-Smoker', displayValue: 'No', impact: 10 });
+            }
+            
+            // Sedentary Lifestyle
+            if (profile.activityLevel?.value === 'Sedentary') {
+                defaultScore += 10;
+                addFactor('default_sedentary', 'Sedentary Lifestyle', 'Yes', 10, 'increase', 'Physical inactivity increases disease risk.', 'lifestyle');
+            } else if (profile.activityLevel?.value === 'Regular') {
+                // Regular exercise is protective
+                defaultScore -= 15;
+                protective.push({ id: 'default_exercise', name: 'Regular Exercise', displayValue: 'Yes', impact: 15 });
+            }
+            
+            // Family History
+            const familyHx = profile.familyHistory?.value;
+            if (familyHx && Array.isArray(familyHx) && familyHx.length > 0) {
+                defaultScore += 10;
+                addFactor('default_family', 'Family History Present', `${familyHx.length} condition(s)`, 10, 'increase', 'Genetic predisposition increases risk.', 'demographic');
+            }
+            
+            // Stress
+            if (profile.stressLevel?.value === 'High' || profile.stressLevel?.value === 'Very High') {
+                defaultScore += 10;
+                addFactor('default_stress', 'High Stress Level', profile.stressLevel.value, 10, 'increase', 'Chronic stress impacts overall health.', 'lifestyle');
+            } else if (profile.stressLevel?.value === 'Low') {
+                // Low stress is protective
+                defaultScore -= 5;
+                protective.push({ id: 'default_low_stress', name: 'Low Stress', displayValue: 'Low', impact: 5 });
+            }
+            
+            // Poor Diet
+            if (profile.dietQuality?.value === 'Poor') {
+                defaultScore += 10;
+                addFactor('default_diet', 'Poor Diet Quality', 'Poor', 10, 'increase', 'Nutrition affects disease risk.', 'lifestyle');
+            } else if (profile.dietQuality?.value === 'Good') {
+                // Good diet is protective
+                defaultScore -= 5;
+                protective.push({ id: 'default_good_diet', name: 'Good Diet', displayValue: 'Good', impact: 5 });
+            }
+            
+            score = defaultScore;
             break;
     }
 

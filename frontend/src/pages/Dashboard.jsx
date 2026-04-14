@@ -62,6 +62,38 @@ const Dashboard = () => {
     }
   };
 
+  // Handle disease score update from questionnaire
+  const handleDiseaseScoreUpdate = async (diseaseId) => {
+    console.log('[Dashboard] Score updated for', diseaseId, '- refreshing dashboard data...');
+    
+    // Refetch the report to get updated scores
+    try {
+      // Add timestamp to bypass any caching
+      const timestamp = Date.now();
+      const reportRes = await axios.get(`${API_URL}/reports/${user.id}?t=${timestamp}`);
+      if (reportRes?.data?.status === 'success') {
+        const newReport = reportRes.data.data;
+        console.log('[Dashboard] Fetched report with scores:', newReport.risk_scores);
+        
+        // Force update by creating new object reference
+        setReport({ ...newReport });
+        
+        console.log('[Dashboard] ✅ Dashboard data refreshed with updated scores');
+        
+        // Show success toast
+        setToast({
+          type: 'success',
+          message: `${diseaseId.replace('_', ' ')} risk score updated to ${newReport.risk_scores[diseaseId]}%!`
+        });
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        console.error('[Dashboard] Invalid response:', reportRes.data);
+      }
+    } catch (err) {
+      console.error('[Dashboard] Failed to refresh dashboard:', err.response?.data || err.message);
+    }
+  };
+
   const fetchData = async () => {
     try {
       const [reportRes, vitalsRes, profileRes, medsRes] = await Promise.all([
@@ -230,6 +262,7 @@ const Dashboard = () => {
                   profile={profile}
                   isExpanded={expandedDiseaseId === key}
                   onToggle={() => handleToggle(key)}
+                  onScoreUpdated={handleDiseaseScoreUpdate}
                 />
               ))}
             </div>
