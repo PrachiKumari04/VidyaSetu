@@ -100,33 +100,41 @@ const HologramMannequin = ({ riskLevel = 0 }) => {
     
     const scale = 3.2 / (size.y || 1);
 
-    // Premium Solid Holographic Glass Material for perfect structural shapes
-    const premiumHoloMaterial = new THREE.MeshPhysicalMaterial({
-      color: "#86efac",      // Light Green base
-      emissive: "#4ade80",   // Brighter light green glow
-      emissiveIntensity: 0.6,
-      metalness: 0.8,
-      roughness: 0.1,
-      transmission: 0.5,
-      transparent: true,
-      opacity: 0.85,
-      wireframe: false,
-      side: THREE.FrontSide
-    });
+  // Shared material to avoid creating one per frame/render
+  const holoMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+    color: "#86efac",      // Light Green base
+    emissive: "#4ade80",   // Brighter light green glow
+    emissiveIntensity: 0.6,
+    metalness: 0.8,
+    roughness: 0.1,
+    transmission: 0.5,
+    transparent: true,
+    opacity: 0.8,
+    side: THREE.FrontSide
+  }), []);
+
+  // Safe calculation to isolate memory without graph modification loops
+  const { scale, center } = useMemo(() => {
+    // Reset transforms to avoid Strict-Mode recursive shift bug
+    scene.position.set(0, 0, 0);
+    scene.scale.set(1, 1, 1);
+    scene.rotation.set(0, 0, 0);
+    scene.updateMatrixWorld(true);
+
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = box.getSize(new THREE.Vector3());
+    const c = box.getCenter(new THREE.Vector3());
+    
+    const s = 3.2 / (size.y || 1);
 
     scene.traverse((child) => {
-      // Clean up any old duplicate wireframes if React hot-reloaded previously
-      if (child.children) {
-         child.children = child.children.filter(c => !c.userData?.isWireframeClone);
-      }
-      
       if (child.isMesh || child.isSkinnedMesh) {
-         child.material = premiumHoloMaterial;
+         child.material = holoMaterial;
       }
     });
 
-    return { scale, cx: center.x, cy: center.y, cz: center.z };
-  }, [scene, riskLevel]);
+    return { scale: s, center: c };
+  }, [scene, holoMaterial]);
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
@@ -160,8 +168,8 @@ const HologramMannequin = ({ riskLevel = 0 }) => {
 
       <group ref={groupRef} rotation={[0, Math.PI / 6, 0]}>
         {/* The Mannequin dynamically scaled and centered in a parent group */}
-        <group scale={modelProps.scale} position={[0, -0.6, 0]}>
-           <primitive object={scene} position={[-modelProps.cx, -modelProps.cy, -modelProps.cz]} />
+        <group scale={scale} position={[0, -0.6, 0]}>
+           <primitive object={scene} position={[-center.x, -center.y, -center.z]} />
         </group>
 
         {/* Digital Core Points */}
@@ -192,9 +200,27 @@ const HologramMannequin = ({ riskLevel = 0 }) => {
 };
 
 const BodyScan3D = ({ riskScore = 0 }) => {
+  const canvasRef = useRef();
+
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden">
-      <Canvas dpr={[1, 2]} className="w-full h-full"> 
+      <Canvas 
+        ref={canvasRef}
+        dpr={[1, 1.5]} // Capped for performance
+        gl={{ 
+          antialias: true,
+          powerPreference: "high-performance",
+          alpha: true,
+          preserveDrawingBuffer: false // Memory optimization
+        }}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener('webglcontextlost', (event) => {
+            event.preventDefault();
+            console.warn('[BodyScan3D] WebGL Context Lost. Attempting recovery...');
+          }, false);
+        }}
+        className="w-full h-full"
+      > 
         <PerspectiveCamera makeDefault position={[0, 0.2, 8]} fov={30} />
         <ambientLight intensity={1.0} />
         <directionalLight position={[10, 10, 5]} intensity={2.5} color="#34d399" />

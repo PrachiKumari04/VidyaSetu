@@ -57,10 +57,16 @@ function selectMitigations(profile, diseaseId, score) {
  * PHASE 2 & 5: Evidence-Based Risk Engine & Mitigation System
  */
 function calculateDetailedInsights(profile, diseaseId) {
-    const age = parseInt(profile.age?.value || profile.age) || 30;
-    const gender = (profile.gender?.value || profile.gender || 'Other').toLowerCase();
+    const getVal = (field) => {
+        if (field === undefined || field === null) return undefined;
+        if (typeof field === 'object' && field.value !== undefined) return field.value;
+        return field;
+    };
+
+    const age = parseInt(getVal(profile.age)) || 30;
+    const gender = (String(getVal(profile.gender) || 'Other')).toLowerCase();
     const isFemale = gender === 'female';
-    const bmi = parseFloat(profile.bmi?.value || profile.bmi) || 22;
+    const bmi = parseFloat(getVal(profile.bmi)) || 22;
     
     // Evaluate Global Emergency Conditions (Step 58)
     const emergencyAlerts = calculateEmergencyAlerts(profile);
@@ -126,7 +132,7 @@ function calculateDetailedInsights(profile, diseaseId) {
             factors.push({ id: 'idrs_age', name: 'Age Factor', displayValue: age, impact: agePts, category: 'demographic', explanation: 'Risk increases significantly after 35 and 50.' });
 
             // Waist Circumference
-            const waist = profile.waistCircumference?.value;
+            const waist = getVal(profile.waistCircumference);
             if (waist) {
                 let waistPts = 0;
                 if (gender === 'male') {
@@ -141,23 +147,23 @@ function calculateDetailedInsights(profile, diseaseId) {
             }
 
             // Activity
-            const activity = profile.activityLevel?.value;
-            let actPts = activity === 'Regular' ? 0 : (activity === 'Occasional' ? 10 : 20);
+            const activity = getVal(profile.activityLevel);
+            let actPts = (activity === 'Regular' || activity === 'active') ? 0 : (activity === 'Occasional' || activity === 'moderate' ? 10 : 20);
             idrs += actPts;
             factors.push({ id: 'idrs_activity', name: 'Physical Activity', displayValue: activity || 'Sedentary', impact: actPts, category: 'lifestyle', explanation: 'Sedentary lifestyle reduces glucose uptake.' });
 
             // Family History
-            const famHist = profile.familyHistoryDiabetes?.value;
-            let famPts = famHist === 'Both' ? 20 : (famHist === 'One' ? 10 : 0);
+            const famHist = getVal(profile.familyHistoryDiabetes);
+            let famPts = (famHist === 'Both' || famHist === 'both') ? 20 : (famHist === 'One' || famHist === 'parents' || famHist === 'siblings' ? 10 : 0);
             idrs += famPts;
             factors.push({ id: 'idrs_family', name: 'Genetics', displayValue: famHist || 'None', impact: famPts, category: 'demographic', explanation: 'Family history indicates genetic predisposition.' });
 
             // Questionnaire symptom enrichments (Phase 1 expanded onboarding)
-            if (profile.frequentThirst?.value || profile.frequentThirst === true) {
+            if (getVal(profile.frequentThirst) === true || getVal(profile.excessive_thirst) === true) {
                 idrs += 8;
                 factors.push({ id: 'dm_thirst', name: 'Frequent Thirst', displayValue: 'Yes', impact: 8, direction: 'increase', category: 'symptom', explanation: 'Polydipsia can indicate elevated glucose levels.' });
             }
-            if (profile.frequentUrination?.value || profile.frequentUrination === true) {
+            if (getVal(profile.frequentUrination) === true || getVal(profile.frequent_urination) === true) {
                 idrs += 8;
                 factors.push({ id: 'dm_urination', name: 'Frequent Urination', displayValue: 'Yes', impact: 8, direction: 'increase', category: 'symptom', explanation: 'Polyuria is a common metabolic warning sign.' });
             }
@@ -226,7 +232,7 @@ function calculateDetailedInsights(profile, diseaseId) {
             // Impaired glucose regulation: IDRS-aligned drivers, scaled below diabetes case
             let pre = 0;
             pre += age < 35 ? 0 : age < 50 ? 14 : 22;
-            const waistPre = profile.waistCircumference?.value;
+            const waistPre = getVal(profile.waistCircumference);
             if (waistPre) {
                 let wPts = 0;
                 if (gender === 'male') wPts = waistPre < 90 ? 0 : waistPre < 100 ? 8 : 16;
@@ -249,8 +255,8 @@ function calculateDetailedInsights(profile, diseaseId) {
                     type: 'number'
                 });
             }
-            const actPre = profile.activityLevel?.value;
-            const actPts = actPre === 'Regular' ? 0 : actPre === 'Occasional' ? 8 : 16;
+            const actPre = getVal(profile.activityLevel);
+            const actPts = (actPre === 'Regular' || actPre === 'active') ? 0 : (actPre === 'Occasional' || actPre === 'moderate') ? 8 : 16;
             pre += actPts;
             factors.push({
                 id: 'pre_activity',
@@ -260,9 +266,9 @@ function calculateDetailedInsights(profile, diseaseId) {
                 category: 'lifestyle',
                 explanation: 'Low activity worsens insulin sensitivity.'
             });
-            const famPre = profile.familyHistoryDiabetes?.value;
+            const famPre = getVal(profile.familyHistoryDiabetes);
             if (famPre) {
-                const fPts = famPre === 'Both' ? 14 : famPre === 'One' ? 7 : 0;
+                const fPts = (famPre === 'Both' || famPre === 'both') ? 14 : (famPre === 'One' || famPre === 'parents' || famPre === 'siblings') ? 7 : 0;
                 pre += fPts;
                 factors.push({
                     id: 'pre_family_dm',
@@ -273,15 +279,15 @@ function calculateDetailedInsights(profile, diseaseId) {
                     explanation: 'Genetic predisposition to dysglycemia.'
                 });
             }
-            if (profile.frequentThirst?.value || profile.frequentThirst === true) {
+            if (getVal(profile.frequentThirst) === true || getVal(profile.excessive_thirst) === true) {
                 pre += 6;
                 factors.push({ id: 'pre_thirst', name: 'Frequent thirst', displayValue: 'Yes', impact: 6, category: 'symptom', explanation: 'May indicate glucose dysregulation.' });
             }
-            if (profile.frequentUrination?.value || profile.frequentUrination === true) {
+            if (getVal(profile.frequentUrination) === true || getVal(profile.frequent_urination) === true) {
                 pre += 6;
                 factors.push({ id: 'pre_uria', name: 'Frequent urination', displayValue: 'Yes', impact: 6, category: 'symptom', explanation: 'Possible hyperglycemia signal.' });
             }
-            if (profile.blurredVision?.value || profile.blurredVision === true) {
+            if (getVal(profile.blurredVision) === true || getVal(profile.blurred_vision) === true) {
                 pre += 4;
                 factors.push({ id: 'pre_vision', name: 'Blurred vision', displayValue: 'Yes', impact: 4, category: 'symptom', explanation: 'Fluctuating glucose can affect vision.' });
             }
@@ -307,7 +313,7 @@ function calculateDetailedInsights(profile, diseaseId) {
                 ob += 8;
                 factors.push({ id: 'ob_under', name: 'Low BMI', displayValue: bmi.toFixed(1), impact: 8, direction: 'increase', category: 'demographic', explanation: 'Underweight has distinct clinical considerations.' });
             }
-            const waistOb = profile.waistCircumference?.value;
+            const waistOb = getVal(profile.waistCircumference);
             if (waistOb) {
                 const highW = gender === 'male' ? waistOb >= 102 : waistOb >= 88;
                 const modW = gender === 'male' ? waistOb >= 90 : waistOb >= 80;
@@ -319,11 +325,11 @@ function calculateDetailedInsights(profile, diseaseId) {
                     factors.push({ id: 'ob_waist_mod', name: 'Elevated waist', displayValue: `${waistOb} cm`, impact: 10, direction: 'increase', category: 'demographic', explanation: 'Central adiposity.' });
                 }
             }
-            if (profile.activityLevel?.value === 'Sedentary') {
+            if (getVal(profile.activityLevel) === 'Sedentary' || getVal(profile.activityLevel) === 'sedentary') {
                 ob += 12;
                 factors.push({ id: 'ob_sed', name: 'Sedentary lifestyle', displayValue: 'Yes', impact: 12, direction: 'increase', category: 'lifestyle', explanation: 'Low energy expenditure.' });
             }
-            if (profile.dietQuality?.value === 'Poor') {
+            if (getVal(profile.dietQuality) === 'Poor' || getVal(profile.dietQuality) === 'poor') {
                 ob += 10;
                 factors.push({ id: 'ob_diet', name: 'Diet quality', displayValue: 'Poor', impact: 10, direction: 'increase', category: 'lifestyle', explanation: 'Poor diet quality supports weight gain.' });
             }
@@ -374,9 +380,9 @@ function calculateDetailedInsights(profile, diseaseId) {
             }
 
             // Salt Intake
-            const saltIntake = profile.saltIntake?.value;
+            const saltIntake = getVal(profile.saltIntake);
             if (saltIntake) {
-                let saltPts = saltIntake === 'Low' ? -5 : (saltIntake === 'Moderate' ? 5 : 15);
+                let saltPts = saltIntake === 'Low' || saltIntake === 'low' ? -5 : (saltIntake === 'Moderate' || saltIntake === 'moderate' ? 5 : 15);
                 htnScore += saltPts;
                 factors.push({ 
                     id: 'htn_salt', 
@@ -399,9 +405,9 @@ function calculateDetailedInsights(profile, diseaseId) {
             }
 
             // Family History
-            const famHtn = profile.familyHistoryHypertension?.value;
+            const famHtn = getVal(profile.familyHistoryHypertension);
             if (famHtn) {
-                let famHtnPts = famHtn === 'Both' ? 20 : (famHtn === 'One' ? 10 : 0);
+                let famHtnPts = (famHtn === 'Both' || famHtn === 'both_parents') ? 20 : (famHtn === 'One' || famHtn === 'one_parent' || famHtn === 'siblings' ? 10 : 0);
                 htnScore += famHtnPts;
                 factors.push({ 
                     id: 'htn_family', 
@@ -424,22 +430,22 @@ function calculateDetailedInsights(profile, diseaseId) {
             }
 
             // Symptom enrichments from expanded onboarding
-            if (profile.chestPainActivity?.value || profile.chestPainActivity === true) {
+            if (getVal(profile.chestPainActivity) === true || getVal(profile.chest_pain) === 'frequently') {
                 htnScore += 12;
                 factors.push({ id: 'htn_chest_pain', name: 'Chest Pain on Activity', displayValue: 'Yes', impact: 12, direction: 'increase', category: 'symptom', explanation: 'Exertional chest symptoms can be associated with elevated cardiovascular risk.' });
             }
-            if (profile.frequentSevereHeadaches?.value || profile.frequentSevereHeadaches === true) {
+            if (getVal(profile.frequentSevereHeadaches) === true || getVal(profile.headaches_dizziness) === 'frequently') {
                 htnScore += 8;
                 factors.push({ id: 'htn_headache', name: 'Frequent Severe Headaches', displayValue: 'Yes', impact: 8, direction: 'increase', category: 'symptom', explanation: 'Headaches can be associated with uncontrolled blood pressure.' });
             }
-            if (profile.nosebleedsHistory?.value || profile.nosebleedsHistory === true) {
+            if (getVal(profile.nosebleedsHistory) === true) {
                 htnScore += 5;
                 factors.push({ id: 'htn_nosebleed', name: 'Nosebleed History', displayValue: 'Yes', impact: 5, direction: 'increase', category: 'symptom', explanation: 'Frequent nosebleeds can occur in uncontrolled hypertension.' });
             }
-            const weeklyExerciseDays = profile.weeklyExerciseDays?.value || profile.weeklyExerciseDays;
+            const weeklyExerciseDays = getVal(profile.weeklyExerciseDays);
             if (weeklyExerciseDays !== undefined && weeklyExerciseDays !== '') {
-                const sedentaryExercise = weeklyExerciseDays === '0' || weeklyExerciseDays === 0;
-                const activeExercise = weeklyExerciseDays === '5+' || Number(weeklyExerciseDays) >= 5;
+                const sedentaryExercise = weeklyExerciseDays === '0' || weeklyExerciseDays === 0 || weeklyExerciseDays === 'sedentary';
+                const activeExercise = weeklyExerciseDays === '5+' || Number(weeklyExerciseDays) >= 5 || weeklyExerciseDays === 'active';
                 if (sedentaryExercise) {
                     htnScore += 8;
                     factors.push({ id: 'htn_low_exercise', name: 'Low Weekly Exercise', displayValue: String(weeklyExerciseDays), impact: 8, direction: 'increase', category: 'lifestyle', explanation: 'Physical inactivity contributes to blood pressure elevation.' });
@@ -450,9 +456,9 @@ function calculateDetailedInsights(profile, diseaseId) {
             }
 
             // Stress Level
-            const stressLevel = profile.stressLevel?.value;
+            const stressLevel = getVal(profile.stressLevel);
             if (stressLevel) {
-                let stressPts = stressLevel === 'Low' ? 0 : (stressLevel === 'Moderate' ? 10 : 20);
+                let stressPts = stressLevel === 'Low' || stressLevel === 'low' ? 0 : (stressLevel === 'Moderate' || stressLevel === 'moderate' ? 10 : 20);
                 htnScore += stressPts;
                 factors.push({ 
                     id: 'htn_stress', 
@@ -466,7 +472,7 @@ function calculateDetailedInsights(profile, diseaseId) {
             }
 
             // Smoking
-            if (profile.isSmoker?.value === true) {
+            if (getVal(profile.isSmoker) === true || getVal(profile.isSmoker) === 'yes') {
                 htnScore += 15;
                 factors.push({ 
                     id: 'htn_smoking', 
@@ -480,9 +486,9 @@ function calculateDetailedInsights(profile, diseaseId) {
             }
 
             // Alcohol Consumption
-            const alcohol = profile.alcoholConsumption?.value;
+            const alcohol = getVal(profile.alcoholConsumption);
             if (alcohol) {
-                let alcPts = alcohol === 'Never' ? 0 : (alcohol === 'Moderate' ? 5 : 15);
+                let alcPts = alcohol === 'Never' || alcohol === 'none' ? 0 : (alcohol === 'Light' || alcohol === 'light' ? 5 : (alcohol === 'Moderate' || alcohol === 'moderate' ? 15 : 25));
                 htnScore += alcPts;
                 if (alcPts !== 0) {
                     factors.push({
@@ -498,9 +504,11 @@ function calculateDetailedInsights(profile, diseaseId) {
             }
 
             // Existing Blood Pressure Readings
-            const bpSystolic = profile.blood_pressure?.value?.systolic;
-            const bpDiastolic = profile.blood_pressure?.value?.diastolic;
-            if (bpSystolic && bpDiastolic) {
+            const bpVal = getVal(profile.blood_pressure) || getVal(profile.previous_bp_readings);
+            // Handle both structured {systolic, diastolic} and simple string 'stage1', 'stage2'
+            if (bpVal && typeof bpVal === 'object' && bpVal.systolic && bpVal.diastolic) {
+                const bpSystolic = bpVal.systolic;
+                const bpDiastolic = bpVal.diastolic;
                 if (bpSystolic >= 140 || bpDiastolic >= 90) {
                     htnScore += 40;
                     factors.push({ 
@@ -523,80 +531,18 @@ function calculateDetailedInsights(profile, diseaseId) {
                         category: 'clinical', 
                         explanation: 'Current reading indicates Stage 1 Hypertension (130-139/80-89 mmHg).' 
                     });
-                } else if (bpSystolic >= 120) {
-                    htnScore += 10;
-                    factors.push({ 
-                        id: 'htn_bp_reading_pre', 
-                        name: 'Current BP Reading', 
-                        displayValue: `${bpSystolic}/${bpDiastolic} mmHg`, 
-                        impact: 10, 
-                        direction: 'increase',
-                        category: 'clinical', 
-                        explanation: 'Current reading indicates Elevated BP (120-129/<80 mmHg).' 
-                    });
                 }
-            } else {
-                missingFactors.push({ 
-                    id: 'blood_pressure', 
-                    name: 'Blood Pressure Reading', 
-                    prompt: 'Enter your recent blood pressure reading (e.g., 120/80)', 
-                    impact: 25, 
-                    type: 'blood_pressure'
-                });
-            }
-
-            score = htnScore;
-            
-            // Allergy & Medication Impact
-            const htnAllergies = profile.allergies?.value || profile.allergies || [];
-            const htnActiveMeds = profile.activeMedications?.value || profile.activeMedications || [];
-            
-            if (htnAllergies.length > 0) {
-                const relevantAllergies = htnAllergies.filter(a => 
-                    a.toLowerCase().includes('ace') || 
-                    a.toLowerCase().includes('beta') ||
-                    a.toLowerCase().includes('diuretic') ||
-                    a.toLowerCase().includes('lisinopril') ||
-                    a.toLowerCase().includes('amlodipine') ||
-                    a.toLowerCase().includes('ARB') ||
-                    a.toLowerCase().includes('calcium channel')
-                );
-                if (relevantAllergies.length > 0) {
-                    score += 10;
-                    factors.push({ 
-                        id: 'htn_allergies', 
-                        name: 'BP Medication Allergies', 
-                        displayValue: relevantAllergies.join(', '), 
-                        impact: 10, 
-                        direction: 'increase',
-                        category: 'clinical', 
-                        explanation: 'Allergies to common BP medications limit treatment options.' 
-                    });
+            } else if (typeof bpVal === 'string') {
+                let bpPts = 0;
+                if (bpVal === 'stage2') bpPts = 45;
+                else if (bpVal === 'stage1') bpPts = 30;
+                else if (bpVal === 'elevated') bpPts = 15;
+                
+                if (bpPts > 0) {
+                    htnScore += bpPts;
+                    factors.push({ id: 'htn_bp_qualitative', name: 'Prior BP Check', displayValue: bpVal, impact: bpPts, category: 'clinical', explanation: 'Historical BP category adds to baseline risk.' });
                 }
             }
-            
-            if (htnActiveMeds.length > 0) {
-                const bpMeds = htnActiveMeds.filter(m => 
-                    m.name?.toLowerCase().includes('amlodipine') || 
-                    m.name?.toLowerCase().includes('losartan') ||
-                    m.name?.toLowerCase().includes('lisinopril') ||
-                    m.name?.toLowerCase().includes('metoprolol') ||
-                    m.name?.toLowerCase().includes('hydrochlorothiazide')
-                );
-                if (bpMeds.length > 0) {
-                    score -= 15; // Already being treated
-                    factors.push({ 
-                        id: 'htn_current_meds', 
-                        name: 'Current BP Medication', 
-                        displayValue: bpMeds.map(m => m.name).join(', '), 
-                        impact: 15, 
-                        direction: 'decrease',
-                        category: 'clinical', 
-                        explanation: 'Currently on hypertension medication - risk being actively managed.' 
-                    });
-                }
-            }
-            break;
 
         case 'thyroid':
             // STEP 13: LIKELIHOOD RATIO MODEL

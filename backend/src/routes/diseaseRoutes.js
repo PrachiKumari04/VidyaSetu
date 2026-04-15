@@ -394,6 +394,92 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
     // Calculate comprehensive risk using ALL data
     const insights = calculateDetailedInsights(comprehensiveProfile, diseaseId);
     
+    // PERSIST QUESTIONNAIRE ANSWERS TO USER PROFILE (CRITICAL FIX)
+    try {
+      const profileToUpdate = await UserProfile.findOne({ clerkId });
+      if (profileToUpdate) {
+        const fieldMapping = {
+          // Diabetes
+          'waist_circumference': 'waistCircumference',
+          'diabetes_family_history': 'familyHistoryDiabetes',
+          'physical_activity': 'activityLevel',
+          'gestational_diabetes': 'gestationalDiabetesHistory',
+          'frequent_thirst': 'frequentThirst',
+          'frequent_urination': 'frequentUrination',
+          'blurred_vision': 'blurredVision',
+          'slow_healing': 'slowHealingWounds',
+          'tingling_extremities': 'tinglingExtremities',
+          
+          // Hypertension
+          'family_history_htn': 'familyHistoryHypertension',
+          'salt_intake': 'saltIntake',
+          'stress_level': 'stressLevel',
+          'sleep_quality': 'sleepQuality',
+          'previous_bp_readings': 'bloodPressureNotes',
+          
+          // Thyroid
+          'family_history_thyroid': 'familyHistoryThyroid',
+          'weight_changes': 'weightChangeUnexplained',
+          'fatigue_level': 'fatiguePersistent',
+          'temperature_sensitivity': 'coldIntolerance',
+          
+          // PCOS
+          'menstrual_cycle': 'menstrualCycleIrregular',
+          'hirsutism': 'facialBodyHairExcess'
+        };
+
+        const now = new Date();
+        const updates = {};
+
+        // 1. Map direct answers
+        Object.entries(answers).forEach(([key, value]) => {
+          const profileField = fieldMapping[key];
+          if (profileField && profileToUpdate[profileField] !== undefined) {
+            updates[profileField] = {
+              value: value,
+              lastUpdated: now,
+              updateType: 'real_change'
+            };
+          }
+        });
+
+        // 2. Handle specific multi-select symptom mapping
+        if (answers.symptoms && Array.isArray(answers.symptoms)) {
+          const symptomMap = {
+            'frequent_urination': 'frequentUrination',
+            'excessive_thirst': 'frequentThirst',
+            'blurred_vision': 'blurredVision',
+            'slow_healing': 'slowHealingWounds',
+            'tingling_extremities': 'tinglingExtremities',
+            'unexplained_weight_loss': 'weightChangeUnexplained',
+            'fatigue': 'fatiguePersistent'
+          };
+          
+          answers.symptoms.forEach(s => {
+            const field = symptomMap[s];
+            if (field) {
+              updates[field] = { value: true, lastUpdated: now, updateType: 'real_change' };
+            }
+          });
+          
+          // If 'none' is selected, we can optionally clear symptoms (but careful here)
+          if (answers.symptoms.includes('none')) {
+            Object.values(symptomMap).forEach(field => {
+               // Only set to false if we didn't just set it to true (though 'none' shouldn't coexist)
+               if (!updates[field]) updates[field] = { value: false, lastUpdated: now, updateType: 'real_change' };
+            });
+          }
+        }
+
+        if (Object.keys(updates).length > 0) {
+          console.log(`[Questionnaire] Persisting ${Object.keys(updates).length} fields to UserProfile for ${clerkId}`);
+          await UserProfile.updateOne({ clerkId }, { $set: updates });
+        }
+      }
+    } catch (saveErr) {
+      console.warn('[Questionnaire] Failed to persist answers to UserProfile:', saveErr.message);
+    }
+    
     // Generate AI-powered mitigation steps considering allergies & medications
     const aiMitigations = await aiService.generateMitigationSteps(
       comprehensiveProfile,
