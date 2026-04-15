@@ -358,7 +358,6 @@ const LabResultsModals = ({ isOpen, onClose, onSave, clerkId }) => {
                         <span className="text-[10px] font-black text-emerald-500 uppercase">Report Linked Successfully</span>
                         <button onClick={() => setReportUrl(null)} className="text-[9px] text-gray-700 dark:text-gray-300 hover:text-red-500 font-bold uppercase underline">Remove File</button>
                       </div>
-<<<<<<< HEAD
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center gap-4">
                         <div className="p-4 bg-gray-50 dark:bg-gray-950 rounded-2xl group-hover:scale-110 transition-transform">
@@ -376,18 +375,6 @@ const LabResultsModals = ({ isOpen, onClose, onSave, clerkId }) => {
               </div>
             </div>
           )}
-=======
-                      <div className="space-y-1">
-                        <p className="text-xs font-black text-gray-600 dark:text-gray-300 uppercase tracking-widest">Upload PDF Report</p>
-                        <p className="text-[9px] text-gray-600 dark:text-gray-300 font-bold">MAX SIZE 10MB</p>
-                      </div>
-                      <input type="file" accept="application/pdf,image/*" className="hidden" onChange={handleFileUpload} />
-                   </label>
-                  )}
-              </div>
-            </div>
-          </div>
->>>>>>> profile
         </div>
 
         <div className="p-8 bg-gray-50 dark:bg-gray-950/50 border-t border-gray-100 dark:border-gray-800">
