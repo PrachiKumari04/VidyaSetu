@@ -31,15 +31,18 @@ function calculateHybridRiskFromProfile(profile) {
   }
 
   const risk_scores = {};
+  const risk_score_meta = {};
   const details = {};
 
   for (const diseaseId of HYBRID_DISEASE_IDS) {
     const insight = calculateDetailedInsights(normalizedProfile, diseaseId);
     risk_scores[diseaseId] = insight.riskScore;
+    risk_score_meta[diseaseId] = insight.verification || null;
     details[diseaseId] = {
       riskScore: insight.riskScore,
       riskBand: getRiskBand(insight.riskScore),
       riskCategory: insight.riskCategory,
+      verification: insight.verification || null,
       missingDataFactors: insight.missingDataFactors || [],
       dataCompleteness: insight.dataCompleteness || 0
     };
@@ -55,7 +58,7 @@ function calculateHybridRiskFromProfile(profile) {
   });
 
   const maxRisk = Math.max(0, ...Object.values(risk_scores).map((v) => Number(v) || 0));
-  return { risk_scores, details, missingData, maxRisk };
+  return { risk_scores, risk_score_meta, details, missingData, maxRisk };
 }
 
 module.exports = { calculateHybridRiskFromProfile, HYBRID_DISEASE_IDS };

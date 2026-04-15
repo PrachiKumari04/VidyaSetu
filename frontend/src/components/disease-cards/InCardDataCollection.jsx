@@ -89,7 +89,7 @@ const InCardDataCollection = ({ missingFactors, onSubmit, loading }) => {
                 label={factor.name}
                 value={formData[factor.id]}
                 onChange={(val) => handleInputChange(factor.id, val)}
-                unit={ranges[factor.id]?.unit || factor.id === 'waistCircumference' ? 'cm' : undefined}
+                unit={ranges[factor.id]?.unit || (factor.id === 'waistCircumference' ? 'cm' : undefined)}
                 min={ranges[factor.id]?.min}
                 max={ranges[factor.id]?.max}
                 placeholder={factor.prompt}

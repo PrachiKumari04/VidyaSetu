@@ -5,7 +5,7 @@ const DiseaseInsight = require('../models/DiseaseInsight');
 const UserProfile = require('../models/UserProfile');
 const Report = require('../models/Report');
 const Medication = require('../models/Medication');
-const { calculateDetailedInsights } = require('../utils/riskScorer');
+const { calculateDetailedInsights, getRiskVerificationMeta } = require('../utils/riskScorer');
 const aiService = require('../services/aiService');
 const { DISEASE_QUESTIONNAIRES, generateGenericQuestionnaire } = require('../utils/diseaseQuestionnaires');
 
@@ -58,7 +58,7 @@ router.get('/:diseaseId/details', async (req, res) => {
     }
 
     // 1. Fetch Metadata and Profile
-    const [metadata, profile] = await Promise.all([
+    let [metadata, profile] = await Promise.all([
       DiseaseMetadata.findOne({ diseaseId }),
       UserProfile.findOne({ clerkId })
     ]);
@@ -128,7 +128,8 @@ router.get('/:diseaseId/details', async (req, res) => {
       const mitigationSteps = await aiService.generateMitigationSteps(
         comprehensiveProfile, 
         diseaseId, 
-        currentInsight?.riskScore || 0
+        currentInsight?.riskScore || 0,
+        req.resolvedLanguage || 'en'
       );
       console.log(`[DiseaseDetails] Generated ${mitigationSteps.length} mitigation steps`);
       
@@ -149,6 +150,7 @@ router.get('/:diseaseId/details', async (req, res) => {
             alternatives: metadata.alternativeSpecialists
           },
           sourceAttributions: metadata.sources,
+          verification: currentInsight?.verification || getRiskVerificationMeta(diseaseId),
           emergencyAlerts: currentInsight?.emergencyAlerts,
           rawInputData: currentInsight?.rawInputData,
           userProfile: {
@@ -185,6 +187,7 @@ router.get('/:diseaseId/details', async (req, res) => {
             alternatives: metadata.alternativeSpecialists
           },
           sourceAttributions: metadata.sources,
+          verification: currentInsight?.verification || getRiskVerificationMeta(diseaseId),
           emergencyAlerts: currentInsight?.emergencyAlerts,
           rawInputData: currentInsight?.rawInputData,
           userProfile: {
@@ -272,7 +275,12 @@ router.post('/:diseaseId/add-data', async (req, res) => {
         // Direct update using MongoDB updateOne
         const updateResult = await Report.updateOne(
           { _id: report._id },
-          { $set: { [`risk_scores.${diseaseId}`]: newInsightData.riskScore } }
+          {
+            $set: {
+              [`risk_scores.${diseaseId}`]: newInsightData.riskScore,
+              [`risk_score_meta.${diseaseId}`]: newInsightData.verification || getRiskVerificationMeta(diseaseId)
+            }
+          }
         );
         
         console.log(`[AddData] Update result:`, updateResult);
@@ -400,8 +408,20 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
     console.log(`  - Medications: ${comprehensiveProfile.activeMedications.length} active`);
     console.log(`  - Questionnaire answers: ${Object.keys(answers || {}).length}`);
     
-    // Calculate comprehensive risk using ALL data
-    const insights = calculateDetailedInsights(comprehensiveProfile, diseaseId);
+    // Calculate baseline and questionnaire-enriched scores separately, then blend 40/60.
+    const baselineInsights = calculateDetailedInsights(dbProfile, diseaseId);
+    const questionnaireInsights = calculateDetailedInsights(comprehensiveProfile, diseaseId);
+
+    let finalRiskScore = questionnaireInsights.riskScore;
+    if (baselineInsights.riskScore !== -1 && questionnaireInsights.riskScore !== -1) {
+      finalRiskScore = Math.round((baselineInsights.riskScore * 0.4) + (questionnaireInsights.riskScore * 0.6));
+      finalRiskScore = Math.max(0, Math.min(95, finalRiskScore));
+    }
+
+    const insights = {
+      ...questionnaireInsights,
+      riskScore: finalRiskScore
+    };
     
     // PERSIST QUESTIONNAIRE ANSWERS TO USER PROFILE (CRITICAL FIX)
     try {
@@ -493,7 +513,8 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
     const aiMitigations = await aiService.generateMitigationSteps(
       comprehensiveProfile,
       diseaseId,
-      insights.riskScore
+      finalRiskScore,
+      req.resolvedLanguage || 'en'
     ).catch(err => {
       console.error('AI mitigation generation failed, using library:', err.message);
       return [];
@@ -523,7 +544,8 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
         onboardingData: dbProfile,
         questionnaireAnswers: answers,
         calculatedAt: new Date()
-      }
+      },
+      verification: insights.verification || getRiskVerificationMeta(diseaseId)
     };
     
     if (diseaseInsight) {
@@ -582,7 +604,12 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
         // Direct update using MongoDB updateOne
         const updateResult = await Report.updateOne(
           { _id: report._id },
-          { $set: { [`risk_scores.${diseaseId}`]: insights.riskScore } }
+          {
+            $set: {
+              [`risk_scores.${diseaseId}`]: finalRiskScore,
+              [`risk_score_meta.${diseaseId}`]: insights.verification || getRiskVerificationMeta(diseaseId)
+            }
+          }
         );
         
         console.log(`[Questionnaire] Update result:`, updateResult);
@@ -590,7 +617,7 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
         // Verify the update
         const verifyReport = await Report.findById(report._id).lean();
         console.log(`[Questionnaire] ✅ Verified: Report.risk_scores[${diseaseId}] = ${verifyReport.risk_scores[diseaseId]}`);
-        console.log(`[Questionnaire] ✅ Updated Report risk_scores[${diseaseId}] = ${insights.riskScore}`);
+        console.log(`[Questionnaire] ✅ Updated Report risk_scores[${diseaseId}] = ${finalRiskScore}`);
       } else {
         // Create new report if none exists
         const newReport = await Report.create({
@@ -599,11 +626,12 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
           advice: {},
           general_tips: 'Complete additional screenings for comprehensive health insights.',
           disclaimer: 'This is a screening support tool, not a diagnosis.',
-          risk_scores: { [diseaseId]: insights.riskScore },
+          risk_scores: { [diseaseId]: finalRiskScore },
+          risk_score_meta: { [diseaseId]: insights.verification || getRiskVerificationMeta(diseaseId) },
           category_insights: {},
           mitigations: {}
         });
-        console.log(`[Questionnaire] ✅ Created new Report for ${clerkId} with risk_scores[${diseaseId}] = ${insights.riskScore}`);
+        console.log(`[Questionnaire] ✅ Created new Report for ${clerkId} with risk_scores[${diseaseId}] = ${finalRiskScore}`);
       }
     } catch (err) {
       console.error('[Questionnaire] ❌ Failed to update Report:', err.message);
@@ -615,16 +643,17 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        riskScore: insights.riskScore,
+        riskScore: finalRiskScore,
         riskCategory: insights.riskCategory,
-        baselineScore: Math.round(insights.riskScore * 0.4),
-        questionnaireScore: Math.round(insights.riskScore * 0.6),
-        totalPoints: insights.riskScore,
+        baselineScore: Math.round(baselineInsights.riskScore),
+        questionnaireScore: Math.round(questionnaireInsights.riskScore),
+        totalPoints: finalRiskScore,
         factorBreakdown: insights.factorBreakdown,
         protectiveFactors: insights.protectiveFactors,
         mitigationSteps: allMitigations,
         allergyConsiderations,
         medicationConsiderations,
+        verification: insights.verification || getRiskVerificationMeta(diseaseId),
         dataCompleteness: insights.dataCompleteness,
         questionnaireCompleted: true,
         message: `Risk recalculated considering onboarding data, questionnaire answers, ${comprehensiveProfile.allergies.length} allergies, and ${comprehensiveProfile.activeMedications.length} medications`

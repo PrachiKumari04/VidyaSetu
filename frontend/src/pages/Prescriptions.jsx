@@ -10,11 +10,13 @@ import {
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addHeader, addSection, addDisclaimer } from '../utils/pdfGenerator';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 const Prescriptions = () => {
   const { user } = useUser();
+  const { t } = useTranslation();
   const [inputText, setInputText] = useState('');
   const [scanning, setScanning] = useState(false);
   const [matching, setMatching] = useState(false);
@@ -109,7 +111,7 @@ const Prescriptions = () => {
       const isQuota = err.response?.data?.message?.includes('quota') || err.message?.includes('limit');
       setScanStatus({ 
         type: 'error', 
-        message: isQuota ? 'AI busy. Retrying with backup engine...' : 'Could not read image. Try better lighting or type names manually.' 
+        message: isQuota ? t('prescriptions.statuses.api_limit_fallback') : t('prescriptions.statuses.error') 
       });
     } finally {
       setScanning(false);
@@ -165,7 +167,7 @@ const Prescriptions = () => {
       const res = await axios.post(`${API_URL}/ocr/normalize`, { medicines: meds });
       if (res.data.status === 'success') {
         setCandidates(res.data.normalized);
-        setScanStatus({ type: 'success', message: 'Medical names identified. Please verify below.' });
+        setScanStatus({ type: 'success', message: t('prescriptions.verification_desc') });
       }
     } catch (err) {
       console.error("Matching failed:", err);
@@ -515,10 +517,10 @@ const Prescriptions = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-emerald-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-2">
-            <ShieldAlert className="w-4 h-4" /> Safety Protocol Active
+            <ShieldAlert className="w-4 h-4" /> {t('prescriptions.safety_protocol')}
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tight">Signature Bridge</h1>
-          <p className="text-gray-600 dark:text-gray-300 font-medium">Multi-Drug Interaction Analysis System</p>
+          <h1 className="text-4xl font-black text-white tracking-tight">{t('prescriptions.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-300 font-medium">{t('prescriptions.subtitle')}</p>
         </div>
         <div className="flex flex-wrap gap-4 w-full md:w-auto">
           {/* Hidden file input */}
@@ -540,7 +542,7 @@ const Prescriptions = () => {
               ) : (
                 <ScanSearch className="w-5 h-5 text-emerald-500 group-hover:scale-110 transition-transform" />
               )}
-              {scanning ? 'Scanning...' : 'Smart Scan'}
+              {scanning ? t('prescriptions.scanning') : t('prescriptions.smart_scan')}
             </button>
             {scanMethod && (
               <span className="text-[10px] text-emerald-400/70 font-mono px-2">✓ via {scanMethod}</span>
@@ -551,7 +553,7 @@ const Prescriptions = () => {
               onClick={downloadReport}
               className="flex-1 md:flex-none px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(16,185,129,0.3)] active:scale-95"
             >
-              <Download className="w-5 h-5" /> Export Report
+              <Download className="w-5 h-5" /> {t('prescriptions.export_report')}
             </button>
           )}
         </div>
@@ -565,7 +567,7 @@ const Prescriptions = () => {
 
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-gray-900 dark:text-white font-bold flex items-center gap-3 text-lg">
-                <FileText className="w-6 h-6 text-emerald-500" /> Intake Terminal
+                <FileText className="w-6 h-6 text-emerald-500" /> {t('prescriptions.intake_terminal')}
               </h3>
               <select
                 value={language}
@@ -586,10 +588,10 @@ const Prescriptions = () => {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 className="w-full h-40 bg-gray-50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 group-hover:border-emerald-500/30 rounded-3xl p-5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 transition-all placeholder:text-gray-600 dark:text-gray-300 dark:placeholder:text-gray-700 resize-none font-medium"
-                placeholder="Type medicines or herbs separated by commas..."
+                placeholder={t('prescriptions.placeholder')}
               />
               <div className="absolute bottom-4 right-4 text-[9px] text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest pointer-events-none">
-                Manual Overlay
+                {t('prescriptions.manual_overlay')}
               </div>
               <button
                 onClick={handleVoiceInput}
@@ -614,7 +616,7 @@ const Prescriptions = () => {
               className="w-full mt-6 py-4 bg-emerald-600 dark:bg-emerald-500/10 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white dark:text-emerald-500 dark:hover:text-white disabled:opacity-30 font-black rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs border border-emerald-600 dark:border-emerald-500/20"
             >
               {matching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Calibrate Medicine List
+              {t('prescriptions.calibrate_btn')}
             </button>
           </div>
 
@@ -622,10 +624,10 @@ const Prescriptions = () => {
           {candidates.length > 0 && (
             <div className="bg-white dark:bg-emerald-500/5 border border-gray-200 dark:border-emerald-500/10 p-8 rounded-[2.5rem] animate-in zoom-in duration-500 shadow-xl">
               <h4 className="text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase tracking-[0.25em] mb-6 flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" /> Medicine Verification
+                <RefreshCw className="w-4 h-4" /> {t('prescriptions.verification_title')}
               </h4>
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-6 font-medium">
-                Click the ✓ button to confirm each medicine name
+                {t('prescriptions.verification_desc')}
               </p>
               <div className="space-y-3">
                 {candidates.map((cand, i) => (
@@ -678,7 +680,7 @@ const Prescriptions = () => {
             <div className="bg-gray-900/40 backdrop-blur-xl border border-gray-800 p-8 rounded-[2.5rem] shadow-2xl">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-white font-bold flex items-center gap-3">
-                  <ShieldAlert className="w-5 h-5 text-emerald-500" /> Active Profile
+                  <ShieldAlert className="w-5 h-5 text-emerald-500" /> {t('prescriptions.active_profile')}
                 </h3>
                 <button onClick={() => { setConfirmedMeds([]); setInteractions([]); }} className="text-gray-600 hover:text-red-500 transition-colors p-1">
                   <Trash2 className="w-5 h-5" />
@@ -697,7 +699,7 @@ const Prescriptions = () => {
                 className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-white font-black rounded-2xl transition-all shadow-[0_15px_40px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 uppercase tracking-[0.2em] text-xs"
               >
                 {checking ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
-                Generate Safety Report
+                {t('prescriptions.generate_safety')}
               </button>
             </div>
           )}
@@ -712,8 +714,8 @@ const Prescriptions = () => {
                   <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl animate-ping" />
                   <RefreshCw className="w-16 h-16 text-emerald-500 animate-spin relative z-10" />
                 </div>
-                <p className="text-emerald-500/80 font-black uppercase tracking-[0.3em] text-xs mt-8">Synthesizing Safety Data</p>
-                <p className="text-gray-700 dark:text-gray-300 text-sm mt-2">Checking across 250+ Allopathic-AYUSH contraindications...</p>
+                <p className="text-emerald-500/80 font-black uppercase tracking-[0.3em] text-xs mt-8">{t('prescriptions.analyzing')}</p>
+                <p className="text-gray-700 dark:text-gray-300 text-sm mt-2">{t('prescriptions.analyzing_subtitle')}</p>
               </div>
             )}
 
@@ -743,8 +745,8 @@ const Prescriptions = () => {
                 <div className="flex items-center gap-4">
                   <ShieldAlert className="w-8 h-8 text-white" />
                   <div>
-                    <h4 className="text-white font-black uppercase tracking-tighter text-lg">Urgent Safety Warning</h4>
-                    <p className="text-red-100 text-xs font-bold uppercase tracking-widest opacity-80">URGENT: Consult doctor immediately.</p>
+                    <h4 className="text-white font-black uppercase tracking-tighter text-lg">{t('prescriptions.urgent_warning')}</h4>
+                    <p className="text-red-100 text-xs font-bold uppercase tracking-widest opacity-80">{t('prescriptions.urgent_desc')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -754,10 +756,10 @@ const Prescriptions = () => {
                     rel="noopener noreferrer"
                     className="px-4 py-2 bg-white text-red-600 hover:bg-gray-100 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer"
                   >
-                    <MapPin className="w-4 h-4" /> Find Nearby Doctor
+                    <MapPin className="w-4 h-4" /> {t('prescriptions.find_doctor')}
                   </a>
                   <div className="hidden md:block px-4 py-1.5 bg-white/20 rounded-full text-[10px] font-black text-white uppercase tracking-widest">
-                    Action Required
+                    {t('prescriptions.action_required')}
                   </div>
                 </div>
               </div>
@@ -770,10 +772,10 @@ const Prescriptions = () => {
                 <div className="w-24 h-24 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner group-hover:scale-110 transition-transform duration-500">
                   <ShieldAlert className="w-12 h-12 text-emerald-500" />
                 </div>
-                <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Clinical Synergy Cleared</h2>
+                <h2 className="text-3xl font-black text-white mb-4 tracking-tight">{t('prescriptions.synergy_cleared')}</h2>
                 <p className="text-gray-600 dark:text-gray-300 max-w-lg mx-auto leading-relaxed font-medium">
-                  No immediate molecular conflicts detected for this specific combination.
-                  <span className="block mt-2 text-emerald-400/60 text-xs italic font-bold uppercase tracking-widest">Molecular Safety Verified</span>
+                  {t('prescriptions.synergy_desc')}
+                  <span className="block mt-2 text-emerald-400/60 text-xs italic font-bold uppercase tracking-widest">{t('prescriptions.safety_verified')}</span>
                 </p>
               </div>
             )}
@@ -811,13 +813,13 @@ const Prescriptions = () => {
                             <div className="group/src relative">
                               <Info className="w-5 h-5 text-white/20 hover:text-emerald-500 cursor-help transition-colors" />
                               <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-4 w-64 p-4 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl invisible group-hover/src:visible opacity-0 group-hover/src:opacity-100 transition-all z-50">
-                                <p className="text-[10px] text-gray-600 dark:text-gray-300 font-bold uppercase tracking-widest mb-2 border-b border-white/5 pb-2">Verification Sources</p>
+                                <p className="text-[10px] text-gray-600 dark:text-gray-300 font-bold uppercase tracking-widest mb-2 border-b border-white/5 pb-2">{t('prescriptions.labels.sources_title')}</p>
                                 <p className="text-[11px] text-white font-medium leading-relaxed mb-4">
-                                  This interaction is verified against: <span className="text-emerald-400">{item.source || 'Standard Reference'}</span>.
+                                  {t('prescriptions.labels.verified_against')}: <span className="text-emerald-400">{item.source || t('prescriptions.labels.std_ref')}</span>.
                                 </p>
                                 <div className="flex items-center gap-2 py-2 px-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
                                   <ShieldAlert className="w-3 h-3 text-emerald-500" />
-                                  <span className="text-[8px] text-emerald-400 font-bold uppercase">Clinical Context Matched</span>
+                                  <span className="text-[8px] text-emerald-400 font-bold uppercase">{t('prescriptions.labels.context_matched')}</span>
                                 </div>
                               </div>
                             </div>
@@ -850,19 +852,19 @@ const Prescriptions = () => {
                       {(item.summary || lastReportData?.overallSummary) && (
                         <div className={`mb-8 p-6 rounded-[2rem] border animate-in slide-in-from-left-4 ${item.status === 'DANGEROUS' ? 'bg-red-500/10 border-red-500/20 text-red-400' : item.status === 'CAUTION' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
                            <h5 className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2">
-                             <Sparkles className="w-3 h-3" /> Safety Summary ({language})
+                             <Sparkles className="w-3 h-3" /> {t('prescriptions.safety_summary')} ({language})
                            </h5>
                            <p className="text-sm font-bold leading-relaxed">{item.summary || lastReportData?.overallSummary}</p>
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                         <div className="bg-black/20 backdrop-blur-md p-6 rounded-[2rem] border border-white/5">
-                          <span className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-3">Clinical Effect</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-3">{t('prescriptions.labels.effect')}</span>
                           <p className="text-sm font-bold leading-relaxed tracking-tight">{item.effect}</p>
                         </div>
                         <div className="bg-black/20 backdrop-blur-md p-6 rounded-[2rem] border border-white/5">
-                          <span className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-3">Safety Action</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest opacity-40 block mb-3">{t('prescriptions.labels.recommendation')}</span>
                           <p className="text-sm font-bold leading-relaxed tracking-tight text-white/90">{item.recommendation}</p>
                         </div>
                       </div>
@@ -873,19 +875,19 @@ const Prescriptions = () => {
                           <Sparkles className="w-8 h-8" />
                         </div>
                         <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-4 flex items-center gap-2">
-                          <Cpu className="w-4 h-4" /> AI Explanation (Plain Language)
+                          <Cpu className="w-4 h-4" /> {t('prescriptions.labels.ai_explanation')}
                         </h4>
                         {explanations[pairKey] ? (
                           <div>
                             <p className="text-gray-200 text-sm leading-relaxed font-medium italic pr-12">"{explanations[pairKey]}"</p>
                             {!feedbackStatus[pairKey] ? (
                               <div className="flex items-center gap-3 mt-4 animate-in fade-in slide-in-from-left-2">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/50 mr-2">Helpful?</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/50 mr-2">{t('prescriptions.helpful')}</span>
                                 <button onClick={() => handleFeedback(pairKey, 'up', pairKey, explanations[pairKey])} className="p-1.5 bg-white/5 hover:bg-emerald-500/20 text-emerald-500/50 hover:text-emerald-400 rounded-lg transition-all active:scale-95"><ThumbsUp className="w-4 h-4" /></button>
                                 <button onClick={() => handleFeedback(pairKey, 'down', pairKey, explanations[pairKey])} className="p-1.5 bg-white/5 hover:bg-red-500/20 text-red-500/50 hover:text-red-400 rounded-lg transition-all active:scale-95"><ThumbsDown className="w-4 h-4" /></button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 mt-4 animate-in zoom-in"><CheckCircle2 className="w-3 h-3" /> Feedback Received</div>
+                              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 mt-4 animate-in zoom-in"><CheckCircle2 className="w-3 h-3" /> {t('prescriptions.feedback_received')}</div>
                             )}
                           </div>
                         ) : (
@@ -896,7 +898,7 @@ const Prescriptions = () => {
                             <div className="w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center group-hover/btn:scale-110 transition-transform">
                               {loadingExpl[pairKey] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                             </div>
-                            Ask AI to explain risk factors
+                            {t('prescriptions.ask_ai_explanation')}
                           </button>
                         )}
                       </div>
@@ -908,7 +910,7 @@ const Prescriptions = () => {
                           className="px-6 py-2 bg-black/10 hover:bg-black/20 rounded-full flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all border border-transparent hover:border-white/5"
                         >
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          {isExpanded ? "Hide Evidence Details" : "View Evidence Summary"}
+                          {isExpanded ? t('prescriptions.hide_evidence') : t('prescriptions.view_evidence')}
                         </button>
 
                         {isExpanded && (
@@ -963,7 +965,7 @@ const Prescriptions = () => {
                     className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-2xl transition-all shadow-[0_15px_40px_rgba(59,130,246,0.3)] flex items-center justify-center gap-3 uppercase tracking-[0.2em] text-xs"
                   >
                     <FileText className="w-5 h-5" />
-                    View Detailed Medicine Breakdown & Alternatives
+                    {t('prescriptions.view_breakdown')}
                   </button>
                 )}
 
@@ -1110,7 +1112,7 @@ const Prescriptions = () => {
                       onClick={() => setMedicineBreakdown(null)}
                       className="w-full py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 font-bold rounded-2xl transition-all"
                     >
-                      Hide Breakdown
+                      {t('prescriptions.hide_breakdown')}
                     </button>
                   </div>
                 )}
@@ -1211,7 +1213,7 @@ const Prescriptions = () => {
       {/* Footer Disclaimer */}
       <div className="mt-16 p-8 bg-red-950/10 border border-red-500/10 rounded-[2.5rem] text-center max-w-4xl mx-auto">
         <p className="text-[11px] text-red-400 font-bold uppercase tracking-widest leading-loose opacity-60">
-          DISCLAIMER: This system utilizes AI and clinical databases for screening purposes only. It is not a substitute for professional medical advice. Always consult your healthcare provider before starting or stopping any medication or supplement.
+          {t('disclaimer.body')}
         </p>
       </div>
       {/* Voice Toast */}

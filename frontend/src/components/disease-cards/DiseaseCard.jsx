@@ -1,23 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, AlertCircle, CheckCircle2, TrendingUp, Info, ThumbsUp, ThumbsDown, Bookmark, BookmarkCheck, ExternalLink, Lightbulb } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
-import DiseaseCardSkeleton from './DiseaseCardSkeleton';
-import CalculationBreakdown from './CalculationBreakdown';
-import InCardDataCollection from './InCardDataCollection';
-import FrequencySlider from './inputs/FrequencySlider';
-import DatePicker from './inputs/DatePicker';
-import MitigationSteps from './MitigationSteps';
-import DoctorConsultation from './DoctorConsultation';
-import EmergencyBanner from './EmergencyBanner';
-import CalculationModal from './CalculationModal';
-import MitigationModal from './MitigationModal';
 import RiskDetailModal from './RiskDetailModal';
 import QuestionnaireModal from './QuestionnaireModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
-const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, profile, onScoreUpdated }) => {
+const DiseaseCard = ({ diseaseId, initialScore, verificationMeta, clerkId, profile, onScoreUpdated }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -25,8 +15,6 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
   const [feedback, setFeedback] = useState(null); // 'up' or 'down'
   const [isPulsing, setIsPulsing] = useState(false); // For score updates
   const [dataSnapshot, setDataSnapshot] = useState(null); // Step 39: Snapshot for Undo
-  const [showCalculationModal, setShowCalculationModal] = useState(false);
-  const [showMitigationModal, setShowMitigationModal] = useState(false);
   const [showRiskDetailModal, setShowRiskDetailModal] = useState(false);
   const [showQuestionnaireModal, setShowQuestionnaireModal] = useState(false);
   const [currentScore, setCurrentScore] = useState(initialScore);
@@ -37,11 +25,11 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
   }, [initialScore]);
 
   useEffect(() => {
-    if ((isExpanded || showRiskDetailModal) && !details && !loading) {
+    if (showRiskDetailModal && !details && !loading) {
       fetchDetails();
       trackEvent('card_expand', { diseaseId });
     }
-  }, [isExpanded, showRiskDetailModal]);
+  }, [showRiskDetailModal]);
 
   const trackEvent = async (event, meta = {}) => {
     try {
@@ -144,32 +132,9 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
           window.onHealthDataUpdate(diseaseId, () => handleUndo(snapshot));
         }
         
-        // CRITICAL: Force refresh the dashboard MULTIPLE times to ensure update
-        console.log('[DiseaseCard] Scheduling dashboard refreshes...');
-        
-        // Immediate refresh after 300ms
-        setTimeout(() => {
-          if (window.refreshDashboard) {
-            console.log('[DiseaseCard] Triggering immediate dashboard refresh...');
-            window.refreshDashboard();
-          }
-        }, 300);
-        
-        // Second refresh after 1 second to catch any delayed updates
-        setTimeout(() => {
-          if (window.refreshDashboard) {
-            console.log('[DiseaseCard] Triggering delayed dashboard refresh...');
-            window.refreshDashboard();
-          }
-        }, 1000);
-        
-        // Third refresh after 2 seconds as final catch
-        setTimeout(() => {
-          if (window.refreshDashboard) {
-            console.log('[DiseaseCard] Triggering final dashboard refresh...');
-            window.refreshDashboard();
-          }
-        }, 2000);
+        if (window.refreshDashboard) {
+          window.refreshDashboard(false);
+        }
       }
     } catch (err) {
       console.error('Data submission failed:', err);
@@ -243,7 +208,7 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
       layout
       transition={{ layout: { duration: 0.4, type: 'spring', damping: 25, stiffness: 120 } }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className={`bg-white dark:bg-gray-950/40 backdrop-blur-3xl border ${isExpanded ? 'border-emerald-500/40 ring-2 ring-emerald-500/10 shadow-2xl z-10' : 'border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none'} p-6 rounded-[2.5rem] transition-all hover:border-emerald-500/30 w-full relative overflow-hidden group`}
+      className="bg-white dark:bg-gray-950/40 backdrop-blur-3xl border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 rounded-[2.5rem] transition-all hover:border-emerald-500/30 w-full relative overflow-hidden group"
     >
       {/* Collapsed Header - Always clickable for popup */}
       <div 
@@ -278,7 +243,7 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-               <AlertCircle className={`w-5 h-5 ${isExpanded ? 'text-emerald-500' : 'text-gray-400 group-hover:text-emerald-500'}`} />
+               <AlertCircle className="w-5 h-5 text-gray-400 group-hover:text-emerald-500" />
             </div>
           </div>
           <div className="flex-1">
@@ -289,6 +254,11 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
               {getRiskLabel(currentScore)} Risk
               {isReviewed && <CheckCircle2 className="w-3.5 h-3.5 ml-2 text-emerald-500" />}
             </h4>
+            {verificationMeta?.source && (
+              <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-wider mt-1">
+                Verified: {verificationMeta.source}
+              </p>
+            )}
             <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
               {getRiskGuidance(currentScore)}
             </p>

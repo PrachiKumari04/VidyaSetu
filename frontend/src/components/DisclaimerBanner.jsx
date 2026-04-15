@@ -1,8 +1,10 @@
 import React from 'react';
 import { AlertTriangle, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const DisclaimerBanner = () => {
+  const { t } = useTranslation();
   return (
     <footer className="mt-20 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl py-12 px-6">
       <div className="max-w-6xl mx-auto">
@@ -11,27 +13,23 @@ const DisclaimerBanner = () => {
            <div className="p-5 bg-red-500/10 text-red-500 rounded-3xl group-hover:scale-110 transition-transform duration-500 ring-1 ring-red-500/20">
               <AlertTriangle className="w-10 h-10" />
            </div>
-           <div className="max-w-4xl space-y-6">
-              <h4 className="text-gray-900 dark:text-white font-black mb-4 text-3xl tracking-tighter">Medical Intelligence Disclaimer</h4>
+            <div className="max-w-4xl space-y-6">
+              <h4 className="text-gray-900 dark:text-white font-black mb-4 text-3xl tracking-tighter">{t('disclaimer.title')}</h4>
               <p className="text-lg text-slate-600 dark:text-gray-300 leading-relaxed font-medium italic">
-                "VaidyaSetu is an AI-powered health assistant designed for educational and screening purposes only. 
-                The insights, risk scores, and interaction alerts provided are generated based on clinical databases and the Llama 3 model. 
-                They do <strong>not</strong> constitute medical advice, diagnosis, or treatment."
+                {t('disclaimer.main')}
               </p>
               <p className="text-sm text-slate-500 dark:text-gray-400 leading-relaxed font-medium">
-                Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. 
-                Never disregard professional medical advice or delay in seeking it because of something you have read on this platform.
+                {t('disclaimer.secondary')}
               </p>
               <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-500">
                  <Info className="w-3.5 h-3.5" /> Powered by Groq Llama 3 & IMPPAT Database
               </div>
-           </div>
+            </div>
         </div>
         
         <div className="mt-12 pt-8 border-t border-gray-100 dark:border-white/5 flex flex-col items-center text-center gap-6 text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-[0.1em]">
            <p>© 2026 VaidyaSetu. Bridge to Balanced Health.</p>
            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3">
-              <Link to="/privacy" className="hover:text-emerald-500 transition-colors">Privacy Policy</Link>
               <a href="#" className="hover:text-emerald-500 transition-colors">Terms of Service</a>
               <a href="#" className="hover:text-emerald-500 transition-colors">Contact Support</a>
            </div>

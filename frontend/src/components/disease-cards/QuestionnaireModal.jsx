@@ -5,10 +5,12 @@ import {
   Activity, Heart, Brain, Scale, Moon, Stethoscope
 } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile, onScoreUpdate }) => {
+  const { t } = useTranslation();
   const [questionnaire, setQuestionnaire] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -254,8 +256,8 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
         console.log('[QuestionnaireModal] Triggering full dashboard refresh...');
         // Trigger the global refresh function if available
         if (window.refreshDashboard) {
-          // Call with fullRecompute=true to ensure all data is refreshed
-          window.refreshDashboard();
+          // Do NOT full-recompute after questionnaire; just pull canonical report scores
+          window.refreshDashboard(false);
           console.log('[QuestionnaireModal] ✅ Dashboard refresh triggered');
         } else {
           console.warn('[QuestionnaireModal] No global refresh function available');
@@ -283,7 +285,8 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
   };
 
   const currentQuestion = questionnaire?.questions?.[currentStep];
-  const progress = questionnaire ? ((currentStep + 1) / questionnaire.questions.length) * 100 : 0;
+  const questionCount = questionnaire?.questions?.length || 0;
+  const progress = questionCount > 0 ? ((currentStep + 1) / questionCount) * 100 : 0;
 
   if (!isOpen) return null;
 
@@ -317,7 +320,7 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
                     <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                       <AlertCircle className="w-8 h-8 text-red-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Fetch Protocol Failed</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('questionnaire.fetch_failed', { defaultValue: 'Fetch Protocol Failed' })}</h3>
                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed">
                       We couldn't retrieve the assessment for <span className="text-emerald-500 font-bold uppercase tracking-wider">{diseaseId.replace(/_/g, ' ')}</span>.
                       <br/><span className="text-[10px] opacity-50 mt-1 block">Log: {error}</span>
@@ -327,13 +330,13 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
                         onClick={fetchQuestionnaire}
                         className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-lg active:scale-95"
                       >
-                        Re-attempt Fetch
+                        {t('questionnaire.retry_fetch', { defaultValue: 'Re-attempt Fetch' })}
                       </button>
                       <button 
                         onClick={onClose}
                         className="w-full py-3 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 font-bold rounded-2xl transition-all"
                       >
-                        Abort Assessment
+                        {t('questionnaire.abort', { defaultValue: 'Abort Assessment' })}
                       </button>
                     </div>
                   </>
@@ -343,8 +346,8 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
                       <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl animate-pulse" />
                       <div className="animate-spin rounded-full h-full w-full border-b-4 border-emerald-500 relative z-10" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">Syncing Disease Logic</h3>
-                    <p className="text-gray-600 dark:text-gray-400 font-medium animate-pulse">Initializing questionnaire modules...</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">{t('questionnaire.syncing', { defaultValue: 'Syncing Disease Logic' })}</h3>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium animate-pulse">{t('questionnaire.initializing', { defaultValue: 'Initializing questionnaire modules...' })}</p>
                   </>
                 )}
               </div>
@@ -393,8 +396,8 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
               {/* Progress Bar */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold">
-                  <span>Question {currentStep + 1} of {questionnaire.questions.length}</span>
-                  <span>{Math.round(progress)}% Complete</span>
+                  <span>{t('questionnaire.question_progress', { defaultValue: 'Question' })} {Math.min(currentStep + 1, Math.max(1, questionCount))} {t('questionnaire.of', { defaultValue: 'of' })} {Math.max(1, questionCount)}</span>
+                  <span>{Math.round(progress)}% {t('questionnaire.complete', { defaultValue: 'Complete' })}</span>
                 </div>
                 <div className="w-full bg-white/30 rounded-full h-2">
                   <motion.div
@@ -412,6 +415,13 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
               {calculatedScore === null ? (
                 /* Question View */
                 <div className="max-w-2xl mx-auto">
+                  {!currentQuestion && (
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30 text-sm text-amber-700 dark:text-amber-300">
+                      No questionnaire questions available for this condition yet.
+                    </div>
+                  )}
+                  {currentQuestion && (
+                    <>
                   <div className="mb-6">
                     <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-black uppercase tracking-wider rounded-full">
                       {currentQuestion.category}
@@ -490,22 +500,24 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
                       className="w-full p-4 border-2 border-gray-200 dark:border-gray-800 rounded-xl text-lg font-bold text-gray-900 dark:text-white bg-transparent focus:border-emerald-500 outline-none transition-colors"
                     />
                   )}
+                    </>
+                  )}
                 </div>
               ) : (
                 /* Results View */
                 <div className="max-w-3xl mx-auto space-y-6">
                   {/* Score Display */}
                   <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-8 text-white text-center">
-                    <h3 className="text-lg font-bold mb-2">Your Updated Risk Score</h3>
+                    <h3 className="text-lg font-bold mb-2">{t('questionnaire.updated_score', { defaultValue: 'Your Updated Risk Score' })}</h3>
                     <div className="text-6xl font-black mb-2">{calculatedScore}%</div>
                     <p className="text-sm text-white/80">
-                      Based on comprehensive assessment with {questionnaire.questions.length} targeted questions
+                      {t('questionnaire.updated_score_desc', { defaultValue: 'Based on comprehensive assessment with' })} {questionnaire.questions.length} {t('questionnaire.targeted_questions', { defaultValue: 'targeted questions' })}
                     </p>
                   </div>
 
                   {/* Breakdown */}
                   <div className="space-y-4">
-                    <h4 className="text-lg font-black text-gray-900 dark:text-white">Score Breakdown</h4>
+                    <h4 className="text-lg font-black text-gray-900 dark:text-white">{t('questionnaire.score_breakdown', { defaultValue: 'Score Breakdown' })}</h4>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
@@ -591,11 +603,11 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
                     className="flex items-center px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 disabled:opacity-30 hover:text-gray-900 dark:hover:text-white transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4 mr-2" />
-                    Previous
+                    {t('common.previous', { defaultValue: 'Previous' })}
                   </button>
 
                   <div className="flex items-center space-x-2">
-                    {questionnaire.questions.map((_, idx) => (
+                    {(questionnaire?.questions || []).map((_, idx) => (
                       <div
                         key={idx}
                         className={`w-2 h-2 rounded-full transition-colors ${
@@ -605,22 +617,22 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
                     ))}
                   </div>
 
-                  {currentStep < questionnaire.questions.length - 1 ? (
+                  {currentQuestion && currentStep < questionCount - 1 ? (
                     <button
                       onClick={nextStep}
                       disabled={!answers[currentQuestion?.id]}
                       className="flex items-center px-6 py-2 bg-emerald-500 text-white text-sm font-bold rounded-lg disabled:opacity-30 hover:bg-emerald-600 transition-colors"
                     >
-                      Next
+                      {t('common.next', { defaultValue: 'Next' })}
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </button>
                   ) : (
                     <button
                       onClick={handleSubmit}
-                      disabled={Object.keys(answers).length < questionnaire.questions.length * 0.5}
+                      disabled={!currentQuestion || Object.keys(answers).length < Math.max(1, questionCount * 0.5)}
                       className="flex items-center px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold rounded-lg disabled:opacity-30 hover:from-emerald-600 hover:to-teal-600 transition-all"
                     >
-                      Calculate Risk
+                      {t('questionnaire.calculate_risk', { defaultValue: 'Calculate Risk' })}
                       <Activity className="w-4 h-4 ml-2" />
                     </button>
                   )}
@@ -631,13 +643,13 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
                     onClick={onClose}
                     className="px-6 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                   >
-                    Close
+                    {t('common.close', { defaultValue: 'Close' })}
                   </button>
                   <button
                     onClick={handleUpdateRisk}
                     className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-all"
                   >
-                    Update Risk Score
+                    {t('questionnaire.update_risk_score', { defaultValue: 'Update Risk Score' })}
                   </button>
                 </div>
               )}

@@ -29,6 +29,7 @@ const governanceRoutes = require('./src/routes/governanceRoutes');
 const diseaseRoutes = require('./src/routes/diseaseRoutes');
 const doctorRoutes = require('./src/routes/doctorRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
+const { resolveLanguage } = require('./src/middleware/languageResolver');
 const { runReminderService } = require('./src/services/reminderService');
 const initCronJobs = require('./src/scripts/cronJobs');
 
@@ -38,6 +39,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(resolveLanguage);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)

@@ -57,7 +57,7 @@ const AppLayout = () => {
     }
 
     // Step 63: Register Push Service Worker Foundation
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+    if ('serviceWorker' in navigator && import.meta.env.PROD) {
        window.addEventListener('load', () => {
          navigator.serviceWorker.register('/sw.js').then(reg => {
            console.log('[SW] Service Worker Registered:', reg.scope);

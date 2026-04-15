@@ -20,10 +20,12 @@ import LabResultsModals from '../components/LabResultsModals';
 import GoalsModals from '../components/GoalsModals';
 import VitalAnalysisModal from '../components/VitalAnalysisModal';
 import LabAnalysisModal from '../components/LabAnalysisModal';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 const VitalCard = ({ title, value, unit, type, status, trend, timestamp, icon: Icon, onClick }) => {
+  const { t } = useTranslation();
   const getStatusColors = (s) => {
     switch (s?.toLowerCase()) {
       case 'normal': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
@@ -51,7 +53,7 @@ const VitalCard = ({ title, value, unit, type, status, trend, timestamp, icon: I
           <Icon className="w-6 h-6" />
         </div>
         <div className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusColors(status)}`}>
-          {status || 'No Data'}
+          {status || t('common.no_data', { defaultValue: 'No Data' })}
         </div>
       </div>
       
@@ -68,10 +70,10 @@ const VitalCard = ({ title, value, unit, type, status, trend, timestamp, icon: I
       <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-950">
         <div className="flex items-center gap-1">
           {getTrendIcon(trend)}
-          <span className="text-[9px] font-bold text-slate-600 dark:text-gray-300 uppercase tracking-tighter">vs Last 7 days</span>
+          <span className="text-[9px] font-bold text-slate-600 dark:text-gray-300 uppercase tracking-tighter">{t('vitals.vs_last_7_days', { defaultValue: 'vs Last 7 days' })}</span>
         </div>
         <div className="text-[9px] font-bold text-slate-600 dark:text-gray-300 uppercase tabular-nums">
-           {timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending'}
+           {timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : t('vitals.labs.pending')}
         </div>
       </div>
     </div>
@@ -80,6 +82,7 @@ const VitalCard = ({ title, value, unit, type, status, trend, timestamp, icon: I
 
 const Vitals = () => {
   const { user } = useUser();
+  const { t } = useTranslation();
   const [demoUser] = useState({ id: 'demo_user_123', fullName: 'Demo Patient' });
   const activeUser = user || demoUser;
   const [vitals, setVitals] = useState({});
@@ -297,7 +300,7 @@ const Vitals = () => {
 
   const handleExportJSON = async () => {
     try {
-      const res = await axios.get(`${API_URL}/profile/export/${user.id}`);
+      const res = await axios.get(`${API_URL}/profile/export/${activeUser.id}`);
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(res.data.data, null, 2));
       const downloadAnchorNode = document.createElement('a');
       downloadAnchorNode.setAttribute("href", dataStr);
@@ -391,21 +394,21 @@ const Vitals = () => {
       {/* Header & Export */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Health Timeline</h1>
-          <p className="text-slate-600 dark:text-gray-300 font-medium text-lg">Monitoring biological constants and metabolic trends</p>
+          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{t('vitals.timeline')}</h1>
+          <p className="text-slate-600 dark:text-gray-300 font-medium text-lg">{t('vitals.monitoring_desc')}</p>
         </div>
         <div className="flex gap-4">
            <button 
               onClick={handleExportJSON}
               className="px-6 py-3 bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:border-emerald-500/50 transition-all shadow-xl text-gray-600 dark:text-gray-300 hover:text-emerald-500"
            >
-              <Download className="w-5 h-5" /> Export JSON
+              <Download className="w-5 h-5" /> {t('vitals.export_json')}
            </button>
            <button 
               onClick={handleExportPDF}
               className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-xl"
            >
-              <FileText className="w-5 h-5" /> Download PDF Report
+              <FileText className="w-5 h-5" /> {t('vitals.download_pdf')}
            </button>
         </div>
       </div>
@@ -436,15 +439,15 @@ const Vitals = () => {
                       <Activity className="w-6 h-6 text-fuchsia-500" />
                    </div>
                    <div>
-                      <h4 className="text-lg font-black text-white">Diabetes Risk Protocol</h4>
-                      <p className="text-xs text-fuchsia-400 font-bold uppercase tracking-widest leading-relaxed">Regular Glucose Monitoring Advised</p>
+                      <h4 className="text-lg font-black text-white">{t('vitals.risk_protocols.diabetes')}</h4>
+                      <p className="text-xs text-fuchsia-400 font-bold uppercase tracking-widest leading-relaxed">{t('vitals.risk_protocols.monitoring_active')}</p>
                    </div>
                 </div>
                 <button 
                   onClick={() => setModal({open: true, type: 'glucose'})}
                   className="w-full py-4 bg-fuchsia-500 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-fuchsia-500/20 active:scale-95 transition-all"
                 >
-                  Log Glucose Now
+                  {t('vitals.log_prefix')} {t('vitals.labels.blood_glucose')}
                 </button>
              </div>
            )}
@@ -456,15 +459,15 @@ const Vitals = () => {
                       <Heart className="w-6 h-6 text-amber-500" />
                    </div>
                    <div>
-                      <h4 className="text-lg font-black text-white">Hypertension Guard</h4>
-                      <p className="text-xs text-amber-400 font-bold uppercase tracking-widest leading-relaxed">BP Stability Monitoring Active</p>
+                      <h4 className="text-lg font-black text-white">{t('vitals.risk_protocols.hypertension')}</h4>
+                      <p className="text-xs text-amber-400 font-bold uppercase tracking-widest leading-relaxed">{t('vitals.risk_protocols.monitoring_active')}</p>
                    </div>
                 </div>
                 <button 
                   onClick={() => setModal({open: true, type: 'bp'})}
                   className="w-full py-4 bg-amber-500 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
                 >
-                  Log Blood Pressure
+                  {t('vitals.log_prefix')} {t('vitals.labels.blood_pressure')}
                 </button>
              </div>
            )}
@@ -475,15 +478,15 @@ const Vitals = () => {
       <div className="p-2 overflow-x-auto scrollbar-hide">
         <div className="flex gap-4 min-w-max pb-4">
           {[
-            { id: 'bp', icon: Heart, label: 'Blood Pressure', color: 'text-rose-500' },
-            { id: 'glucose', icon: Activity, label: 'Glucose Level', color: 'text-amber-500' },
-            { id: 'heart_rate', icon: Stethoscope, label: 'Heart Rate', color: 'text-pink-500' },
-            { id: 'weight', icon: Scale, label: 'Current Weight', color: 'text-blue-500' },
-            { id: 'steps', icon: Footprints, label: 'Daily Steps', color: 'text-emerald-500' },
-            { id: 'sleep', icon: Moon, label: 'Sleep Tracker', color: 'text-indigo-500' },
-            { id: 'water', icon: Droplets, label: 'Water Log', color: 'text-cyan-500' },
-            { id: 'body_temperature', icon: Thermometer, label: 'Body Temp', color: 'text-orange-500' },
-            { id: 'oxygen_saturation', icon: Wind, label: 'SpO2 Level', color: 'text-teal-500' },
+            { id: 'bp', icon: Heart, label: t('vitals.labels.blood_pressure'), color: 'text-rose-500' },
+            { id: 'glucose', icon: Activity, label: t('vitals.labels.blood_glucose'), color: 'text-amber-500' },
+            { id: 'heart_rate', icon: Stethoscope, label: t('vitals.labels.heart_rate'), color: 'text-pink-500' },
+            { id: 'weight', icon: Scale, label: t('vitals.labels.weight'), color: 'text-blue-500' },
+            { id: 'steps', icon: Footprints, label: t('vitals.labels.steps'), color: 'text-emerald-500' },
+            { id: 'sleep', icon: Moon, label: t('vitals.labels.sleep'), color: 'text-indigo-500' },
+            { id: 'water', icon: Droplets, label: t('vitals.labels.water'), color: 'text-cyan-500' },
+            { id: 'body_temperature', icon: Thermometer, label: t('vitals.labels.body_temperature'), color: 'text-orange-500' },
+            { id: 'oxygen_saturation', icon: Wind, label: t('vitals.labels.oxygen_saturation'), color: 'text-teal-500' },
           ].map((item) => (
             <button
               key={item.id}
@@ -491,7 +494,7 @@ const Vitals = () => {
               className="flex items-center gap-3 px-6 py-4 bg-white dark:bg-none dark:bg-gray-950/40 backdrop-blur-3xl border border-slate-100 dark:border-gray-800 rounded-3xl hover:border-blue-100 dark:hover:border-emerald-500/40 transition-all duration-500 hover:-translate-y-1 shadow-[0_8px_30px_rgba(35,60,111,0.05)] hover:shadow-[0_15px_40px_rgba(35,60,111,0.08)] dark:shadow-none group"
             >
               <item.icon className={`w-5 h-5 ${item.color} group-hover:scale-110 transition-transform`} />
-              <span className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Log {item.label}</span>
+              <span className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">{t('vitals.log_prefix')} {item.label}</span>
               <Plus className="w-4 h-4 text-emerald-500 ml-2" />
             </button>
           ))}
@@ -501,14 +504,14 @@ const Vitals = () => {
       {/* Tabs & Content */}
       <div className="space-y-12">
         <div className="flex border-b border-gray-100 dark:border-gray-800">
-           {['overview', 'trends', 'labs'].map(t => (
+           {['overview', 'trends', 'labs'].map(t_tab => (
              <button
-               key={t}
-               onClick={() => setActiveTab(t)}
-               className={`px-8 py-4 text-xs font-black uppercase tracking-widest transition-all relative ${activeTab === t ? 'text-emerald-500' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
+               key={t_tab}
+               onClick={() => setActiveTab(t_tab)}
+               className={`px-8 py-4 text-xs font-black uppercase tracking-widest transition-all relative ${activeTab === t_tab ? 'text-emerald-500' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
              >
-               {t}
-               {activeTab === t && <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-full" />}
+               {t(`vitals.tabs.${t_tab}`)}
+               {activeTab === t_tab && <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 rounded-full" />}
              </button>
            ))}
         </div>
@@ -518,7 +521,7 @@ const Vitals = () => {
              {/* Summary Grid (Step 23) */}
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <VitalCard 
-                  title="Blood Pressure" 
+                  title={t('vitals.labels.blood_pressure')} 
                   value={formatValue('blood_pressure', vitals.blood_pressure?.value)}
                   unit="mmHg"
                   icon={Heart} 
@@ -527,7 +530,7 @@ const Vitals = () => {
                   onClick={() => handleVitalCardClick('blood_pressure', vitals.blood_pressure?.value)}
                 />
                 <VitalCard 
-                  title="Blood Glucose" 
+                  title={t('vitals.labels.blood_glucose')} 
                   value={vitals.blood_glucose?.value}
                   unit="mg/dL"
                   icon={Activity} 
@@ -536,7 +539,7 @@ const Vitals = () => {
                   onClick={() => handleVitalCardClick('blood_glucose', vitals.blood_glucose?.value)}
                 />
                 <VitalCard 
-                  title="Heart Rate" 
+                  title={t('vitals.labels.heart_rate')} 
                   value={vitals.heart_rate?.value}
                   unit="BPM"
                   icon={Stethoscope} 
@@ -545,7 +548,7 @@ const Vitals = () => {
                   onClick={() => handleVitalCardClick('heart_rate', vitals.heart_rate?.value)}
                 />
                 <VitalCard 
-                  title="Oxygen Saturation" 
+                  title={t('vitals.labels.oxygen_saturation')} 
                   value={vitals.oxygen_saturation?.value}
                   unit="%"
                   icon={Wind} 
@@ -554,7 +557,7 @@ const Vitals = () => {
                   onClick={() => handleVitalCardClick('oxygen_saturation', vitals.oxygen_saturation?.value)}
                 />
                 <VitalCard 
-                  title="Sleep Quality" 
+                  title={t('vitals.labels.sleep')} 
                   value={vitals.sleep_duration?.value}
                   unit="Hours"
                   icon={Moon} 
@@ -563,7 +566,7 @@ const Vitals = () => {
                   onClick={() => handleVitalCardClick('sleep_duration', vitals.sleep_duration?.value)}
                 />
                 <VitalCard 
-                  title="Daily Steps" 
+                  title={t('vitals.labels.steps')} 
                   value={vitals.steps?.value}
                   unit="Steps"
                   icon={Footprints} 
@@ -572,7 +575,7 @@ const Vitals = () => {
                   onClick={() => handleVitalCardClick('steps', vitals.steps?.value)}
                 />
                 <VitalCard 
-                  title="Water Intake" 
+                  title={t('vitals.labels.water')} 
                   value={vitals.water_intake?.value}
                   unit="ml"
                   icon={Droplets} 
@@ -581,7 +584,7 @@ const Vitals = () => {
                   onClick={() => handleVitalCardClick('water_intake', vitals.water_intake?.value)}
                 />
                 <VitalCard 
-                  title="Body Temperature" 
+                  title={t('vitals.labels.body_temperature')} 
                   value={vitals.body_temperature?.value}
                   unit="°F"
                   icon={Thermometer} 
@@ -597,25 +600,25 @@ const Vitals = () => {
                 <div className="space-y-6">
                    <div className="flex justify-between items-center px-4">
                       <h3 className="text-xs font-black uppercase text-gray-700 dark:text-gray-300 tracking-widest flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-emerald-500" /> Active Milestones
+                        <Trophy className="w-4 h-4 text-emerald-500" /> {t('vitals.active_milestones')}
                       </h3>
-                      <button onClick={() => setGoalModalOpen(true)} className="text-[10px] font-black text-emerald-500 uppercase hover:underline">Customize Goals</button>
+                      <button onClick={() => setGoalModalOpen(true)} className="text-[10px] font-black text-emerald-500 uppercase hover:underline">{t('vitals.customize_goals')}</button>
                    </div>
                     <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-8 rounded-[2.5rem] shadow-[0_10px_40px_rgba(35,60,111,0.06)] hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] transition-all duration-500 dark:shadow-none space-y-6">
                       {goals.length > 0 ? goals.map(g => (
                         <div key={g._id} className="space-y-3">
                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">
-                              <span>{(g.goalType || 'Goal').replace('_', ' ')} Target</span>
+                              <span>{(g.goalType || 'Goal').replace('_', ' ')} {t('vitals.target')}</span>
                               <span className="text-emerald-500">{g.targetValue} {g.unit}</span>
                            </div>
                            <div className="w-full h-2 bg-gray-100 dark:bg-gray-900 rounded-full overflow-hidden">
                               <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${calculateGoalProgress(g)}%` }} />
                            </div>
-                           <div className="text-[8px] font-bold text-gray-600 dark:text-gray-300 text-right uppercase tracking-widest">{calculateGoalProgress(g).toFixed(0)}% Complete</div>
+                           <div className="text-[8px] font-bold text-gray-600 dark:text-gray-300 text-right uppercase tracking-widest">{calculateGoalProgress(g).toFixed(0)}% {t('vitals.complete')}</div>
                         </div>
                       )) : (
                         <div className="text-center py-4">
-                           <p className="text-[10px] text-gray-600 dark:text-gray-300 font-bold uppercase tracking-widest">No active goals configured.</p>
+                           <p className="text-[10px] text-gray-600 dark:text-gray-300 font-bold uppercase tracking-widest">{t('vitals.no_goals')}</p>
                         </div>
                       )}
                    </div>
@@ -624,7 +627,7 @@ const Vitals = () => {
                 {/* Connected Devices (Step 47) */}
                 <div className="space-y-6">
                    <h3 className="text-xs font-black uppercase text-gray-700 dark:text-gray-300 tracking-widest px-4 flex items-center gap-2">
-                     <RefreshCw className="w-4 h-4 text-emerald-500" /> Sync Intelligence
+                     <RefreshCw className="w-4 h-4 text-emerald-500" /> {t('vitals.sync_intelligence')}
                    </h3>
                    <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-8 rounded-[2.5rem] shadow-[0_10px_40px_rgba(35,60,111,0.06)] hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] transition-all duration-500 dark:shadow-none">
                       <div className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-white/5">
@@ -633,14 +636,14 @@ const Vitals = () => {
                                <RefreshCw className="w-5 h-5 text-emerald-500" />
                             </div>
                             <div>
-                               <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter">Google Fit Hub</div>
+                               <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter">{t('vitals.google_fit_hub')}</div>
                                <div className="text-[9px] text-emerald-500 font-bold flex items-center gap-1">
                                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> 
-                                  Operational • Connected
+                                  {t('vitals.connected_status')}
                                </div>
                             </div>
                          </div>
-                         <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 transition-colors">Resync</button>
+                         <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl text-[9px] font-black uppercase tracking-widest hover:text-emerald-500 transition-colors">{t('vitals.resync')}</button>
                       </div>
                       <div className="mt-4 flex items-center justify-between p-4 opacity-40 grayscale pointer-events-none">
                          <div className="flex items-center gap-4">
@@ -661,11 +664,11 @@ const Vitals = () => {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-900/50">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">Biological Metric</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">Precision Value</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest text-center">Reference Unit</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">Trace Timestamp</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest text-right">Ops</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">{t('vitals.metric')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">{t('vitals.value')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest text-center">{t('vitals.unit')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">{t('vitals.timestamp')}</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest text-right">{t('vitals.labs.ops')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 dark:divide-gray-900">
@@ -700,27 +703,37 @@ const Vitals = () => {
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {/* BP TREND */}
                 <TrendAnalysisCard 
-                  title="Hemodynamic Stability" 
-                  subtitle="Blood Pressure Variance"
+                  title={t('vitals.trends.bp_title')} 
+                  subtitle={t('vitals.trends.bp_sub')}
                   icon={Heart}
                   color="rose"
                   data={history.filter(h => h.type === 'blood_pressure').reverse()}
                   Chart={BloodPressureChart}
+                  labels={{
+                    average: t('vitals.trends.average', { defaultValue: 'Average' }),
+                    max: t('vitals.trends.max', { defaultValue: 'Max' }),
+                    readings: t('vitals.trends.readings', { defaultValue: 'Readings' })
+                  }}
                 />
                 {/* GLUCOSE TREND */}
                 <TrendAnalysisCard 
-                  title="Glycemic Control" 
-                  subtitle="Metabolic Glucose Response"
+                  title={t('vitals.trends.glucose_title')} 
+                  subtitle={t('vitals.trends.glucose_sub')}
                   icon={Activity}
                   color="amber"
                   data={history.filter(h => h.type === 'blood_glucose').reverse()}
                   Chart={GlucoseChart}
                   extra={`HbA1c Estimate: ${hba1c}%`}
+                  labels={{
+                    average: t('vitals.trends.average', { defaultValue: 'Average' }),
+                    max: t('vitals.trends.max', { defaultValue: 'Max' }),
+                    readings: t('vitals.trends.readings', { defaultValue: 'Readings' })
+                  }}
                 />
                 {/* WEIGHT TREND */}
                 <TrendAnalysisCard 
-                  title="Body Morphology" 
-                  subtitle="Weight & BMI Trajectory"
+                  title={t('vitals.trends.weight_title')} 
+                  subtitle={t('vitals.trends.weight_sub')}
                   icon={Scale}
                   color="blue"
                   data={history.filter(h => h.type === 'weight').map(h => ({
@@ -728,20 +741,30 @@ const Vitals = () => {
                     bmi: (h.value / (( (report?.userProfile?.height?.value || 170) /100)**2)).toFixed(1) 
                   })).reverse()}
                   Chart={WeightBMIChart}
+                  labels={{
+                    average: t('vitals.trends.average', { defaultValue: 'Average' }),
+                    max: t('vitals.trends.max', { defaultValue: 'Max' }),
+                    readings: t('vitals.trends.readings', { defaultValue: 'Readings' })
+                  }}
                 />
                 {/* STEPS TREND */}
                 <TrendAnalysisCard 
-                  title="Kinetic Activity" 
-                  subtitle="Daily Movement & Goal Delta"
+                  title={t('vitals.trends.steps_title')} 
+                  subtitle={t('vitals.trends.steps_sub')}
                   icon={Footprints}
                   color="emerald"
                   data={history.filter(h => h.type === 'steps').reverse()}
                   Chart={StepsChart}
+                  labels={{
+                    average: t('vitals.trends.average', { defaultValue: 'Average' }),
+                    max: t('vitals.trends.max', { defaultValue: 'Max' }),
+                    readings: t('vitals.trends.readings', { defaultValue: 'Readings' })
+                  }}
                 />
                 {/* SLEEP TREND (Step 38) */}
                 <TrendAnalysisCard 
-                  title="Circadian Rest" 
-                  subtitle="Sleep Duration & Quality"
+                  title={t('vitals.trends.sleep_title')} 
+                  subtitle={t('vitals.trends.sleep_sub')}
                   icon={Moon}
                   color="indigo"
                   data={history.filter(h => h.type === 'sleep_duration').map(h => ({
@@ -749,6 +772,11 @@ const Vitals = () => {
                     quality: h.notes ? parseInt(h.notes) : 0 // Fallback to notes if we store quality there
                   })).reverse()}
                   Chart={SleepPatternChart}
+                  labels={{
+                    average: t('vitals.trends.average', { defaultValue: 'Average' }),
+                    max: t('vitals.trends.max', { defaultValue: 'Max' }),
+                    readings: t('vitals.trends.readings', { defaultValue: 'Readings' })
+                  }}
                 />
              </div>
           </div>
@@ -758,8 +786,8 @@ const Vitals = () => {
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-4">
                 <div className="space-y-1">
-                   <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-widest">Diagnostic Repository</h2>
-                   <p className="text-[10px] text-gray-600 dark:text-gray-300 font-bold uppercase tracking-widest">Comparative Analysis of Laboratory Metrics</p>
+                   <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-widest">{t('vitals.labs.repository')}</h2>
+                   <p className="text-[10px] text-gray-600 dark:text-gray-300 font-bold uppercase tracking-widest">{t('vitals.labs.subtitle')}</p>
                 </div>
                 <div className="flex gap-3">
                   {labResults.length > 0 && (
@@ -767,14 +795,14 @@ const Vitals = () => {
                       onClick={() => setLabAnalysisModal({ open: true })}
                       className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl flex items-center gap-3"
                     >
-                       <Activity className="w-5 h-5" /> AI Analysis
+                       <Activity className="w-5 h-5" /> {t('vitals.labs.ai_analysis')}
                     </button>
                   )}
                   <button 
                     onClick={() => setLabModalOpen(true)}
                     className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl flex items-center gap-3"
                   >
-                     <Plus className="w-5 h-5" /> Append New Report
+                     <Plus className="w-5 h-5" /> {t('vitals.labs.append')}
                   </button>
                 </div>
              </div>
@@ -794,7 +822,7 @@ const Vitals = () => {
                     })();
                     const rangeColor = isInRange === true ? 'border-emerald-500/30 bg-emerald-500/5' : isInRange === false ? 'border-red-500/30 bg-red-500/5' : 'border-gray-100 dark:border-gray-800';
                     const valueTxt = isInRange === true ? 'text-emerald-500' : isInRange === false ? 'text-red-500' : 'text-emerald-500';
-                    const rangeLabel = isInRange === true ? 'In Range' : isInRange === false ? 'Out of Range' : 'N/A';
+                    const rangeLabel = isInRange === true ? t('vitals.labs.in_range') : isInRange === false ? t('vitals.labs.out_of_range') : t('vitals.labs.pending');
                     const rangeLabelColor = isInRange === true ? 'text-emerald-500 bg-emerald-500/10' : isInRange === false ? 'text-red-500 bg-red-500/10' : 'text-gray-400 bg-gray-100 dark:bg-gray-800';
                     return (
                     <div key={lab._id} className={`bg-white dark:bg-gray-950 border ${rangeColor} p-8 rounded-[3rem] shadow-2xl space-y-6 group hover:border-emerald-500/20 transition-all`}>
@@ -814,14 +842,14 @@ const Vitals = () => {
                              <span className="text-[10px] font-bold text-slate-700 dark:text-gray-300 uppercase">{lab.unit}</span>
                           </div>
                           <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-white/5">
-                             <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Reference Range</div>
+                             <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{t('vitals.labs.reference_range', { defaultValue: 'Reference Range' })}</div>
                              <div className="text-[11px] font-bold text-gray-600 dark:text-gray-300">{lab.referenceRange || 'Not specified'} {lab.referenceRange ? lab.unit : ''}</div>
-                             <div className="text-[8px] font-black text-slate-600 dark:text-gray-300 uppercase tracking-[0.2em] mb-1">Reference Alignment</div>
+                             <div className="text-[8px] font-black text-slate-600 dark:text-gray-300 uppercase tracking-[0.2em] mb-1">{t('vitals.labs.reference_alignment', { defaultValue: 'Reference Alignment' })}</div>
                              <div className="text-[11px] font-bold text-slate-600 dark:text-gray-300">{lab.referenceRange} {lab.unit}</div>
                           </div>
                           <div className="mt-6 flex items-center justify-between">
                              <span className="text-[9px] font-black text-gray-600 dark:text-gray-300 uppercase tracking-widest">{new Date(lab.sampleDate).toLocaleDateString()}</span>
-                             <button className="text-[9px] font-black text-emerald-500 uppercase hover:underline flex items-center gap-1">History <ChevronRight className="w-3 h-3" /></button>
+                             <button className="text-[9px] font-black text-emerald-500 uppercase hover:underline flex items-center gap-1">{t('vitals.labs.history', { defaultValue: 'History' })} <ChevronRight className="w-3 h-3" /></button>
                           </div>
                        </div>
                        
@@ -830,9 +858,9 @@ const Vitals = () => {
                           <button
                             onClick={() => handleViewTrends(lab.testName)}
                             className="flex-1 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl text-[9px] font-black uppercase tracking-wider transition-colors flex items-center justify-center gap-1"
-                            title="View History"
+                            title={t('vitals.labs.view_history', { defaultValue: 'View History' })}
                           >
-                             <TrendingUp className="w-3 h-3" /> History
+                             <TrendingUp className="w-3 h-3" /> {t('vitals.labs.history', { defaultValue: 'History' })}
                           </button>
                           <button
                             onClick={() => handleDeleteLabResult(lab._id)}
@@ -850,7 +878,7 @@ const Vitals = () => {
                   <div className="p-8 bg-white dark:bg-gray-950 rounded-full w-max mx-auto mb-6 shadow-2xl">
                      <FileText className="w-16 h-16 text-emerald-500/20" />
                   </div>
-                  <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-widest">Biometric Intelligence Gap</h3>
+                  <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-widest">{t('vitals.labs.empty_title', { defaultValue: 'Biometric Intelligence Gap' })}</h3>
                   <p className="text-gray-700 dark:text-gray-300 max-w-sm mx-auto mt-2 font-medium leading-relaxed">System awaiting clinical report input for precision mapping.</p>
                </div>
              )}
@@ -870,14 +898,14 @@ const Vitals = () => {
         isOpen={labModalOpen}
         onClose={() => setLabModalOpen(false)}
         onSave={fetchVitals}
-        clerkId={user.id}
+        clerkId={activeUser.id}
       />
 
       <GoalsModals
          isOpen={goalModalOpen}
          onClose={() => setGoalModalOpen(false)}
          onSave={fetchVitals}
-         clerkId={user.id}
+         clerkId={activeUser.id}
       />
             
       <VitalAnalysisModal
@@ -885,14 +913,14 @@ const Vitals = () => {
         onClose={() => setAnalysisModal({ open: false, vitalType: null, currentValue: null })}
         vitalType={analysisModal.vitalType}
         currentValue={analysisModal.currentValue}
-        clerkId={user.id}
+        clerkId={activeUser.id}
       />
 
       <LabAnalysisModal
         isOpen={labAnalysisModal.open}
         onClose={() => setLabAnalysisModal({ open: false })}
         labResults={labResults}
-        clerkId={user.id}
+        clerkId={activeUser.id}
       />
 
       {/* Lab Trends Modal */}
@@ -902,10 +930,10 @@ const Vitals = () => {
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-black text-white uppercase tracking-wider">
-                  {labTrendsModal.testName} History
+                  {labTrendsModal.testName} {t('vitals.labs.history', { defaultValue: 'History' })}
                 </h2>
                 <p className="text-blue-100 text-sm mt-1">
-                  {labTrends.length} records over time
+                  {labTrends.length} {t('vitals.labs.records_over_time', { defaultValue: 'records over time' })}
                 </p>
               </div>
               <button
@@ -969,7 +997,7 @@ const Vitals = () => {
               ) : (
                 <div className="text-center py-12">
                   <TrendingUp className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No historical data available</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('vitals.labs.no_history', { defaultValue: 'No historical data available' })}</p>
                 </div>
               )}
             </div>
@@ -981,7 +1009,7 @@ const Vitals = () => {
   );
 };
 
-const TrendAnalysisCard = ({ title, subtitle, icon: Icon, color, data, Chart, extra }) => (
+const TrendAnalysisCard = ({ title, subtitle, icon: Icon, color, data, Chart, extra, labels = {} }) => (
   <div className={`bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-8 rounded-[3rem] shadow-[0_10px_40px_rgba(35,60,111,0.06)] dark:shadow-none space-y-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] hover:border-${color}-100 dark:hover:border-${color}-500/30 relative overflow-hidden`}>
     <div className={`absolute top-[-20%] right-[-10%] w-64 h-64 bg-${color}-500/5 dark:bg-${color}-500/5 blur-[80px] rounded-full group-hover:bg-${color}-500/10 transition-colors duration-700 pointer-events-none`} />
     <div className="flex justify-between items-start relative z-10">
@@ -1001,19 +1029,19 @@ const TrendAnalysisCard = ({ title, subtitle, icon: Icon, color, data, Chart, ex
 
     <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-50 dark:border-gray-900">
        <div className="text-center">
-          <div className="text-[9px] text-gray-700 dark:text-gray-300 uppercase font-black tracking-widest mb-1">Average</div>
+          <div className="text-[9px] text-gray-700 dark:text-gray-300 uppercase font-black tracking-widest mb-1">{labels.average || 'Average'}</div>
           <div className="text-sm font-black text-gray-900 dark:text-white">
             {data.length ? (data.reduce((a, b) => a + (typeof b.value === 'object' ? b.value.systolic : b.value), 0) / data.length).toFixed(1) : '--'}
           </div>
        </div>
        <div className="text-center">
-          <div className="text-[9px] text-gray-700 dark:text-gray-300 uppercase font-black tracking-widest mb-1">Max</div>
+          <div className="text-[9px] text-gray-700 dark:text-gray-300 uppercase font-black tracking-widest mb-1">{labels.max || 'Max'}</div>
           <div className="text-sm font-black text-gray-900 dark:text-white">
             {data.length ? Math.max(...data.map(b => typeof b.value === 'object' ? b.value.systolic : b.value)) : '--'}
           </div>
        </div>
        <div className="text-center">
-          <div className="text-[9px] text-gray-700 dark:text-gray-300 uppercase font-black tracking-widest mb-1">Readings</div>
+          <div className="text-[9px] text-gray-700 dark:text-gray-300 uppercase font-black tracking-widest mb-1">{labels.readings || 'Readings'}</div>
           <div className="text-sm font-black text-emerald-500">{data.length}</div>
        </div>
     </div>

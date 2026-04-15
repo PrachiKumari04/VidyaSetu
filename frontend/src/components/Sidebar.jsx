@@ -4,6 +4,7 @@ import { Home, FileText, Activity, ShieldAlert, Settings, LogOut, AlertCircle, U
 import { UserButton, useClerk, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '@clerk/clerk-react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
@@ -20,6 +21,7 @@ const Sidebar = () => {
   const { signOut } = useClerk();
   const { theme } = useTheme();
   const { user } = useUser();
+  const { t } = useTranslation();
   const [unreadCount, setUnreadCount] = React.useState(0);
 
   React.useEffect(() => {
@@ -41,13 +43,13 @@ const Sidebar = () => {
   }, [user]);
 
   const navItems = [
-    { to: '/', icon: Home, label: 'Dashboard' },
-    { to: '/prescriptions', icon: ShieldAlert, label: 'Safety Bridge' },
-    { to: '/vitals', icon: Activity, label: 'My Vitals' },
-    { to: '/medicines', icon: Pill, label: 'My Medicines' },
-    { to: '/alerts', icon: AlertCircle, label: 'Alerts' },
-    { to: '/profile', icon: UserCircle, label: 'Profile' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
+    { to: '/', icon: Home, label: t('sidebar.dashboard') },
+    { to: '/prescriptions', icon: ShieldAlert, label: t('sidebar.prescriptions') },
+    { to: '/vitals', icon: Activity, label: t('sidebar.vitals') },
+    { to: '/medicines', icon: Pill, label: t('sidebar.medicines') },
+    { to: '/alerts', icon: AlertCircle, label: t('sidebar.alerts') },
+    { to: '/profile', icon: UserCircle, label: t('sidebar.profile') },
+    { to: '/settings', icon: Settings, label: t('sidebar.settings') },
   ];
 
   return (
@@ -81,7 +83,7 @@ const Sidebar = () => {
             </SignedIn>
             <SignedOut>
                 <div className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer text-center">
-                   <SignInButton mode="modal">Sign In</SignInButton>
+                   <SignInButton mode="modal">{t('sidebar.signin')}</SignInButton>
                 </div>
             </SignedOut>
         </div>
@@ -136,7 +138,7 @@ const Sidebar = () => {
           </SignedIn>
           <SignedOut>
              <div className="w-full flex items-center justify-center px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-colors cursor-pointer text-center">
-                <SignInButton mode="modal">Sign In</SignInButton>
+                <SignInButton mode="modal">{t('sidebar.signin')}</SignInButton>
              </div>
           </SignedOut>
         </div>
