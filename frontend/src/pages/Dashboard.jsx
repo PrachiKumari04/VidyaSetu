@@ -316,50 +316,51 @@ const Dashboard = () => {
          <button onClick={generateReport} disabled={generating} className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold transition-all disabled:opacity-50 flex items-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
            {generating ? <><RefreshCw className="w-5 h-5 mr-3 animate-spin" /> Analyzing...</> : <><Activity className="w-5 h-5 mr-3" /> Initiate Predictive Scan</>}
          </button>
-         <p className="text-gray-500 text-xs mt-6 max-w-md">
-           Tip: after onboarding, risk cards usually fill automatically from your questionnaire. If scores look empty, confirm your profile saved and the API is reachable ({API_URL}).
-         </p>
-      </div>
+          <p className="text-gray-500 text-xs mt-6 max-w-md">
+            Tip: after onboarding, risk cards usually fill automatically from your questionnaire. If scores look empty, confirm your profile saved and the API is reachable ({API_URL}).
+          </p>
+        </div>
     );
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Welcome, {getProfileVal('name') || user?.fullName || 'User'}
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-8 md:py-16">
+      {/* Integrated Dashboard Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16 pb-8 border-b border-slate-100 dark:border-white/5">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-[0.3em] text-[10px] mb-2">
+             <div className="w-8 h-[2px] bg-emerald-500/30" />
+             Clinical Intelligence
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-[0.9]">
+            Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">{getProfileVal('name') || user?.firstName || 'User'}</span>
           </h1>
-          <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-            Report from {report?.createdAt ? new Date(report.createdAt).toLocaleDateString('en-GB') : 'N/A'}
-            {scoresAsOf && (
-              <span className="block text-emerald-600 dark:text-emerald-400 normal-case mt-1 tracking-normal">
-                Questionnaire risk scores refreshed {scoresAsOf.toLocaleString()}
-              </span>
-            )}
+          <p className="text-slate-500 dark:text-gray-400 font-medium text-lg max-w-2xl leading-relaxed">
+            Predictive screening matrix updated as of {report?.createdAt ? new Date(report.createdAt).toLocaleDateString('en-GB') : 'N/A'}. 
+            {scoresAsOf && <span className="text-emerald-600 dark:text-emerald-400 ml-1">Live refresh active.</span>}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        
+        <div className="flex flex-wrap items-center gap-4">
           <button
             type="button"
             onClick={() => {
-              console.log('[Dashboard] Manual refresh triggered by user');
               setLoading(true);
               fetchData(true).then(() => {
-                setToast({
-                  type: 'success',
-                  message: 'Dashboard refreshed with latest risk scores!'
-                });
+                setToast({ type: 'success', message: 'Intelligence matrix synchronized!' });
                 setTimeout(() => setToast(null), 3000);
               });
             }}
-            className="px-5 py-3 rounded-2xl border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500/10 transition-colors"
+            className="group flex items-center gap-2 px-6 py-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 font-bold hover:bg-slate-50 dark:hover:bg-white/10 transition-all shadow-xl shadow-slate-200/20 active:scale-95 active:shadow-none"
           >
-            Refresh risk scores
+            <RefreshCw className={`w-4 h-4 text-emerald-500 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+            Refresh Scan
           </button>
-          <button onClick={handleExport} className="px-6 py-3 bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 hover:border-emerald-500/50 hover:text-emerald-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center shadow-xl active:scale-95 text-gray-500 dark:text-gray-400">
-             <Download className="w-4 h-4 mr-2" /> Export My Health Data
+          <button 
+            onClick={handleExport} 
+            className="flex items-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-500 transition-all shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.4)] hover:-translate-y-1 active:scale-95 active:shadow-none"
+          >
+             <Download className="w-5 h-5" /> Export Insights
           </button>
         </div>
       </div>

@@ -52,7 +52,7 @@ const Sidebar = () => {
 
   return (
     <div 
-      className="vs-sidebar flex flex-col w-full md:w-72 h-auto md:h-screen sticky top-0 px-5 py-6 md:py-10 backdrop-blur-3xl border-b md:border-r text-slate-700 dark:text-gray-300 shrink-0 z-50 transition-all duration-500 relative"
+      className="vs-sidebar flex flex-col w-full md:w-72 h-auto md:h-screen md:fixed md:top-0 md:left-0 md:bottom-0 px-5 py-6 md:py-10 backdrop-blur-3xl border-b md:border-r text-slate-700 dark:text-gray-300 shrink-0 z-50 transition-all duration-500"
       style={theme === 'dark' ? {
         background: 'rgba(5, 11, 20, 0.4)',
         borderColor: 'rgba(255,255,255,0.05)',

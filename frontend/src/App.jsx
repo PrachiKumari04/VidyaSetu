@@ -95,7 +95,7 @@ const AppLayout = () => {
 
   return (
     <div 
-      className="flex flex-col md:flex-row min-h-screen w-full relative transition-colors duration-700 overflow-hidden"
+      className="flex flex-col md:flex-row h-screen w-full relative transition-colors duration-700 overflow-hidden"
       style={theme === 'dark' ? { background: '#030712' } : {
         background: 'linear-gradient(180deg, #f0f9ff 0%, #ffffff 40%, #f0fdf4 100%)'
       }}
@@ -103,23 +103,11 @@ const AppLayout = () => {
       {/* Premium Ambient Background Glows */}
       <div className="fixed top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full dark:bg-emerald-500/15 blur-[140px] pointer-events-none z-0" style={{background: theme === 'dark' ? '' : 'radial-gradient(ellipse, rgba(59,130,246,0.15) 0%, transparent 70%)'}} />
       <div className="fixed bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full dark:bg-blue-500/15 blur-[140px] pointer-events-none z-0" style={{background: theme === 'dark' ? '' : 'radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, transparent 70%)'}} />
-      <div className="fixed top-[30%] left-[50%] w-[50%] h-[50%] rounded-full dark:bg-purple-500/10 blur-[120px] pointer-events-none z-0" style={{background: theme === 'dark' ? '' : 'radial-gradient(ellipse, rgba(99,102,241,0.07) 0%, transparent 70%)'}} />
-      {/* Floating Theme Toggle Button */}
-      <button
-        onClick={toggleTheme}
-        className="fixed top-6 right-6 z-[100] p-3 bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl text-emerald-500 hover:scale-110 active:scale-95 transition-all shadow-2xl group"
-        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      >
-        {theme === 'dark' ? (
-          <Sun className="w-5 h-5 group-hover:rotate-45 transition-transform" />
-        ) : (
-          <Moon className="w-5 h-5 group-hover:-rotate-12 transition-transform" />
-        )}
-      </button>
-
+      
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300">
-        <main className="p-4 sm:p-8 md:p-12 w-full overflow-auto vs-main-content bg-transparent dark:bg-transparent">
+      
+      <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300 md:ml-72 overflow-y-auto">
+        <main className="p-4 sm:p-8 md:p-12 w-full vs-main-content bg-transparent dark:bg-transparent">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/profile" element={<HealthProfile />} />
@@ -136,9 +124,19 @@ const AppLayout = () => {
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
+        
         <DisclaimerBanner />
         <Chatbot />
       </div>
+
+      {/* Floating Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="fixed top-6 right-6 z-[100] p-3 bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl text-emerald-500 hover:scale-110 active:scale-95 transition-all shadow-2xl group"
+        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      >
+        {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      </button>
     </div>
   );
 };

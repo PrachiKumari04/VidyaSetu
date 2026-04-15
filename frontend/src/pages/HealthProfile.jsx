@@ -157,12 +157,13 @@ const HealthProfile = () => {
           <div className="absolute top-[-50%] right-[-10%] w-96 h-96 bg-blue-500/5 dark:bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-blue-500/10 dark:group-hover:bg-emerald-500/20 transition-colors duration-700 pointer-events-none group-hover:scale-[1.2]"></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
             <div className="relative w-28 h-28 shrink-0">
-               <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                 <circle cx="56" cy="56" r="48" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-200 dark:text-gray-800" />
-                 <circle cx="56" cy="56" r="48" stroke="currentColor" strokeWidth="10" fill="transparent" 
-                   strokeDasharray={2 * Math.PI * 48}
-                   strokeDashoffset={2 * Math.PI * 48 * (1 - (dataQuality?.score || 0) / 100)}
+               <svg viewBox="0 0 112 112" className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                 <circle cx="56" cy="56" r="46" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-200 dark:text-gray-800" />
+                 <circle cx="56" cy="56" r="46" stroke="currentColor" strokeWidth="10" fill="transparent" 
+                   strokeDasharray={289}
+                   strokeDashoffset={289 * (1 - (dataQuality?.score || 0) / 100)}
                    className="text-emerald-500 transition-all duration-1000 ease-out" 
+                   strokeLinecap="round"
                  />
                </svg>
                <div className="absolute inset-0 flex items-center justify-center font-black text-2xl text-gray-900 dark:text-white drop-shadow-sm">
@@ -250,12 +251,6 @@ const HealthProfile = () => {
                 )) : <span className="text-gray-700 dark:text-gray-300 text-sm italic">No history provided</span>}
               </div>
             </div>
-            {profile.otherConditions?.value && (
-              <div className="pt-2 border-t border-gray-700/50">
-                <p className="text-xs text-slate-600 dark:text-gray-300 uppercase tracking-widest mb-2 font-bold">Contextual Observations</p>
-                <p className="text-sm text-slate-700 dark:text-gray-300 font-medium italic">"{profile.otherConditions.value}"</p>
-              </div>
-            )}
           </div>
         </SummarySection>
 
@@ -275,6 +270,22 @@ const HealthProfile = () => {
            </Link>
         </div>
       </div>
+
+      {/* Dedicated Contextual Observations Section - Center Aligned */}
+      {profile.otherConditions?.value && (
+        <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-8 lg:p-12 text-center animate-in zoom-in duration-500 shadow-xl group hover:border-emerald-500/30 transition-all">
+          <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl w-fit mx-auto mb-6 group-hover:scale-110 transition-transform">
+             <History size={24} />
+          </div>
+          <h3 className="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-[0.3em] font-black mb-4">Contextual Observations</h3>
+          <p className="text-xl md:text-2xl text-slate-900 dark:text-white font-black italic max-w-4xl mx-auto leading-relaxed">
+            "{profile.otherConditions.value}"
+          </p>
+          <div className="mt-8 flex justify-center">
+             <div className="h-1 w-12 bg-emerald-500/30 rounded-full" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

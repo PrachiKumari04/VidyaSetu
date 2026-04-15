@@ -30,21 +30,21 @@ const SettingsNav = ({ active, onSelect }) => {
   ];
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {categories.map((cat) => (
         <button
           key={cat.id}
           onClick={() => onSelect(cat.id)}
-          className={`group flex items-center p-4 rounded-[1.5rem] transition-all ${active === cat.id ? 'bg-emerald-600 text-white shadow-xl translate-x-1' : 'bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-300 hover:text-emerald-500 hover:bg-emerald-500/5'}`}
+          className={`group flex items-center p-5 rounded-[2rem] transition-all duration-500 border ${active === cat.id ? 'bg-emerald-600 text-white shadow-2xl shadow-emerald-500/20 translate-x-1 border-emerald-500/50' : 'bg-white/40 dark:bg-white/5 backdrop-blur-xl text-gray-600 dark:text-gray-300 border-slate-100 dark:border-white/5 hover:border-emerald-500/30'}`}
         >
-          <div className={`p-2.5 rounded-xl mr-4 ${active === cat.id ? 'bg-white/20' : 'bg-gray-50 dark:bg-gray-900 group-hover:bg-emerald-500/10 transition-colors'}`}>
-             <cat.icon className="w-5 h-5" />
+          <div className={`p-3 rounded-2xl mr-4 transition-all duration-500 ${active === cat.id ? 'bg-white/20' : 'bg-gray-50 dark:bg-white/5 group-hover:bg-emerald-500/10 group-hover:text-emerald-500 shadow-sm'}`}>
+             <cat.icon className="w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
           <div className="text-left">
-            <div className="text-xs font-black uppercase tracking-widest">{cat.label}</div>
-            <div className={`text-[9px] font-bold uppercase opacity-60 ${active === cat.id ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{cat.sub}</div>
+            <div className={`text-xs font-black uppercase tracking-[0.2em] mb-1 ${active === cat.id ? 'text-white' : 'text-slate-900 dark:text-gray-100'}`}>{cat.label}</div>
+            <div className={`text-[10px] font-bold uppercase opacity-60 tracking-wider ${active === cat.id ? 'text-white' : 'text-slate-500 dark:text-gray-400'}`}>{cat.sub}</div>
           </div>
-          <ChevronRight className={`ml-auto w-4 h-4 transition-transform ${active === cat.id ? 'rotate-90' : 'opacity-0 group-hover:opacity-100'}`} />
+          <ChevronRight className={`ml-auto w-4 h-4 transition-all duration-500 ${active === cat.id ? 'rotate-90 scale-125' : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-1'}`} />
         </button>
       ))}
     </div>
@@ -412,7 +412,8 @@ const Settings = () => {
 
         {/* Content Panel */}
         <div className="flex-1 min-w-0">
-          <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-[3.5rem] p-10 lg:p-14 shadow-2xl relative overflow-hidden min-h-[700px]">
+          <div className="bg-white/40 dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] p-10 lg:p-14 shadow-2xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden min-h-[700px] group transition-all duration-500 hover:shadow-[0_40px_80px_rgba(35,60,111,0.08)]">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 dark:bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-125" />
             
             {/* Identity & Bio (Step 67, 69) */}
             {activeCategory === 'identity' && (

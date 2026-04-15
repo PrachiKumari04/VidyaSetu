@@ -242,7 +242,8 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
     <motion.div 
       layout
       transition={{ layout: { duration: 0.4, type: 'spring', damping: 25, stiffness: 120 } }}
-      className={`bg-white dark:bg-gray-950 border ${isExpanded ? 'border-emerald-500/30 ring-1 ring-emerald-500/10 shadow-2xl z-10' : 'border-gray-100 dark:border-gray-800 shadow-sm'} p-5 rounded-[2rem] transition-all hover:border-emerald-500/20 w-full relative overflow-hidden group`}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      className={`bg-white dark:bg-gray-950/40 backdrop-blur-3xl border ${isExpanded ? 'border-emerald-500/40 ring-2 ring-emerald-500/10 shadow-2xl z-10' : 'border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none'} p-6 rounded-[2.5rem] transition-all hover:border-emerald-500/30 w-full relative overflow-hidden group`}
     >
       {/* Collapsed Header - Always clickable for popup */}
       <div 
@@ -252,11 +253,11 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
         <div className="flex items-center space-x-4 flex-1">
           {/* Circular Progress Indicator */}
           <div className="relative w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform">
-            <svg className="w-full h-full transform -rotate-90">
+            <svg viewBox="0 0 48 48" className="w-full h-full transform -rotate-90">
               <circle
                 cx="24"
                 cy="24"
-                r="20"
+                r="19"
                 stroke="currentColor"
                 strokeWidth="4"
                 fill="transparent"
@@ -265,13 +266,13 @@ const DiseaseCard = ({ diseaseId, initialScore, isExpanded, onToggle, clerkId, p
               <motion.circle
                 cx="24"
                 cy="24"
-                r="20"
+                r="19"
                 stroke={currentScore === -1 ? '#6b7280' : getRiskColor(currentScore)}
                 strokeWidth="4"
                 fill="transparent"
-                strokeDasharray={125.6}
-                initial={{ strokeDashoffset: 125.6 }}
-                animate={{ strokeDashoffset: 125.6 - (125.6 * (currentScore === -1 ? 0 : currentScore)) / 100 }}
+                strokeDasharray={119.4}
+                initial={{ strokeDashoffset: 119.4 }}
+                animate={{ strokeDashoffset: 119.4 - (119.4 * (currentScore === -1 ? 0 : currentScore)) / 100 }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 strokeLinecap="round"
               />
