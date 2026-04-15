@@ -15,6 +15,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 router.post('/generate-report', async (req, res) => {
   try {
     const { clerkId, changeContext } = req.body;
+    const outputLanguage = req.resolvedLanguage || 'en';
     if (!clerkId) {
       return res.status(400).json({ status: 'error', message: 'clerkId is required' });
     }
@@ -85,6 +86,7 @@ router.post('/generate-report', async (req, res) => {
     // --- Phase 4: Expanded AI Prompt for 20+ Diseases ---
     const prompt = `
     You are VaidyaSetu AI, a comprehensive health assistant for Indian users.
+    IMPORTANT LANGUAGE RULE: Respond only in ${outputLanguage}. Keep medical terms understandable in ${outputLanguage}.
     Analyze this user profile, preliminary risk scores, and vitals telemetry across 20+ disease categories.
 
     USER PROFILE: ${JSON.stringify(flatProfile)}
@@ -165,6 +167,8 @@ router.post('/generate-report', async (req, res) => {
       throw new Error("Invalid AI response format");
     }
 
+    const existingReport = await Report.findOne({ clerkId }).sort({ createdAt: -1 }).lean();
+
     const reportData = {
       clerkId,
       summary: aiData.summary || "Health analysis complete. Please see risk matrix for details.",
@@ -173,15 +177,16 @@ router.post('/generate-report', async (req, res) => {
       mitigations: (aiData.mitigations && typeof aiData.mitigations === 'object') ? aiData.mitigations : {},
       general_tips: Array.isArray(aiData.general_tips) ? aiData.general_tips.join('\n') : (aiData.general_tips || "Maintain a balanced diet and regular exercise."),
       disclaimer: aiData.disclaimer || "VaidyaSetu is an AI screening tool, not a diagnostic service. Please consult a doctor for clinical advice.",
-      risk_scores: riskScores,
+      // Keep hybrid/questionnaire-updated scores canonical if present
+      risk_scores: (existingReport?.risk_scores && Object.keys(existingReport.risk_scores).length > 0)
+        ? existingReport.risk_scores
+        : riskScores,
+      risk_score_meta: existingReport?.risk_score_meta || {},
       createdAt: new Date()
     };
 
     console.log("Saving report for user:", clerkId);
     try {
-      // Cleanup any duplicate reports for this user
-      await Report.deleteMany({ clerkId }); 
-      
       const savedReport = await Report.findOneAndUpdate(
         { clerkId },
         reportData,
@@ -204,6 +209,7 @@ router.post('/generate-report', async (req, res) => {
 router.post('/medicine-insight', async (req, res) => {
   try {
     const { clerkId, medicineName } = req.body;
+    const outputLanguage = req.resolvedLanguage || 'en';
     if (!medicineName) {
       return res.status(400).json({ status: 'error', message: 'medicineName is required' });
     }
@@ -236,6 +242,7 @@ router.post('/medicine-insight', async (req, res) => {
     }
 
     const prompt = `You are VaidyaSetu AI, a comprehensive health assistant specializing in Indian healthcare systems (Allopathy, Ayurveda, Homeopathy).
+IMPORTANT LANGUAGE RULE: Respond only in ${outputLanguage}.
 
 Analyze this medicine: "${medicineName}"
 ${userContext}
@@ -300,6 +307,7 @@ Prioritize Indian foods, Ayurvedic herbs, and locally available alternatives. Be
 router.post('/mitigation-plan', async (req, res) => {
   try {
     const { clerkId, riskScores } = req.body;
+    const outputLanguage = req.resolvedLanguage || 'en';
     if (!clerkId) {
       return res.status(400).json({ status: 'error', message: 'clerkId is required' });
     }
@@ -317,7 +325,7 @@ router.post('/mitigation-plan', async (req, res) => {
 
     const mitigationByDisease = {};
     for (const [diseaseId, score] of elevatedDiseases) {
-      mitigationByDisease[diseaseId] = await aiService.generateMitigationSteps(profile, diseaseId, Number(score));
+      mitigationByDisease[diseaseId] = await aiService.generateMitigationSteps(profile, diseaseId, Number(score), outputLanguage);
     }
 
     res.json({

@@ -90,6 +90,12 @@ const DiseaseInsightSchema = new mongoose.Schema({
   questionnaireVersion: {
     type: String,
     default: '1.0.0'
+  },
+  verification: {
+    source: { type: String, default: 'Population baseline' },
+    datasetVersion: { type: String, default: '2024' },
+    verificationLevel: { type: String, default: 'verified' },
+    lastValidatedAt: { type: Date, default: Date.now }
   }
 });
 

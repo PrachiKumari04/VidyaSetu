@@ -45,7 +45,8 @@ router.post('/check', async (req, res) => {
 router.post('/explain-interaction', async (req, res) => {
   try {
     const { drug1, drug2 } = req.body;
-    const prompt = `Explain to a patient in simple, compassionate terms why taking ${drug1} and ${drug2} together might be dangerous. Keep it strictly under 80 words.`;
+    const outputLanguage = req.resolvedLanguage || 'en';
+    const prompt = `Explain to a patient in simple, compassionate terms why taking ${drug1} and ${drug2} together might be dangerous. Keep it strictly under 80 words. Reply only in ${outputLanguage}.`;
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'system', content: "You are VaidyaSetu AI, a health safety assistant." }, { role: 'user', content: prompt }],
       model: 'llama-3.3-70b-versatile',

@@ -7,7 +7,7 @@ const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_
  * PROBLEM 1: Step 1.6 - Generate mitigation steps using LLM or robust fallback.
  * Incorporates allergies, medications, and user profile context.
  */
-async function generateMitigationSteps(profile, diseaseId, riskScore) {
+async function generateMitigationSteps(profile, diseaseId, riskScore, language = 'en') {
   const age = parseInt(profile.age?.value || profile.age) || 30;
   const bmi = parseFloat(profile.bmi?.value || profile.bmi) || 22;
   const gender = profile.gender?.value || 'Other';
@@ -41,6 +41,7 @@ async function generateMitigationSteps(profile, diseaseId, riskScore) {
         - Current Medications: ${medNames.join(', ') || 'None reported'}
 
         REQUIREMENTS:
+        - Return all content in ${language}.
         - Avoid foods or substances that trigger reported allergies.
         - Ensure recommendations do not conflict with current medications.
         - Provide title, description, and priority (high/medium/low).

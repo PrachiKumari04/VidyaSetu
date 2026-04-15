@@ -7,11 +7,13 @@ import {
   ChevronRight, Heart, Wind, Coffee, Moon, Flame, X
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 const HealthProfile = () => {
   const { user } = useUser();
+  const { t } = useTranslation();
   const location = useLocation();
   const [profile, setProfile] = useState(null);
   const [dataQuality, setDataQuality] = useState(null);
@@ -35,12 +37,12 @@ const HealthProfile = () => {
             setProfile(res.data.data);
             setDataQuality(res.data.dataQuality || null);
           } else {
-            setError("Failed to load profile data.");
+            setError(t('profile.errors.failed_load'));
           }
         })
         .catch(err => {
           console.error('Error fetching profile:', err);
-          setError("Connection error to server.");
+          setError(t('profile.errors.connection'));
         })
         .finally(() => setLoading(false));
     }
@@ -56,32 +58,32 @@ const HealthProfile = () => {
     <div className="text-center py-12">
       <h2 className="text-2xl font-bold text-white mb-4">{error}</h2>
       <button onClick={() => window.location.reload()} className="bg-emerald-600 px-6 py-2 rounded-lg text-white font-medium hover:bg-emerald-500 transition-colors">
-        Retry
+        {t('profile.errors.retry')}
       </button>
     </div>
   );
 
   if (!profile) return (
     <div className="text-center py-12">
-      <h2 className="text-2xl font-bold text-white mb-4">No Profile Found</h2>
+      <h2 className="text-2xl font-bold text-white mb-4">{t('profile.errors.no_profile')}</h2>
       <Link to="/onboarding" className="bg-emerald-600 px-6 py-2 rounded-lg text-white font-medium hover:bg-emerald-500 transition-colors">
-        Complete Onboarding
+        {t('profile.errors.onboarding')}
       </Link>
     </div>
   );
 
   const getRelativeTime = (date) => {
-    if (!date) return 'Never';
+    if (!date) return t('profile.values.never');
     try {
       const d = new Date(date);
-      if (isNaN(d.getTime())) return 'Never';
+      if (isNaN(d.getTime())) return t('profile.values.never');
       const diff = new Date() - d;
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      if (days === 0) return 'Today';
-      if (days === 1) return 'Yesterday';
-      return `${days} days ago`;
+      if (days === 0) return t('profile.values.today');
+      if (days === 1) return t('profile.values.yesterday');
+      return t('profile.values.days_ago', { val: days });
     } catch (e) {
-      return 'Never';
+      return t('profile.values.never');
     }
   };
 
@@ -130,24 +132,21 @@ const HealthProfile = () => {
       )}
 
       {/* Header Profile Info */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10 bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl p-6 lg:p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/10 shadow-[0_10px_40px_rgba(35,60,111,0.06)] dark:shadow-none transition-all duration-500 hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] hover:border-blue-100 dark:hover:border-emerald-500/30 hover:-translate-y-1 group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none group-hover:scale-[1.2] transition-transform duration-700" />
-        <div className="relative">
-          <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase mb-2 drop-shadow-sm">
-            My Health Profile <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-400">: {profile?.name?.value || user?.fullName || 'User'}</span>
-          </h1>
-          <p className="text-slate-700 dark:text-gray-300 font-medium max-w-xl text-lg opacity-90">
-            A comprehensive, real-time overview of your foundational health metrics and physiological parameters.
-          </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-1.5 bg-emerald-500 rounded-full" />
+             <span className="text-[10px] font-black uppercase text-emerald-500 tracking-[0.4em] mb-2">{t('profile.title')}</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-[0.9] uppercase italic">{t('profile.edit_profile')}</h1>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Link to="/history" className="flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-gray-200 text-sm font-medium transition-all group">
-            <History size={16} className="mr-2 group-hover:-rotate-45 transition-transform" />
-            View History
-          </Link>
-          <Link to="/profile/edit" className="flex items-center px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/20 transition-all active:scale-95 group">
-             <Edit3 size={16} className="mr-2 group-hover:scale-110 transition-transform" /> Update Matrix
-          </Link>
+        <div className="flex gap-4">
+           <button onClick={() => window.print()} className="px-8 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 rounded-[1.5rem] font-bold shadow-xl hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-2 uppercase tracking-widest text-[10px]">
+              <Download className="w-4 h-4" /> {t('profile.export_profile')}
+           </button>
+           <Link to="/profile/edit" className="px-8 py-4 bg-emerald-600 text-white rounded-[1.5rem] font-bold shadow-2xl shadow-emerald-500/20 hover:bg-emerald-500 transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-2 uppercase tracking-widest text-[10px]">
+              <Edit3 className="w-4 h-4" /> {t('profile.edit_profile')}
+           </Link>
         </div>
       </div>
 
@@ -157,12 +156,13 @@ const HealthProfile = () => {
           <div className="absolute top-[-50%] right-[-10%] w-96 h-96 bg-blue-500/5 dark:bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-blue-500/10 dark:group-hover:bg-emerald-500/20 transition-colors duration-700 pointer-events-none group-hover:scale-[1.2]"></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
             <div className="relative w-28 h-28 shrink-0">
-               <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                 <circle cx="56" cy="56" r="48" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-200 dark:text-gray-800" />
-                 <circle cx="56" cy="56" r="48" stroke="currentColor" strokeWidth="10" fill="transparent" 
-                   strokeDasharray={2 * Math.PI * 48}
-                   strokeDashoffset={2 * Math.PI * 48 * (1 - (dataQuality?.score || 0) / 100)}
+               <svg viewBox="0 0 112 112" className="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                 <circle cx="56" cy="56" r="46" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-200 dark:text-gray-800" />
+                 <circle cx="56" cy="56" r="46" stroke="currentColor" strokeWidth="10" fill="transparent" 
+                   strokeDasharray={289}
+                   strokeDashoffset={289 * (1 - (dataQuality?.score || 0) / 100)}
                    className="text-emerald-500 transition-all duration-1000 ease-out" 
+                   strokeLinecap="round"
                  />
                </svg>
                <div className="absolute inset-0 flex items-center justify-center font-black text-2xl text-gray-900 dark:text-white drop-shadow-sm">
@@ -170,17 +170,17 @@ const HealthProfile = () => {
                </div>
             </div>
             <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
+               <div className="flex items-center space-x-2 mb-2">
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${
                   dataQuality?.label === 'Excellent' ? 'bg-emerald-500/20 text-emerald-400' : 
                   dataQuality?.label === 'Good' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'
                 }`}>
-                  {dataQuality?.label || 'Basic'} Profile
+                  {t(`profile.quality_${dataQuality?.label?.toLowerCase() || 'basic'}`)} {t('profile.profile_label')}
                 </span>
               </div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Data Quality Score</h2>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">{t('profile.data_quality')}</h2>
               <p className="text-slate-700 dark:text-gray-300 text-sm md:text-base max-w-2xl leading-relaxed font-semibold">
-                {dataQuality?.message || 'Update your profile to improve insights.'}
+                {dataQuality?.message || t('profile.action.update_stats')}
               </p>
             </div>
           </div>
@@ -188,9 +188,13 @@ const HealthProfile = () => {
       )}
 
       {/* Profile Sections Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Biometrics */}
-        <SummarySection icon={Scale} title="Basic Biometrics" lastUpdated={profile.weight?.lastUpdated}>
+        <SummarySection 
+            icon={User} 
+            title={t('profile.identity')}
+            lastUpdated={profile?.updatedAt}
+          >
           {profile.name?.value && <DataItem label="Name" value={profile.name.value} />}
           <DataItem label="Age" value={profile.age?.value} unit="years" />
           <DataItem label="Gender" value={profile.gender?.value} />
@@ -198,7 +202,7 @@ const HealthProfile = () => {
           <DataItem label="Weight" value={profile.weight?.value} unit="kg" />
           <div className="pt-2 border-t border-gray-700/50 mt-2">
              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-300 text-sm">Calculated BMI</span>
+                <span className="text-gray-600 dark:text-gray-300 text-sm">{t('profile.labels.bmi')}</span>
                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                   profile.bmi?.value && profile.bmi.value > 0 
                     ? 'bg-emerald-500/10 text-emerald-400' 
@@ -211,70 +215,84 @@ const HealthProfile = () => {
         </SummarySection>
 
         {/* Lifestyle */}
-        <SummarySection icon={Activity} title="Lifestyle & Habits" lastUpdated={profile.activityLevel?.lastUpdated}>
-          <DataItem label="Activity Level" value={profile.activityLevel?.value} />
-          <DataItem label="Sleep Quality" value={profile.sleepHours?.value} unit="hours" />
-          <DataItem label="Stress Level" value={profile.stressLevel?.value} />
-          <DataItem label="Smoking" value={profile.isSmoker?.value ? 'Active' : 'Non-smoker'} />
-          <DataItem label="Alcohol" value={profile.alcoholConsumption?.value} />
+        <SummarySection 
+            icon={Activity} 
+            title={t('profile.vitals_summary')}
+            lastUpdated={profile?.vitals?.updatedAt}
+          >
+           <DataItem label={t('profile.labels.activity')} value={profile.activityLevel?.value} />
+           <DataItem label={t('profile.labels.sleep_quality')} value={profile.sleepHours?.value} unit={t('profile.values.hours')} />
+           <DataItem label={t('profile.labels.stress')} value={profile.stressLevel?.value} />
+           <DataItem label={t('profile.labels.smoking')} value={profile.isSmoker?.value ? t('profile.values.active') : t('profile.values.non_smoker')} />
+           <DataItem label={t('profile.labels.alcohol')} value={profile.alcoholConsumption?.value} />
         </SummarySection>
 
         {/* Diet */}
-        <SummarySection icon={Utensils} title="Diet & Nutrition" lastUpdated={profile.dietType?.lastUpdated}>
-          <DataItem label="Diet Type" value={profile.dietType?.value} />
-          <DataItem label="Sugar Intake" value={profile.sugarIntake?.value} />
-          <DataItem label="Salt Intake" value={profile.saltIntake?.value} />
-          <DataItem label="Junk Food" value={profile.junkFoodFrequency?.value} />
-          <div className="flex gap-2 mt-2">
-             {profile.eatsLeafyGreens?.value && <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded">Leafy Greens</span>}
-             {profile.eatsFruits?.value && <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded">Daily Fruits</span>}
-          </div>
-        </SummarySection>
+         <SummarySection icon={Utensils} title={t('profile.diet_nutrition')} lastUpdated={profile.dietType?.lastUpdated}>
+           <DataItem label={t('profile.labels.diet_type')} value={profile.dietType?.value} />
+           <DataItem label={t('profile.labels.sugar')} value={profile.sugarIntake?.value} />
+           <DataItem label={t('profile.labels.salt')} value={profile.saltIntake?.value} />
+           <DataItem label={t('profile.labels.junk_food')} value={profile.junkFoodFrequency?.value} />
+           <div className="flex gap-2 mt-2">
+              {profile.eatsLeafyGreens?.value && <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded">{t('profile.values.leafy_greens')}</span>}
+              {profile.eatsFruits?.value && <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded">{t('profile.values.daily_fruits')}</span>}
+           </div>
+         </SummarySection>
 
         {/* Allergies & Current Conditions */}
-        <SummarySection icon={AlertTriangle} title="Allergies & Medical" lastUpdated={profile.allergies?.lastUpdated}>
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-2 font-bold">Allergies</p>
-              <div className="flex flex-wrap gap-2">
-                {profile.allergies?.value?.length > 0 ? profile.allergies.value.map(a => (
-                  <span key={a} className="bg-red-500/10 text-red-400 text-xs px-2 py-1 rounded-lg border border-red-500/20">{a}</span>
-                )) : <span className="text-gray-700 dark:text-gray-300 text-sm italic">None declared</span>}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-2 font-bold">Conditions</p>
-              <div className="flex flex-wrap gap-2">
-                {profile.medicalHistory?.value?.length > 0 ? profile.medicalHistory.value.map(c => (
-                  <span key={c} className="bg-blue-500/10 text-blue-400 text-xs px-2 py-1 rounded-lg border border-blue-500/20">{c}</span>
-                )) : <span className="text-gray-700 dark:text-gray-300 text-sm italic">No history provided</span>}
-              </div>
-            </div>
-            {profile.otherConditions?.value && (
-              <div className="pt-2 border-t border-gray-700/50">
-                <p className="text-xs text-slate-600 dark:text-gray-300 uppercase tracking-widest mb-2 font-bold">Contextual Observations</p>
-                <p className="text-sm text-slate-700 dark:text-gray-300 font-medium italic">"{profile.otherConditions.value}"</p>
-              </div>
-            )}
-          </div>
-        </SummarySection>
+         <SummarySection icon={AlertTriangle} title={t('profile.allergies_medical')} lastUpdated={profile.allergies?.lastUpdated}>
+           <div className="space-y-4">
+             <div>
+               <p className="text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-2 font-bold">{t('profile.labels.allergies')}</p>
+               <div className="flex flex-wrap gap-2">
+                 {profile.allergies?.value?.length > 0 ? profile.allergies.value.map(a => (
+                   <span key={a} className="bg-red-500/10 text-red-400 text-xs px-2 py-1 rounded-lg border border-red-500/20">{a}</span>
+                 )) : <span className="text-gray-700 dark:text-gray-300 text-sm italic">{t('profile.values.none')}</span>}
+               </div>
+             </div>
+             <div>
+               <p className="text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-2 font-bold">{t('profile.labels.conditions')}</p>
+               <div className="flex flex-wrap gap-2">
+                 {profile.medicalHistory?.value?.length > 0 ? profile.medicalHistory.value.map(c => (
+                   <span key={c} className="bg-blue-500/10 text-blue-400 text-xs px-2 py-1 rounded-lg border border-blue-500/20">{c}</span>
+                 )) : <span className="text-gray-700 dark:text-gray-300 text-sm italic">{t('profile.values.no_history')}</span>}
+               </div>
+             </div>
+           </div>
+         </SummarySection>
 
         {/* Action Card */}
         <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-[2rem] p-8 flex flex-col justify-between text-white relative overflow-hidden group shadow-2xl shadow-emerald-900/20">
            <div className="absolute top-[-20%] right-[-10%] opacity-20 transform group-hover:scale-125 transition-transform duration-700">
               <CheckCircle2 size={240} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,1)]" />
            </div>
-           <div className="relative z-10 mb-8">
-             <h3 className="text-2xl font-black mb-3">Need a check-up?</h3>
-             <p className="text-emerald-50 text-base opacity-90 w-3/4 leading-relaxed font-medium">
-               Your latest AI report was generated {getRelativeTime(profile.createdAt)}. Update your stats for fresh tips.
-             </p>
-           </div>
-           <Link to="/" className="relative z-10 w-full bg-white/90 backdrop-blur-md text-emerald-700 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-white transition-colors shadow-lg active:scale-[0.98]">
-             Go to Dashboard <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
-           </Link>
+            <div className="relative z-10 mb-8">
+              <h3 className="text-2xl font-black mb-3">{t('profile.action.checkup')}</h3>
+              <p className="text-emerald-50 text-base opacity-90 w-3/4 leading-relaxed font-medium">
+                {t('profile.action.report_generated')} {getRelativeTime(profile.createdAt)}. {t('profile.action.update_stats')}
+              </p>
+            </div>
+            <Link to="/" className="relative z-10 w-full bg-white/90 backdrop-blur-md text-emerald-700 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-white transition-colors shadow-lg active:scale-[0.98]">
+              {t('profile.action.go_dashboard')} <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </Link>
         </div>
       </div>
+
+      {/* Dedicated Contextual Observations Section - Center Aligned */}
+      {profile.otherConditions?.value && (
+        <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-8 lg:p-12 text-center animate-in zoom-in duration-500 shadow-xl group hover:border-emerald-500/30 transition-all">
+           <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl w-fit mx-auto mb-6 group-hover:scale-110 transition-transform">
+              <History size={24} />
+           </div>
+           <h3 className="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-[0.3em] font-black mb-4">{t('profile.labels.obs_title')}</h3>
+          <p className="text-xl md:text-2xl text-slate-900 dark:text-white font-black italic max-w-4xl mx-auto leading-relaxed">
+            "{profile.otherConditions.value}"
+          </p>
+          <div className="mt-8 flex justify-center">
+             <div className="h-1 w-12 bg-emerald-500/30 rounded-full" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

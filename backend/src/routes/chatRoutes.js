@@ -13,6 +13,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 router.post('/symptom', async (req, res) => {
   try {
     const { clerkId, message, conversationHistory } = req.body;
+    const outputLanguage = req.resolvedLanguage || 'en';
     
     let profileContext = "";
     if (clerkId) {
@@ -79,6 +80,7 @@ router.post('/symptom', async (req, res) => {
     }
 
     const systemPrompt = `You are VaidyaSetu's AI Health Assistant, a professional, empathetic, and knowledgeable healthcare bot specializing in Indian health contexts.
+IMPORTANT LANGUAGE RULE: Reply only in ${outputLanguage}.
 
 You have access to the user's COMPLETE health profile below. Use it to provide highly personalized, specific, and actionable health advice.
 
@@ -128,12 +130,15 @@ IMPORTANT GUIDELINES:
     });
   } catch (error) {
     console.error('[Chat] Error:', error.message);
+    const outputLanguage = req.resolvedLanguage || 'en';
     
     // If Groq is completely unavailable, return a friendly message
     if (error.status === 429 || error.message?.includes('rate_limit')) {
       return res.json({
         status: 'success',
-        reply: "I'm currently experiencing high demand and my AI services are temporarily unavailable. Please try again in a few minutes. Your health data is safe and I'll be ready to help you shortly! 🙏"
+        reply: outputLanguage === 'en'
+          ? "I'm currently experiencing high demand and my AI services are temporarily unavailable. Please try again in a few minutes. Your health data is safe and I'll be ready to help you shortly! 🙏"
+          : `AI सेवा अभी व्यस्त है। कृपया कुछ मिनट बाद फिर प्रयास करें। आपकी health data सुरक्षित है और मैं जल्द आपकी मदद के लिए तैयार रहूंगा।`
       });
     }
     

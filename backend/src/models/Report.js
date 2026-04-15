@@ -27,6 +27,11 @@ const reportSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
+  // Per-disease provenance/verification metadata aligned with risk_scores keys
+  risk_score_meta: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   // Category-level insights (e.g., { "metabolic": "...", "cardio": "..." })
   category_insights: {
     type: mongoose.Schema.Types.Mixed,

@@ -5,8 +5,10 @@ import {
   Info, ChevronDown, ChevronUp, ChevronRight, Activity, Coffee, Star, Leaf,
   CheckCircle, ArrowRight, Heart
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfile, loading, onOpenQuestionnaire }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('calculation'); // 'calculation' or 'mitigation'
   const [expandedStep, setExpandedStep] = useState(null);
 
@@ -84,17 +86,17 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200]"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-4 md:inset-6 lg:inset-8 bg-white dark:bg-gray-950 rounded-3xl shadow-2xl z-50 flex items-center justify-center"
+              className="fixed inset-4 md:inset-6 lg:inset-8 bg-white dark:bg-gray-950 rounded-3xl shadow-2xl z-[210] flex items-center justify-center"
             >
               <div className="text-center">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400 font-bold">Loading risk analysis...</p>
+                <p className="text-gray-600 dark:text-gray-400 font-bold">{t('risk.loading_analysis', { defaultValue: 'Loading risk analysis...' })}</p>
               </div>
             </motion.div>
           </>
@@ -114,25 +116,25 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200]"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-4 md:inset-6 lg:inset-8 bg-white dark:bg-gray-950 rounded-3xl shadow-2xl z-50 flex items-center justify-center"
+              className="fixed inset-4 md:inset-6 lg:inset-8 bg-white dark:bg-gray-950 rounded-3xl shadow-2xl z-[210] flex items-center justify-center"
             >
               <div className="text-center p-8">
                 <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
-                <p className="text-gray-900 dark:text-white font-black text-lg mb-2">No Data Available</p>
+                <p className="text-gray-900 dark:text-white font-black text-lg mb-2">{t('risk.no_data', { defaultValue: 'No Data Available' })}</p>
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                  Risk analysis data could not be loaded for {diseaseId?.replace('_', ' ')}
+                  {t('risk.no_data_desc', { defaultValue: 'Risk analysis data could not be loaded for' })} {diseaseId?.replace('_', ' ')}
                 </p>
                 <button
                   onClick={onClose}
                   className="px-6 py-2 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 transition-colors"
                 >
-                  Close
+                  {t('common.close', { defaultValue: 'Close' })}
                 </button>
               </div>
             </motion.div>
@@ -152,7 +154,7 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200]"
           />
 
           {/* Modal */}
@@ -160,7 +162,7 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-4 md:inset-6 lg:inset-8 bg-white dark:bg-gray-950 rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col"
+            className="fixed inset-4 md:inset-6 lg:inset-8 bg-white dark:bg-gray-950 rounded-3xl shadow-2xl z-[210] overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-emerald-500/5 to-blue-500/5">
@@ -176,7 +178,7 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
                 </div>
                 <div>
                   <h2 className="text-2xl font-black text-gray-900 dark:text-white capitalize">
-                    {diseaseId?.replace('_', ' ')} Risk Analysis
+                    {diseaseId?.replace('_', ' ')} {t('risk.analysis', { defaultValue: 'Risk Analysis' })}
                   </h2>
                   <div className="flex items-center gap-2 mt-1">
                     <span 
@@ -189,6 +191,11 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
                       • {getRiskLabel(score)} Risk - {getRiskGuidance(score)}
                     </span>
                   </div>
+                  {details?.verification?.source && (
+                    <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mt-1">
+                      Verified: {details.verification.source}
+                    </p>
+                  )}
                 </div>
               </div>
               <button
@@ -205,18 +212,18 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
                 <div className="flex-1">
                   <h4 className="font-black text-blue-900 dark:text-blue-400 flex items-center mb-1">
                     <Lightbulb className="w-4 h-4 mr-2" />
-                    Get More Accurate Risk Score
+                    {t('risk.get_accurate_score', { defaultValue: 'Get More Accurate Risk Score' })}
                   </h4>
                   <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Answer {details?.questionnaireLength || 6-8} targeted questions about {diseaseId?.replace('_', ' ')}. 
-                    We'll also consider your allergies, medications, and medical history.
+                    {t('risk.questionnaire_cta', { defaultValue: 'Answer' })} {details?.questionnaireLength || '6-8'} {t('risk.questionnaire_cta_tail', { defaultValue: 'targeted questions about' })} {diseaseId?.replace('_', ' ')}. 
+                    {t('risk.questionnaire_cta_note', { defaultValue: "We'll also consider your allergies, medications, and medical history." })}
                   </p>
                 </div>
                 <button
                   onClick={onOpenQuestionnaire}
                   className="ml-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-lg transition-colors whitespace-nowrap"
                 >
-                  Take Assessment
+                  {t('risk.take_assessment', { defaultValue: 'Take Assessment' })}
                   <ChevronRight className="w-3 h-3 inline ml-1" />
                 </button>
               </div>
@@ -233,7 +240,7 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
                 }`}
               >
                 <TrendingUp className="w-4 h-4 inline mr-2" />
-                Calculation Breakdown
+                {t('risk.calculation_breakdown', { defaultValue: 'Calculation Breakdown' })}
               </button>
               <button
                 onClick={() => setActiveTab('mitigation')}
@@ -244,7 +251,7 @@ const RiskDetailModal = ({ isOpen, onClose, diseaseId, score, details, userProfi
                 }`}
               >
                 <Lightbulb className="w-4 h-4 inline mr-2" />
-                Recovery Strategy
+                {t('risk.recovery_strategy', { defaultValue: 'Recovery Strategy' })}
               </button>
             </div>
 

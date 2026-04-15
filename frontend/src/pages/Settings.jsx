@@ -15,36 +15,55 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { generateArchivePDF } from '../utils/pdfGenerator';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
+const LANGUAGE_MAP = {
+  'English': 'en',
+  'Hindi': 'hi',
+  'Marathi': 'mr',
+  'Tamil': 'ta',
+  'Telugu': 'te',
+  'Bengali': 'bn',
+  'Gujarati': 'gu',
+  'Kannada': 'kn',
+  'Malayalam': 'ml',
+  'Odia': 'or',
+  'Punjabi': 'pa',
+  'Assamese': 'as',
+  'Urdu': 'ur'
+};
+const getLanguageCode = (languageLabelOrCode) => LANGUAGE_MAP[languageLabelOrCode] || languageLabelOrCode || 'en';
+
 const SettingsNav = ({ active, onSelect }) => {
+  const { t } = useTranslation();
   const categories = [
-    { id: 'identity', label: 'Identity & Bio', icon: User, sub: 'Profile metadata' },
-    { id: 'sync', label: 'Sync Intelligence', icon: Zap, sub: 'Connected platforms' },
-    { id: 'security', label: 'Security & Alerts', icon: Bell, sub: 'Thresholds & defaults' },
-    { id: 'preferences', label: 'Global Prefs', icon: Globe, sub: 'Language & units' },
-    { id: 'governance', label: 'Data Sovereignty', icon: Database, sub: 'Export, Privacy & Purge' },
-    { id: 'display', label: 'Display & UX', icon: Monitor, sub: 'Accessibility & themes' },
-    { id: 'support', label: 'Support & Legal', icon: HelpCircle, sub: 'FAQ, feedback & terms' }
+    { id: 'identity', label: t('settings.categories.identity'), icon: User, sub: t('settings.categories.identity_sub') },
+    { id: 'sync', label: t('settings.categories.sync'), icon: Zap, sub: t('settings.categories.sync_sub') },
+    { id: 'security', label: t('settings.categories.security'), icon: Bell, sub: t('settings.categories.security_sub') },
+    { id: 'preferences', label: t('settings.categories.preferences'), icon: Globe, sub: t('settings.categories.preferences_sub') },
+    { id: 'governance', label: t('settings.categories.governance'), icon: Database, sub: t('settings.categories.governance_sub') },
+    { id: 'display', label: t('settings.categories.display'), icon: Monitor, sub: t('settings.categories.display_sub') },
+    { id: 'support', label: t('settings.categories.support'), icon: HelpCircle, sub: t('settings.categories.support_sub') }
   ];
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {categories.map((cat) => (
         <button
           key={cat.id}
           onClick={() => onSelect(cat.id)}
-          className={`group flex items-center p-4 rounded-[1.5rem] transition-all ${active === cat.id ? 'bg-emerald-600 text-white shadow-xl translate-x-1' : 'bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-300 hover:text-emerald-500 hover:bg-emerald-500/5'}`}
+          className={`group flex items-center p-5 rounded-[2rem] transition-all duration-500 border ${active === cat.id ? 'bg-emerald-600 text-white shadow-2xl shadow-emerald-500/20 translate-x-1 border-emerald-500/50' : 'bg-white/40 dark:bg-white/5 backdrop-blur-xl text-gray-600 dark:text-gray-300 border-slate-100 dark:border-white/5 hover:border-emerald-500/30'}`}
         >
-          <div className={`p-2.5 rounded-xl mr-4 ${active === cat.id ? 'bg-white/20' : 'bg-gray-50 dark:bg-gray-900 group-hover:bg-emerald-500/10 transition-colors'}`}>
-             <cat.icon className="w-5 h-5" />
+          <div className={`p-3 rounded-2xl mr-4 transition-all duration-500 ${active === cat.id ? 'bg-white/20' : 'bg-gray-50 dark:bg-white/5 group-hover:bg-emerald-500/10 group-hover:text-emerald-500 shadow-sm'}`}>
+             <cat.icon className="w-5 h-5 transition-transform group-hover:scale-110" />
           </div>
           <div className="text-left">
-            <div className="text-xs font-black uppercase tracking-widest">{cat.label}</div>
-            <div className={`text-[9px] font-bold uppercase opacity-60 ${active === cat.id ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{cat.sub}</div>
+            <div className={`text-xs font-black uppercase tracking-[0.2em] mb-1 ${active === cat.id ? 'text-white' : 'text-slate-900 dark:text-gray-100'}`}>{cat.label}</div>
+            <div className={`text-[10px] font-bold uppercase opacity-60 tracking-wider ${active === cat.id ? 'text-white' : 'text-slate-500 dark:text-gray-400'}`}>{cat.sub}</div>
           </div>
-          <ChevronRight className={`ml-auto w-4 h-4 transition-transform ${active === cat.id ? 'rotate-90' : 'opacity-0 group-hover:opacity-100'}`} />
+          <ChevronRight className={`ml-auto w-4 h-4 transition-all duration-500 ${active === cat.id ? 'rotate-90 scale-125' : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-1'}`} />
         </button>
       ))}
     </div>
@@ -59,6 +78,7 @@ const Settings = () => {
     highContrast, toggleContrast, 
     reducedMotion, toggleMotion 
   } = useTheme();
+  const { i18n, t } = useTranslation();
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -130,7 +150,9 @@ const Settings = () => {
          refillAlertAt: profile.settings?.refillAlertThreshold || 7
       }));
       setGlobalPrefs({
-         language: profile.settings?.language || 'English',
+         language: Object.keys(LANGUAGE_MAP).includes(profile.settings?.language)
+           ? profile.settings.language
+           : (Object.entries(LANGUAGE_MAP).find(([, code]) => code === profile.settings?.language)?.[0] || 'English'),
          measurementUnits: profile.settings?.measurementUnits || 'metric',
          glucoseUnits: profile.settings?.glucoseUnits || 'mg/dL'
       });
@@ -143,6 +165,17 @@ const Settings = () => {
        }));
     }
   }, [profile, pref, user]);
+
+  useEffect(() => {
+    const preferredLang = profile?.settings?.language;
+    if (!preferredLang) return;
+
+    const isoCode = LANGUAGE_MAP[preferredLang] || preferredLang;
+    if (isoCode && i18n.language !== isoCode) {
+      i18n.changeLanguage(isoCode);
+      localStorage.setItem('i18nextLng', isoCode);
+    }
+  }, [profile?.settings?.language, i18n]);
 
   // Handle Google OAuth callback
   useEffect(() => {
@@ -221,13 +254,21 @@ const Settings = () => {
       await axios.patch(`${API_URL}/profile/settings/${user.id}`, {
          settings: {
             ...profile?.settings,
-            language: globalPrefs.language,
+            language: getLanguageCode(globalPrefs.language),
             measurementUnits: globalPrefs.measurementUnits,
             glucoseUnits: globalPrefs.glucoseUnits
          }
       });
+      
+      // Update i18n active language immediately
+      const isoCode = LANGUAGE_MAP[globalPrefs.language];
+      if (isoCode) {
+        i18n.changeLanguage(isoCode);
+        localStorage.setItem('i18nextLng', isoCode);
+      }
+      
       fetchData();
-      alert("Global Preferences saved successfully!");
+      alert(t('settings.global_prefs.save'));
     } catch(err) {
       console.error(err);
       alert("Failed to save global preferences");
@@ -382,6 +423,15 @@ const Settings = () => {
      }
   };
 
+  const handleLanguageSelect = (lang) => {
+    setGlobalPrefs({ ...globalPrefs, language: lang });
+    const isoCode = LANGUAGE_MAP[lang];
+    if (isoCode) {
+      i18n.changeLanguage(isoCode);
+      localStorage.setItem('i18nextLng', isoCode);
+    }
+  };
+
   if (loading) return <div className="p-12 animate-pulse flex gap-10">
     <div className="w-64 space-y-4">
        {[1,2,3,4,5].map(i => <div key={i} className="h-20 bg-gray-100 dark:bg-gray-900 rounded-3xl" />)}
@@ -397,10 +447,10 @@ const Settings = () => {
         <div>
            <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-1 bg-emerald-500 rounded-full" />
-              <span className="text-[10px] font-black uppercase text-emerald-500 tracking-[0.4em]">Configuration Center</span>
+              <span className="text-[10px] font-black uppercase text-emerald-500 tracking-[0.4em]">{t('settings.configuration')}</span>
            </div>
-           <h1 className="text-4xl lg:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase italic underline decoration-emerald-500/20 underline-offset-8">User Control hub</h1>
-           <p className="text-gray-600 dark:text-gray-300 mt-4 font-bold uppercase tracking-widest text-[9px]">Build v1.2.0-Alpha • Core Engine Status: Online</p>
+           <h1 className="text-4xl lg:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase italic underline decoration-emerald-500/20 underline-offset-8">{t('settings.title')}</h1>
+           <p className="text-gray-600 dark:text-gray-300 mt-4 font-bold uppercase tracking-widest text-[9px]">{t('settings.status_alpha')}</p>
         </div>
       </div>
 
@@ -412,27 +462,28 @@ const Settings = () => {
 
         {/* Content Panel */}
         <div className="flex-1 min-w-0">
-          <div className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-[3.5rem] p-10 lg:p-14 shadow-2xl relative overflow-hidden min-h-[700px]">
+          <div className="bg-white/40 dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/5 rounded-[3.5rem] p-10 lg:p-14 shadow-2xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden min-h-[700px] group transition-all duration-500 hover:shadow-[0_40px_80px_rgba(35,60,111,0.08)]">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 dark:bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none transition-transform duration-1000 group-hover:scale-125" />
             
-            {/* Identity & Bio (Step 67, 69) */}
+            {/* Identity & Bio */}
             {activeCategory === 'identity' && (
               <div className="space-y-12 animate-in slide-in-from-right-8 duration-500">
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Identity Core</h2>
-                  <p className="text-gray-600 dark:text-gray-300 font-medium">Demographic metadata and verification status.</p>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{t('settings.identity.title')}</h2>
+                  <p className="text-gray-600 dark:text-gray-300 font-medium">{t('settings.identity.subtitle')}</p>
                 </div>
 
                 <div className="flex items-center gap-6 p-6 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-white/5">
                    <div className="relative group">
                       <img src={user.imageUrl} alt="Profile" className="w-20 h-20 rounded-2xl object-cover shadow-lg" />
                       <button className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition-opacity flex flex-col gap-1">
-                         <ImageIcon className="w-5 h-5" /><span className="text-[8px] uppercase tracking-widest font-black">Upload</span>
+                         <ImageIcon className="w-5 h-5" /><span className="text-[8px] uppercase tracking-widest font-black">{t('settings.identity.upload')}</span>
                       </button>
                    </div>
                    <div>
                       <h4 className="text-lg font-black text-gray-900 dark:text-white">{user.fullName || 'User'}</h4>
                       <p className="text-xs text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest flex items-center gap-2 mt-1">
-                         <Mail className="w-3 h-3" /> {user.primaryEmailAddress?.emailAddress} <span className="text-emerald-500">(Verified)</span>
+                         <Mail className="w-3 h-3" /> {user.primaryEmailAddress?.emailAddress} <span className="text-emerald-500">{t('settings.identity.verified')}</span>
                       </p>
                    </div>
                 </div>
@@ -440,26 +491,28 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                    <div className="space-y-6">
                       <div>
-                        <label className="block text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 mb-2 tracking-widest px-1">Legal Full Name</label>
+                        <label className="block text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 mb-2 tracking-widest px-1">{t('settings.identity.name')}</label>
                         <input type="text" value={profileFormData.name} onChange={e => setProfileFormData({...profileFormData, name: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-2xl p-5 text-sm font-bold outline-none focus:border-emerald-500/30 transition-all" />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 mb-2 tracking-widest px-1">Phone Number</label>
+                        <label className="block text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 mb-2 tracking-widest px-1">{t('settings.identity.phone')}</label>
                         <div className="flex gap-2">
                            <input type="text" placeholder="+91" value={profileFormData.phone} onChange={e => setProfileFormData({...profileFormData, phone: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-2xl p-5 text-sm font-bold outline-none focus:border-emerald-500/30" />
-                           <button onClick={handleVerifyPhone} className="px-6 bg-emerald-500/10 text-emerald-600 font-black text-[10px] uppercase tracking-widest rounded-2xl hidden md:block">Verify</button>
+                           <button onClick={handleVerifyPhone} className="px-6 bg-emerald-500/10 text-emerald-600 font-black text-[10px] uppercase tracking-widest rounded-2xl hidden md:block">{t('settings.identity.verify')}</button>
                         </div>
                       </div>
                    </div>
                    <div className="space-y-6">
                       <div>
-                        <label className="block text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 mb-2 tracking-widest px-1">Demographic Gender</label>
+                        <label className="block text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 mb-2 tracking-widest px-1">{t('settings.identity.gender')}</label>
                         <select value={profileFormData.gender} onChange={e => setProfileFormData({...profileFormData, gender: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-2xl p-5 text-sm font-bold outline-none focus:border-emerald-500/30 appearance-none">
-                           <option>Male</option><option>Female</option><option>Other</option>
+                           <option value="Male">{t('settings.identity.male')}</option>
+                           <option value="Female">{t('settings.identity.female')}</option>
+                           <option value="Other">{t('settings.identity.other')}</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 mb-2 tracking-widest px-1">Chronological Entry (DOB)</label>
+                        <label className="block text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 mb-2 tracking-widest px-1">{t('settings.identity.dob')}</label>
                         <input type="date" value={profileFormData.dob} onChange={e => setProfileFormData({...profileFormData, dob: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-2xl p-5 text-sm font-bold outline-none focus:border-emerald-500/30 transition-all" />
                       </div>
                    </div>
@@ -467,18 +520,18 @@ const Settings = () => {
 
                 <div className="pt-10 border-t border-gray-50 dark:border-gray-900 flex justify-end">
                   <button onClick={handleSaveIdentity} disabled={saving} className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs uppercase tracking-[0.2em] shadow-xl transition-all shadow-emerald-500/20 active:scale-95 disabled:opacity-50">
-                     {saving ? 'Saving...' : 'Save Identity State'}
+                     {saving ? t('settings.identity.saving') : t('settings.identity.save')}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Sync Intelligence (Step 73) */}
+            {/* Sync Intelligence */}
             {activeCategory === 'sync' && (
               <div className="space-y-12 animate-in slide-in-from-right-8 duration-500">
                  <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Sync Intelligence</h2>
-                    <p className="text-gray-600 dark:text-gray-300 font-medium">Manage integrated health platforms and real-time biometric pipelines.</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{t('settings.sync.title')}</h2>
+                    <p className="text-gray-600 dark:text-gray-300 font-medium">{t('settings.sync.subtitle')}</p>
                  </div>
                  
                  <div className="space-y-6">
@@ -491,13 +544,13 @@ const Settings = () => {
                              <img src="https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png" className={`w-8 h-8 ${googleFitConnected ? '' : 'grayscale opacity-50'}`} alt="Google" />
                           </div>
                           <div>
-                             <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Google Fit Protocol</h4>
+                             <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{t('settings.sync.google_fit')}</h4>
                              <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                                <div className={`w-2 h-2 rounded-full ${googleFitConnected ? 'bg-emerald-500' : 'bg-gray-300'}`} /> {googleFitConnected ? 'Connected & Syncing' : 'Not Connected'}
+                                <div className={`w-2 h-2 rounded-full ${googleFitConnected ? 'bg-emerald-500' : 'bg-gray-300'}`} /> {googleFitConnected ? t('settings.sync.connected') : t('settings.sync.not_connected')}
                              </div>
                           </div>
                        </div>
-                       <button onClick={handleConnectGoogleFit} disabled={syncingFit} className={`px-8 py-4 font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 relative z-10 ${googleFitConnected ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-emerald-600 hover:text-white'}`}>{syncingFit ? 'Syncing...' : (googleFitConnected ? 'Disconnect' : 'Connect Hub')}</button>
+                       <button onClick={handleConnectGoogleFit} disabled={syncingFit} className={`px-8 py-4 font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 relative z-10 ${googleFitConnected ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-emerald-600 hover:text-white'}`}>{syncingFit ? t('settings.sync.syncing') : (googleFitConnected ? t('settings.sync.disconnect') : t('settings.sync.connect'))}</button>
                     </div>
 
                     <div className="p-8 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-[3rem] opacity-50 relative overflow-hidden grayscale">
@@ -507,23 +560,23 @@ const Settings = () => {
                                 <Activity className="w-8 h-8 text-blue-500" />
                              </div>
                              <div>
-                                <h4 className="text-lg font-black text-gray-600 dark:text-gray-300 uppercase tracking-tight">Apple Health Link</h4>
-                                <p className="text-[10px] text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest mt-1">iOS Ecosystem Sync</p>
+                                <h4 className="text-lg font-black text-gray-600 dark:text-gray-300 uppercase tracking-tight">{t('settings.sync.apple_health')}</h4>
+                                <p className="text-[10px] text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest mt-1">{t('settings.sync.ios_ecosystem')}</p>
                              </div>
                           </div>
-                          <span className="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase tracking-widest bg-gray-200 dark:bg-gray-800 px-4 py-2 rounded-lg">Beta Testing</span>
+                          <span className="text-[10px] font-black text-gray-600 dark:text-gray-300 uppercase tracking-widest bg-gray-200 dark:bg-gray-800 px-4 py-2 rounded-lg">{t('settings.sync.beta')}</span>
                        </div>
                     </div>
                  </div>
               </div>
             )}
 
-            {/* Security & Reminders (Step 70, 71, 79) */}
+            {/* Security & Reminders */}
             {activeCategory === 'security' && (
               <div className="space-y-12 animate-in slide-in-from-right-8 duration-500">
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Security & Alerts</h2>
-                  <p className="text-gray-600 dark:text-gray-300 font-medium">Notification delivery, biometric thresholds, and medication defaults.</p>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{t('settings.security.title')}</h2>
+                  <p className="text-gray-600 dark:text-gray-300 font-medium">{t('settings.security.subtitle')}</p>
                 </div>
 
                 <div className="space-y-8">
@@ -531,8 +584,8 @@ const Settings = () => {
                       <div className="flex items-center gap-4">
                          <div className="p-3 bg-emerald-500/10 rounded-2xl"><Bell className="w-6 h-6 text-emerald-500" /></div>
                          <div className="space-y-1">
-                            <h4 className="text-lg font-black uppercase tracking-tight">Full Alert Matrix Rules</h4>
-                            <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">Configure channels and quiet hours.</p>
+                            <h4 className="text-lg font-black uppercase tracking-tight">{t('settings.security.alert_rules')}</h4>
+                            <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">{t('settings.security.alert_rules_desc')}</p>
                          </div>
                       </div>
                       <button onClick={() => window.location.href='/alerts/settings'} className="p-4 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-500 transition-all shadow-xl">
@@ -544,15 +597,15 @@ const Settings = () => {
                       <div className="p-8 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-[3rem] space-y-6">
                          <div className="flex items-center gap-4">
                             <div className="p-3 bg-amber-500/10 rounded-2xl"><Settings2 className="w-6 h-6 text-amber-500" /></div>
-                            <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Biometric Safe Zones</h4>
+                            <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{t('settings.security.safe_zones')}</h4>
                          </div>
                          <div className="space-y-4">
                             <div className="p-5 bg-white dark:bg-gray-950 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                               <span className="text-[10px] font-black uppercase text-gray-400">High Systolic BP</span>
+                               <span className="text-[10px] font-black uppercase text-gray-400">{t('settings.security.high_systolic')}</span>
                                <input type="number" value={alertSettings.highSystolicBP} onChange={e => setAlertSettings({...alertSettings, highSystolicBP: Number(e.target.value)})} className="w-16 bg-transparent text-sm font-bold text-right outline-none" />
                             </div>
                             <div className="p-5 bg-white dark:bg-gray-950 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                               <span className="text-[10px] font-black uppercase text-gray-400">Low SPO2 Trigger</span>
+                               <span className="text-[10px] font-black uppercase text-gray-400">{t('settings.security.low_spo2')}</span>
                                <input type="number" value={alertSettings.lowSPO2} onChange={e => setAlertSettings({...alertSettings, lowSPO2: Number(e.target.value)})} className="w-16 bg-transparent text-sm font-bold text-right outline-none" />
                             </div>
                          </div>
@@ -561,20 +614,20 @@ const Settings = () => {
                       <div className="p-8 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-[3rem] space-y-6">
                          <div className="flex items-center gap-4">
                             <div className="p-3 bg-blue-500/10 rounded-2xl"><Clock className="w-6 h-6 text-blue-500" /></div>
-                            <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Medication Defaults</h4>
+                            <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{t('settings.security.medication_defaults')}</h4>
                          </div>
                          <div className="space-y-4">
                             <div className="p-4 bg-white dark:bg-gray-950 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                               <span className="text-[10px] font-black uppercase text-gray-400">Default Time</span>
+                               <span className="text-[10px] font-black uppercase text-gray-400">{t('settings.security.default_time')}</span>
                                <input type="time" value={alertSettings.defaultTime} onChange={e => setAlertSettings({...alertSettings, defaultTime: e.target.value})} className="bg-transparent text-sm font-bold text-right outline-none" />
                             </div>
                             <div className="p-4 bg-white dark:bg-gray-950 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                               <span className="text-[10px] font-black uppercase text-gray-400">Snooze Duration</span>
-                               <select value={alertSettings.snoozeDuration} onChange={e => setAlertSettings({...alertSettings, snoozeDuration: Number(e.target.value)})} className="text-sm font-bold bg-transparent outline-none text-right"><option value={15}>15 mins</option><option value={30}>30 mins</option></select>
+                               <span className="text-[10px] font-black uppercase text-gray-400">{t('settings.security.snooze')}</span>
+                               <select value={alertSettings.snoozeDuration} onChange={e => setAlertSettings({...alertSettings, snoozeDuration: Number(e.target.value)})} className="text-sm font-bold bg-transparent outline-none text-right"><option value={15}>{t('settings.security.mins', { val: 15 })}</option><option value={30}>{t('settings.security.mins', { val: 30 })}</option></select>
                             </div>
                             <div className="p-4 bg-white dark:bg-gray-950 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                               <span className="text-[10px] font-black uppercase text-gray-400">Refill Alert At</span>
-                               <select value={alertSettings.refillAlertAt} onChange={e => setAlertSettings({...alertSettings, refillAlertAt: Number(e.target.value)})} className="text-sm font-bold bg-transparent outline-none text-right"><option value={7}>7 days</option><option value={3}>3 days</option></select>
+                               <span className="text-[10px] font-black uppercase text-gray-400">{t('settings.security.refill')}</span>
+                               <select value={alertSettings.refillAlertAt} onChange={e => setAlertSettings({...alertSettings, refillAlertAt: Number(e.target.value)})} className="text-sm font-bold bg-transparent outline-none text-right"><option value={7}>{t('settings.security.days', { val: 7 })}</option><option value={3}>{t('settings.security.days', { val: 3 })}</option></select>
                             </div>
                          </div>
                       </div>
@@ -582,29 +635,32 @@ const Settings = () => {
                 </div>
                 <div className="pt-10 border-t border-gray-50 dark:border-gray-900 flex justify-end">
                   <button onClick={handleSaveSecuritySettings} disabled={saving} className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs uppercase tracking-[0.2em] shadow-xl transition-all shadow-emerald-500/20 active:scale-95 disabled:opacity-50">
-                     {saving ? 'Saving...' : 'Save Security Rules'}
+                     {saving ? t('settings.security.saving') : t('settings.security.save')}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Global Prefs (Step 68, 78) */}
+             {/* Global Prefs */}
             {activeCategory === 'preferences' && (
                <div className="space-y-12 animate-in slide-in-from-right-8 duration-500">
                   <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Global Prefs</h2>
-                    <p className="text-gray-600 dark:text-gray-300 font-medium">Localization and medical unit standards.</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{t('settings.global_prefs.title')}</h2>
+                    <p className="text-gray-600 dark:text-gray-300 font-medium">{t('settings.global_prefs.subtitle')}</p>
                   </div>
-                  {/* ... same as before, omitted the full copy to fit, keeping layout valid ... */}
                   <div className="space-y-8">
                      <div className="p-10 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[3.5rem] space-y-8">
                         <div className="flex items-center gap-4">
                            <div className="p-3 bg-indigo-500/10 rounded-2xl"><Languages className="w-6 h-6 text-indigo-500" /></div>
-                           <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Platform Dialect</h4>
+                           <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{t('settings.global_prefs.platform_dialect')}</h4>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                            {['English', 'Hindi', 'Marathi', 'Tamil', 'Telugu', 'Bengali', 'Gujarati', 'Kannada', 'Malayalam', 'Odia', 'Punjabi', 'Assamese', 'Urdu'].map(lang => (
-                             <button key={lang} onClick={() => setGlobalPrefs({...globalPrefs, language: lang})} className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${lang === globalPrefs.language ? 'bg-emerald-500 text-white shadow-xl' : 'bg-white dark:bg-gray-950 text-gray-400 border border-gray-100 dark:border-gray-800'}`}>
+                             <button 
+                               key={lang} 
+                               onClick={() => handleLanguageSelect(lang)} 
+                               className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${lang === globalPrefs.language ? 'bg-emerald-500 text-white shadow-xl' : 'bg-white dark:bg-gray-950 text-gray-400 border border-gray-100 dark:border-gray-800'}`}
+                             >
                                {lang}
                              </button>
                            ))}
@@ -613,17 +669,17 @@ const Settings = () => {
                      <div className="p-10 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[3.5rem] space-y-8">
                         <div className="flex items-center gap-4">
                            <div className="p-3 bg-pink-500/10 rounded-2xl"><Activity className="w-6 h-6 text-pink-500" /></div>
-                           <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Measurement Standards</h4>
+                           <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{t('settings.global_prefs.measurement_standards')}</h4>
                         </div>
                         <div className="flex gap-6">
                            <div className="flex-1 p-6 bg-white dark:bg-gray-950 rounded-[2rem] border border-gray-100 dark:border-gray-800 space-y-4">
-                              <span className="text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">Weight Units</span>
+                              <span className="text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">{t('settings.global_prefs.weight_units')}</span>
                               <div className="flex gap-2">
                                  {['metric', 'imperial'].map(u => <button key={u} onClick={() => setGlobalPrefs({...globalPrefs, measurementUnits: u})} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${u === globalPrefs.measurementUnits ? 'bg-emerald-500 text-white' : 'text-gray-400 bg-gray-50 dark:bg-gray-900'}`}>{u}</button>)}
                               </div>
                            </div>
                            <div className="flex-1 p-6 bg-white dark:bg-gray-950 rounded-[2rem] border border-gray-100 dark:border-gray-800 space-y-4">
-                              <span className="text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">Glucose Scale</span>
+                              <span className="text-[10px] font-black uppercase text-gray-600 dark:text-gray-300 tracking-widest">{t('settings.global_prefs.glucose_scale')}</span>
                               <div className="flex gap-2">
                                  {['mg/dL', 'mmol/L'].map(u => <button key={u} onClick={() => setGlobalPrefs({...globalPrefs, glucoseUnits: u})} className={`flex-1 py-3 text-[9px] font-black uppercase rounded-xl transition-all ${u === globalPrefs.glucoseUnits ? 'bg-emerald-500 text-white' : 'text-gray-400 bg-gray-50 dark:bg-gray-900'}`}>{u}</button>)}
                               </div>
@@ -633,29 +689,29 @@ const Settings = () => {
                   </div>
                 <div className="pt-10 border-t border-gray-50 dark:border-gray-900 flex justify-end">
                   <button onClick={handleSaveGlobalPrefs} disabled={saving} className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs uppercase tracking-[0.2em] shadow-xl transition-all shadow-emerald-500/20 active:scale-95 disabled:opacity-50">
-                     {saving ? 'Saving...' : 'Save Global Prefs'}
+                     {saving ? t('settings.global_prefs.saving') : t('settings.global_prefs.save')}
                   </button>
                 </div>
                </div>
             )}
 
-            {/* Governance, Privacy & Sovereignty (Step 74, 75, 76) */}
+            {/* Governance, Privacy & Sovereignty */}
             {activeCategory === 'governance' && (
                <div className="space-y-12 animate-in slide-in-from-right-8 duration-500">
                   <div className="space-y-2">
-                     <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Data Sovereignty & Privacy</h2>
-                     <p className="text-gray-600 dark:text-gray-300 font-medium">Control over what data is logged, shared, and deleted.</p>
+                     <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{t('settings.governance.title')}</h2>
+                     <p className="text-gray-600 dark:text-gray-300 font-medium">{t('settings.governance.subtitle')}</p>
                   </div>
 
                   <div className="p-8 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-white/5 rounded-[3rem] space-y-6">
                      <div className="flex items-center gap-4">
                         <div className="p-3 bg-purple-500/10 rounded-2xl"><Shield className="w-6 h-6 text-purple-500" /></div>
-                        <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">AI Privacy Controls</h4>
+                        <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{t('settings.governance.ai_privacy')}</h4>
                      </div>
                      <div className="flex justify-between items-center p-4 bg-white dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-gray-800">
                         <div>
-                           <p className="text-sm font-black uppercase text-gray-700 dark:text-white">Clinical AI Analysis Pool</p>
-                           <p className="text-[9px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest mt-1 max-w-sm">Allow system to use generalized biometric trends to improve alert modeling. Data remains completely unidentifiable.</p>
+                           <p className="text-sm font-black uppercase text-gray-700 dark:text-white">{t('settings.governance.ai_pool')}</p>
+                           <p className="text-[9px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest mt-1 max-w-sm">{t('settings.governance.ai_pool_desc')}</p>
                         </div>
                         <label className="cursor-pointer flex items-center">
                            <input type="checkbox" checked={aiDataSharing} onChange={handleToggleAIDataSharing} className="hidden" />
@@ -671,58 +727,58 @@ const Settings = () => {
                         <div className="flex items-center justify-between">
                            <Download className="w-8 h-8 text-emerald-500 opacity-80" />
                            <div className="flex gap-2">
-                              <button onClick={exportDataJSON} className="px-4 py-2 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 shadow-xl">JSON Data</button>
-                              <button onClick={exportDataPDF} className="px-4 py-2 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 shadow-xl">Report PDF</button>
+                              <button onClick={exportDataJSON} className="px-4 py-2 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 shadow-xl">{t('settings.governance.json_data')}</button>
+                              <button onClick={exportDataPDF} className="px-4 py-2 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 shadow-xl">{t('settings.governance.report_pdf')}</button>
                            </div>
                         </div>
                         <div>
-                           <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Clinical Archive</h4>
-                           <p className="text-[10px] text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest mt-2 leading-relaxed">Download a complete structured JSON dataset or a PDF ready for physician review. Includes all charts and timelines.</p>
+                           <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{t('settings.governance.archive')}</h4>
+                           <p className="text-[10px] text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest mt-2 leading-relaxed">{t('settings.governance.archive_desc')}</p>
                         </div>
                      </div>
 
                      <div className="p-8 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-[3rem] space-y-6">
                         <Trash2 className="w-8 h-8 text-red-500 opacity-80" />
                         <div>
-                           <h4 className="text-lg font-black text-red-600 dark:text-red-500 uppercase tracking-tight">Partial or Global Purge</h4>
-                           <p className="text-[10px] text-red-500/80 font-bold uppercase tracking-widest mt-2 leading-relaxed italic">Selectively wipe vital history or initialize a permanent wipe of all your clinical records across the matrix.</p>
+                           <h4 className="text-lg font-black text-red-600 dark:text-red-500 uppercase tracking-tight">{t('settings.governance.purge')}</h4>
+                           <p className="text-[10px] text-red-500/80 font-bold uppercase tracking-widest mt-2 leading-relaxed italic">{t('settings.governance.purge_desc')}</p>
                         </div>
                         <div className="flex gap-2">
-                           <button onClick={handleWipeVitals} className="flex-1 py-3 border border-red-500/30 text-red-600 dark:text-red-500 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-red-500/10">Wipe Vitals Only</button>
-                           <button onClick={() => setPurgeConfirm(true)} className="flex-1 py-3 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-red-500 shadow-red-500/30 shadow-xl">Global Purge</button>
+                           <button onClick={handleWipeVitals} className="flex-1 py-3 border border-red-500/30 text-red-600 dark:text-red-500 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-red-500/10">{t('settings.governance.wipe_vitals')}</button>
+                           <button onClick={() => setPurgeConfirm(true)} className="flex-1 py-3 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-red-500 shadow-red-500/30 shadow-xl">{t('settings.governance.global_purge')}</button>
                         </div>
                      </div>
                   </div>
                </div>
             )}
 
-            {/* Display & Accessibility (Step 77) */}
+            {/* Display & Accessibility */}
             {activeCategory === 'display' && (
                <div className="space-y-12 animate-in slide-in-from-right-8 duration-500">
                   <div className="space-y-2">
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Display & UX</h2>
-                    <p className="text-gray-600 dark:text-gray-300 font-medium">Visual preferences and clinical accessibility controls.</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{t('settings.display.title')}</h2>
+                    <p className="text-gray-600 dark:text-gray-300 font-medium">{t('settings.display.subtitle')}</p>
                   </div>
 
                   <div className="space-y-8">
                      <div className="p-10 bg-gray-50 dark:bg-gray-950/20 border border-gray-100 dark:border-gray-800 rounded-[3.5rem] space-y-8">
                         <div className="flex items-center gap-4">
                            <div className="p-3 bg-blue-500/10 rounded-2xl"><MonitorIcon className="w-6 h-6 text-blue-500" /></div>
-                           <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Chromatic Profile</h4>
+                           <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{t('settings.display.chromatic')}</h4>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                            <button onClick={() => theme !== 'light' && toggleTheme()} className={`flex items-center gap-6 p-6 rounded-3xl border transition-all ${theme === 'light' ? 'bg-white border-emerald-500 shadow-2xl' : 'bg-gray-50 dark:bg-gray-900 border-transparent text-gray-600 dark:text-gray-300'}`}>
                               <Sun className={`w-8 h-8 ${theme === 'light' ? 'text-emerald-500' : ''}`} />
                               <div className="text-left">
-                                 <div className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">Crystal Day</div>
-                                 <p className="text-[9px] font-bold uppercase mt-1">Light Optimized Protocol</p>
+                                 <div className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">{t('settings.display.crystal_day')}</div>
+                                 <p className="text-[9px] font-bold uppercase mt-1">{t('settings.display.light_desc')}</p>
                               </div>
                            </button>
                            <button onClick={() => theme !== 'dark' && toggleTheme()} className={`flex items-center gap-6 p-6 rounded-3xl border transition-all ${theme === 'dark' ? 'bg-white dark:bg-gray-900 border-emerald-500 shadow-2xl' : 'bg-gray-50 dark:bg-gray-900 border-transparent text-gray-600 dark:text-gray-300'}`}>
                               <Moon className={`w-8 h-8 ${theme === 'dark' ? 'text-emerald-500' : ''}`} />
                               <div className="text-left">
-                                 <div className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">Obsidian Night</div>
-                                 <p className="text-[9px] font-bold uppercase mt-1">Dark Matrix Preferred</p>
+                                 <div className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">{t('settings.display.obsidian_night')}</div>
+                                 <p className="text-[9px] font-bold uppercase mt-1">{t('settings.display.dark_desc')}</p>
                               </div>
                            </button>
                         </div>
@@ -731,19 +787,19 @@ const Settings = () => {
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <button onClick={toggleContrast} className={`p-6 rounded-[2.5rem] border transition-all flex flex-col items-center gap-4 text-center ${highContrast ? 'bg-white dark:bg-gray-900 border-emerald-500 shadow-xl' : 'bg-gray-50 dark:bg-gray-950 border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300'}`}>
                            <Maximize className={`w-6 h-6 ${highContrast ? 'text-emerald-500' : ''}`} />
-                           <span className="text-[10px] font-black uppercase tracking-widest leading-tight">High Contrast</span>
+                           <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{t('settings.display.high_contrast')}</span>
                         </button>
                         <button onClick={() => setFontSize(prev => prev === 'base' ? 'large' : prev === 'large' ? 'x-large' : 'base')} className={`p-6 rounded-[2.5rem] border transition-all flex flex-col items-center gap-4 text-center ${fontSize !== 'base' ? 'bg-white dark:bg-gray-900 border-emerald-500 shadow-xl text-emerald-500' : 'bg-gray-50 dark:bg-gray-950 border-gray-100 dark:border-gray-800 text-gray-400'}`}>
                            <Type className="w-6 h-6" />
-                           <span className="text-[10px] font-black uppercase tracking-widest leading-tight">Font Scale: {fontSize}</span>
+                           <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{t('settings.display.font_scale')}: {fontSize}</span>
                         </button>
                         <button onClick={toggleMotion} className={`p-6 rounded-[2.5rem] border transition-all flex flex-col items-center gap-4 text-center ${reducedMotion ? 'bg-white dark:bg-gray-900 border-emerald-500 shadow-xl' : 'bg-gray-50 dark:bg-gray-950 border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300'}`}>
                            <Zap className={`w-6 h-6 ${reducedMotion ? 'text-emerald-500' : 'opacity-20'}`} />
-                           <span className="text-[10px] font-black uppercase tracking-widest leading-tight">Reduce Motion</span>
+                           <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{t('settings.display.reduce_motion')}</span>
                         </button>
                         <button onClick={toggleVoiceGuidance} className={`p-6 rounded-[2.5rem] border transition-all flex flex-col items-center gap-4 text-center ${voiceGuidance ? 'bg-white dark:bg-gray-900 border-emerald-500 shadow-xl text-emerald-500' : 'bg-gray-50 dark:bg-gray-950 border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300'}`}>
                            {voiceGuidance ? <Volume2 className="w-6 h-6 text-emerald-500" /> : <Volume2 className="w-6 h-6" />}
-                           <span className="text-[10px] font-black uppercase tracking-widest leading-tight">Voice Assist</span>
+                           <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{t('settings.display.voice_assist')}</span>
                         </button>
                      </div>
                   </div>
@@ -754,8 +810,8 @@ const Settings = () => {
             {activeCategory === 'support' && (
               <div className="space-y-12 animate-in slide-in-from-right-8 duration-500">
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Support & Legal</h2>
-                  <p className="text-gray-600 dark:text-gray-300 font-medium">Platform policies, help center, and contribution forms.</p>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{t('settings.support.title')}</h2>
+                  <p className="text-gray-600 dark:text-gray-300 font-medium">{t('settings.support.subtitle')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

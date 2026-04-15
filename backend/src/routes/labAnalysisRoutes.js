@@ -13,6 +13,7 @@ const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_
 router.post('/analyze', async (req, res) => {
   try {
     const { clerkId, labIds } = req.body;
+    const outputLanguage = req.resolvedLanguage || 'en';
     
     if (!clerkId) {
       return res.status(400).json({ 
@@ -83,7 +84,7 @@ router.post('/analyze', async (req, res) => {
     let aiAnalysis = null;
     if (groq && abnormalResults.length > 0) {
       try {
-        aiAnalysis = await generateAIAnalysis(labSummary, abnormalResults, userContext);
+        aiAnalysis = await generateAIAnalysis(labSummary, abnormalResults, userContext, outputLanguage);
         console.log('[Lab Analysis] AI analysis generated successfully');
       } catch (aiError) {
         console.warn('[Lab Analysis] AI analysis failed:', aiError.message);
@@ -121,8 +122,9 @@ router.post('/analyze', async (req, res) => {
 /**
  * Generate AI-powered analysis using Groq
  */
-async function generateAIAnalysis(allLabs, abnormalLabs, userContext) {
+async function generateAIAnalysis(allLabs, abnormalLabs, userContext, language = 'en') {
   const prompt = `You are an expert medical laboratory analyst providing personalized health insights.
+IMPORTANT LANGUAGE RULE: Return all values in ${language}.
 
 USER PROFILE:
 - Age: ${userContext.age}

@@ -24,7 +24,8 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 // POST /api/rag/check-safety
 router.post('/check-safety', async (req, res) => {
   try {
-    const { medicines, language = 'English', clerkId } = req.body;
+    const { medicines, language: requestLanguage, clerkId } = req.body;
+    const language = requestLanguage || req.resolvedLanguage || 'en';
 
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
       return res.status(400).json({ status: 'error', message: 'medicines array is required.' });
@@ -189,7 +190,8 @@ router.post('/check-safety', async (req, res) => {
  */
 router.post('/medicine-breakdown', async (req, res) => {
   try {
-    const { medicines, language = 'English' } = req.body;
+    const { medicines, language: requestLanguage } = req.body;
+    const language = requestLanguage || req.resolvedLanguage || 'en';
 
     if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
       return res.status(400).json({ status: 'error', message: 'medicines array is required.' });

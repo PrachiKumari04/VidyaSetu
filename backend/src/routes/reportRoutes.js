@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const UserProfile = require('../models/UserProfile');
 const Report = require('../models/Report');
+const Medication = require('../models/Medication');
 const InteractionHistory = require('../models/InteractionHistory');
 const Feedback = require('../models/Feedback');
+const DiseaseInsight = require('../models/DiseaseInsight');
 const { calculateHybridRiskFromProfile } = require('../utils/hybridRiskAssessment');
 
 // Get Latest Report
@@ -59,13 +61,44 @@ router.post('/hybrid-assessment', async (req, res) => {
       }
     });
 
+    // Fetch active medications for hybrid assessment
+    try {
+      const activeMeds = await Medication.find({ clerkId, active: true }).lean();
+      flatProfile.activeMedications = activeMeds;
+    } catch (medErr) {
+      console.warn('[HybridAssessment] Could not fetch medications:', medErr.message);
+    }
+
     const hybrid = calculateHybridRiskFromProfile(flatProfile);
 
     let report = null;
     if (persist) {
       const existing = await Report.findOne({ clerkId }).sort({ createdAt: -1 });
       if (existing) {
-        existing.risk_scores = { ...(existing.risk_scores || {}), ...(hybrid.risk_scores || {}) };
+        const questionnaireInsights = await DiseaseInsight.find({
+          clerkId,
+          questionnaireCompletedAt: { $ne: null }
+        }).lean();
+
+        const preservedScores = {};
+        const preservedMeta = {};
+        questionnaireInsights.forEach((insight) => {
+          if (insight?.diseaseId) {
+            preservedScores[insight.diseaseId] = insight.riskScore;
+            preservedMeta[insight.diseaseId] = insight.verification || null;
+          }
+        });
+
+        existing.risk_scores = {
+          ...(existing.risk_scores || {}),
+          ...(hybrid.risk_scores || {}),
+          ...preservedScores
+        };
+        existing.risk_score_meta = {
+          ...(existing.risk_score_meta || {}),
+          ...(hybrid.risk_score_meta || {}),
+          ...preservedMeta
+        };
         await existing.save();
         report = existing;
       } else {
@@ -76,6 +109,7 @@ router.post('/hybrid-assessment', async (req, res) => {
           general_tips: 'Complete additional screenings and vitals for better accuracy.',
           disclaimer: 'This is a screening support tool, not a diagnosis.',
           risk_scores: hybrid.risk_scores,
+          risk_score_meta: hybrid.risk_score_meta || {},
           category_insights: {},
           mitigations: {}
         });
@@ -86,6 +120,7 @@ router.post('/hybrid-assessment', async (req, res) => {
       status: 'success',
       data: {
         risk_scores: hybrid.risk_scores,
+        risk_score_meta: hybrid.risk_score_meta,
         details: hybrid.details,
         missingData: hybrid.missingData,
         reportId: report?._id || null
