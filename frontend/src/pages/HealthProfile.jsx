@@ -5,7 +5,7 @@ import {
   Scale, Activity, Utensils, AlertTriangle,
   History, Edit3, ArrowRight, CheckCircle2, Clock,
   Heart, Wind, Brain, Venus, X, Zap, Shield,
-  Cigarette, Wine, Salad, Apple, TrendingUp, RefreshCw
+  Cigarette, Wine, Salad, Apple, TrendingUp, RefreshCw, Download
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +28,7 @@ const getRelativeTime = (date) => {
 };
 
 const bmiColor = (bmi) => {
-  if (!bmi || bmi <= 0) return '#6b7280';
+  if (!bmi || isNaN(bmi) || bmi <= 0) return '#6b7280';
   if (bmi < 18.5) return '#60a5fa';
   if (bmi < 25)   return '#10b981';
   if (bmi < 30)   return '#f59e0b';
@@ -39,11 +39,12 @@ const bmiColor = (bmi) => {
    Sub-components
 ───────────────────────────────────────────── */
 
-/** Animated circular ring gauge */
 const RingGauge = ({ value = 0, max = 100, color = '#10b981', size = 120, label }) => {
   const r = 46;
   const circ = 2 * Math.PI * r;
-  const fill = circ * (1 - Math.min(value, max) / max);
+  const numericValue = parseFloat(value);
+  const fill = isNaN(numericValue) ? circ : circ * (1 - Math.min(numericValue, max) / max);
+  
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox="0 0 100 100" className="-rotate-90">
@@ -52,27 +53,26 @@ const RingGauge = ({ value = 0, max = 100, color = '#10b981', size = 120, label 
           cx="50" cy="50" r={r} fill="none"
           stroke={color} strokeWidth="8"
           strokeDasharray={circ}
-          strokeDashoffset={fill}
+          strokeDashoffset={isNaN(fill) ? circ : fill}
           strokeLinecap="round"
           style={{ transition: 'stroke-dashoffset 1.2s ease-out' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-black text-white text-xl leading-none">{value}</span>
+        <span className="font-black text-white text-xl leading-none">{isNaN(numericValue) ? '—' : value}</span>
         {label && <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">{label}</span>}
       </div>
     </div>
   );
 };
 
-/** Pill badge */
 const Pill = ({ label, active, color = 'emerald' }) => {
   const palettes = {
     emerald: active ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-white/3 text-gray-600 border-white/8 line-through',
     fuchsia: active ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30' : 'bg-white/3 text-gray-600 border-white/8 line-through',
     blue:    active ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'           : 'bg-white/3 text-gray-600 border-white/8 line-through',
-    red:     'bg-red-500/15 text-red-400 border-red-500/30',
-    sky:     'bg-sky-500/15 text-sky-400 border-sky-500/30',
+    red:     active ? 'bg-red-500/15 text-red-400 border-red-500/30' : 'bg-white/3 text-gray-600 border-white/8 line-through',
+    sky:     active ? 'bg-sky-500/15 text-sky-400 border-sky-500/30' : 'bg-white/3 text-gray-600 border-white/8 line-through',
   };
   return (
     <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${palettes[color] ?? palettes.emerald}`}>
@@ -81,7 +81,6 @@ const Pill = ({ label, active, color = 'emerald' }) => {
   );
 };
 
-/** Stat row inside a card */
 const StatRow = ({ label, value, unit = '', highlight = false }) => (
   <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
     <span className="text-xs font-semibold text-gray-400">{label}</span>
@@ -93,14 +92,12 @@ const StatRow = ({ label, value, unit = '', highlight = false }) => (
   </div>
 );
 
-/** Section card wrapper */
 const Card = ({ children, accent = '#10b981', className = '' }) => (
   <div
     className={`relative rounded-3xl border border-white/8 bg-white/4 backdrop-blur-xl overflow-hidden
       hover:-translate-y-1 hover:border-white/15 hover:shadow-2xl transition-all duration-500 group ${className}`}
     style={{ boxShadow: `0 0 0 0 ${accent}00` }}
   >
-    {/* Glow on hover */}
     <div
       className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-3xl"
       style={{ boxShadow: `inset 0 0 60px ${accent}18` }}
@@ -109,7 +106,6 @@ const Card = ({ children, accent = '#10b981', className = '' }) => (
   </div>
 );
 
-/** Card header strip */
 const CardHeader = ({ icon: Icon, title, iconColor, lastUpdated }) => (
   <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/6">
     <div className="flex items-center gap-3">
@@ -139,22 +135,51 @@ const HealthProfile = () => {
   const [error, setError] = useState(null);
   const [toastMessage, setToastMessage] = useState(location.state?.toast || null);
 
+  useEffect(() => {
+    if (user) {
+      axios.get(`${API_URL}/profile/${user.id}`)
+        .then(res => {
+          if (res.data.status === 'success') {
+            setProfile(res.data.data);
+            setDataQuality(res.data.dataQuality);
+          } else {
+            setError(t('profile.errors.failed_load', { defaultValue: 'Failed to synchronize bio-ledger.' }));
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching profile:', err);
+          setError(t('profile.errors.connection', { defaultValue: 'Gateway connection failed.' }));
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [user]);
+
   if (loading || !profile) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-[60vh] bg-transparent">
       <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
     </div>
   );
 
-  const bmi = profile.bmi?.value ? Number(profile.bmi.value).toFixed(1) : null;
-  const bmiCat = profile.bmiCategory?.value || '';
+  const bmiRaw = profile?.bmi?.value;
+  const bmi = (bmiRaw && !isNaN(parseFloat(bmiRaw))) ? parseFloat(bmiRaw).toFixed(1) : null;
+  const bmiCat = profile?.bmiCategory?.value || '';
   const qualityScore = dataQuality?.score || 0;
-  const isFemale = profile.gender?.value?.toLowerCase() === 'female';
-  const initials = (profile.name?.value || user?.fullName || 'U')
-    .split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const dqLabel = (dataQuality?.label || 'Basic').toLowerCase();
+  const isFemale = profile?.gender?.value?.toString().toLowerCase() === 'female';
+  
+  const getInitials = () => {
+    try {
+      const rawName = profile?.name?.value || user?.fullName || 'User';
+      if (!rawName || typeof rawName !== 'string') return 'U';
+      const parts = rawName.split(' ').filter(Boolean);
+      return parts.length > 0 ? parts.map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'U';
+    } catch (e) { return 'U'; }
+  };
+  const initials = getInitials();
 
   return (
     <div className="max-w-7xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-
+      
       {/* ── Toast ── */}
       {toastMessage && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top-8 fade-in duration-300">
@@ -183,7 +208,7 @@ const HealthProfile = () => {
             {user?.imageUrl ? (
               <img
                 src={user.imageUrl}
-                alt={profile.name?.value || user?.fullName || 'User'}
+                alt={profile?.name?.value || user?.fullName || 'User'}
                 className="w-24 h-24 rounded-3xl object-cover border-2 border-emerald-500/40 shadow-xl"
               />
             ) : (
@@ -192,15 +217,12 @@ const HealthProfile = () => {
                 {initials}
               </div>
             )}
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-gray-950 flex items-center justify-center">
-              <div className="w-2 h-2 bg-white rounded-full" />
-            </div>
           </div>
 
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
               <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-                {t('profile.title')}
+                {t('profile.title', { defaultValue: 'Bio-Ledger' })}
               </span>
               {dataQuality?.label && (
                 <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
@@ -208,25 +230,25 @@ const HealthProfile = () => {
                   : dataQuality.label === 'Good' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                   : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                 }`}>
-                  {t(`profile.quality_${dataQuality.label.toLowerCase()}`)} {t('profile.profile_label')}
+                  {t(`profile.quality_${dqLabel}`, { defaultValue: dataQuality.label })} {t('profile.profile_label', { defaultValue: 'Profile' })}
                 </span>
               )}
             </div>
             <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter mb-2 italic uppercase">
-              {profile.name?.value || user?.fullName || t('profile.errors.no_profile')}
+              {profile?.name?.value || user?.fullName || t('profile.errors.no_profile', { defaultValue: 'Legacy Entity' })}
             </h1>
             <p className="text-gray-400 text-sm max-w-lg leading-relaxed font-medium">
-              {t('profile.health_overview_subtitle') || 'Real-time overview of your foundational health metrics and physiological parameters.'}
+              {t('profile.health_overview_subtitle', { defaultValue: 'Real-time overview of your foundational health metrics.' })}
             </p>
           </div>
 
           <div className="flex flex-row md:flex-col gap-3 flex-shrink-0">
             <button onClick={() => window.print()} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/6 border border-white/10 text-gray-300 text-sm font-bold hover:bg-white/10 hover:text-white transition-all uppercase tracking-widest text-[10px]">
-              <Download size={15} /> {t('profile.export_profile')}
+              <Download size={15} /> {t('profile.export_profile', { defaultValue: 'Export Data' })}
             </button>
             <Link to="/profile/edit"
               className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all active:scale-95 uppercase tracking-widest text-[10px]">
-              <Edit3 size={15} /> {t('profile.edit_profile')}
+              <Edit3 size={15} /> {t('profile.edit_profile', { defaultValue: 'Edit Ledger' })}
             </Link>
           </div>
         </div>
@@ -244,20 +266,20 @@ const HealthProfile = () => {
                   dataQuality?.label === 'Excellent' ? 'bg-emerald-500/20 text-emerald-400' : 
                   dataQuality?.label === 'Good' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'
                 }`}>
-                  {t(`profile.quality_${dataQuality?.label?.toLowerCase() || 'basic'}`)} {t('profile.profile_label')}
+                  {t(`profile.quality_${dqLabel}`, { defaultValue: dataQuality.label })} {t('profile.profile_label', { defaultValue: 'Profile' })}
                 </span>
               </div>
-              <h2 className="text-2xl font-black text-white mb-2">{t('profile.data_quality')}</h2>
+              <h2 className="text-2xl font-black text-white mb-2">{t('profile.data_quality', { defaultValue: 'Bio-Data Quality' })}</h2>
               <p className="text-gray-400 text-sm md:text-base max-w-2xl leading-relaxed font-medium">
-                {dataQuality?.message || t('profile.action.update_stats')}
+                {dataQuality?.message || t('profile.action.update_stats', { defaultValue: 'Complete your bio-matrix for deeper AI assessment.' })}
               </p>
             </div>
             {/* Mini progress bars */}
             <div className="flex flex-col gap-2 min-w-[180px]">
               {[
-                { label: t('profile.identity'), pct: profile.weight?.value ? 100 : 40 },
-                { label: t('profile.vitals_summary'), pct: profile.activityLevel?.value ? 100 : 30 },
-                { label: t('profile.diet_nutrition'), pct: profile.dietType?.value ? 100 : 30 },
+                { label: t('profile.identity', { defaultValue: 'Biometrics' }), pct: profile?.weight?.value ? 100 : 40 },
+                { label: t('profile.vitals_summary', { defaultValue: 'Vital Trends' }), pct: profile?.activityLevel?.value ? 100 : 30 },
+                { label: t('profile.diet_nutrition', { defaultValue: 'Nutrition Matrix' }), pct: profile?.dietType?.value ? 100 : 30 },
               ].map(bar => (
                 <div key={bar.label}>
                   <div className="flex justify-between text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -279,12 +301,12 @@ const HealthProfile = () => {
 
         {/* 1. Biometrics */}
         <Card accent="#10b981">
-          <CardHeader icon={Scale} title={t('profile.identity')} iconColor="#10b981" lastUpdated={profile.weight?.lastUpdated} />
+          <CardHeader icon={Scale} title={t('profile.identity', { defaultValue: 'Biometrics' })} iconColor="#10b981" lastUpdated={profile?.weight?.lastUpdated} />
           <div className="px-6 py-5 flex gap-5 items-center">
             {bmi && (
               <div className="flex-shrink-0 text-center">
                 <RingGauge
-                  value={Math.round(parseFloat(bmi))}
+                  value={bmi}
                   max={40}
                   color={bmiColor(parseFloat(bmi))}
                   size={84}
@@ -296,41 +318,41 @@ const HealthProfile = () => {
               </div>
             )}
             <div className="flex-1">
-              <StatRow label={t('profile.labels.height')} value={profile.height?.value} unit="cm" />
-              <StatRow label={t('profile.labels.weight')} value={profile.weight?.value} unit="kg" />
-              <StatRow label={t('profile.labels.age')} value={profile.age?.value} unit="yrs" />
-              <StatRow label={t('profile.labels.gender')} value={profile.gender?.value} />
+              <StatRow label={t('profile.labels.height', { defaultValue: 'Height' })} value={profile?.height?.value} unit="cm" />
+              <StatRow label={t('profile.labels.weight', { defaultValue: 'Weight' })} value={profile?.weight?.value} unit="kg" />
+              <StatRow label={t('profile.labels.age', { defaultValue: 'Age' })} value={profile?.age?.value} unit="yrs" />
+              <StatRow label={t('profile.labels.gender', { defaultValue: 'Gender' })} value={profile?.gender?.value} />
             </div>
           </div>
         </Card>
 
         {/* 2. Lifestyle */}
         <Card accent="#8b5cf6">
-          <CardHeader icon={Activity} title={t('profile.vitals_summary')} iconColor="#8b5cf6" lastUpdated={profile.activityLevel?.lastUpdated} />
+          <CardHeader icon={Activity} title={t('profile.vitals_summary', { defaultValue: 'Vital Trends' })} iconColor="#8b5cf6" lastUpdated={profile?.activityLevel?.lastUpdated} />
           <div className="px-6 py-5 space-y-1">
-            <StatRow label={t('profile.labels.activity')} value={profile.activityLevel?.value} />
-            <StatRow label={t('profile.labels.sleep_quality')} value={profile.sleepHours?.value} unit="hrs" />
-            <StatRow label={t('profile.labels.stress')} value={profile.stressLevel?.value} />
+            <StatRow label={t('profile.labels.activity', { defaultValue: 'Activity' })} value={profile?.activityLevel?.value} />
+            <StatRow label={t('profile.labels.sleep_quality', { defaultValue: 'Sleep' })} value={profile?.sleepHours?.value} unit="hrs" />
+            <StatRow label={t('profile.labels.stress', { defaultValue: 'Stress' })} value={profile?.stressLevel?.value} />
             <div className="flex gap-2 pt-3 flex-wrap">
-              <Pill label={profile.isSmoker?.value ? t('profile.values.smoking_pill') || '🚬 Smoker' : t('profile.values.non_smoker')}
-                active={!profile.isSmoker?.value} color="emerald" />
-              <Pill label={`${t('profile.labels.alcohol')}: ${profile.alcoholConsumption?.value || '—'}`}
-                active={!!(profile.alcoholConsumption?.value)} color="blue" />
+              <Pill label={profile?.isSmoker?.value ? t('profile.values.smoking_pill', { defaultValue: '🚬 Smoker' }) : t('profile.values.non_smoker', { defaultValue: '🚭 Non-Smoker' })}
+                active={!profile?.isSmoker?.value} color="emerald" />
+              <Pill label={`${t('profile.labels.alcohol', { defaultValue: 'Alcohol' })}: ${profile?.alcoholConsumption?.value || '—'}`}
+                active={!!(profile?.alcoholConsumption?.value)} color="blue" />
             </div>
           </div>
         </Card>
 
         {/* 3. Diet */}
         <Card accent="#f59e0b">
-          <CardHeader icon={Utensils} title={t('profile.diet_nutrition')} iconColor="#f59e0b" lastUpdated={profile.dietType?.lastUpdated} />
+          <CardHeader icon={Utensils} title={t('profile.diet_nutrition', { defaultValue: 'Nutrition Matrix' })} iconColor="#f59e0b" lastUpdated={profile?.dietType?.lastUpdated} />
           <div className="px-6 py-5 space-y-1">
-            <StatRow label={t('profile.labels.diet_type')} value={profile.dietType?.value} highlight />
-            <StatRow label={t('profile.labels.sugar')} value={profile.sugarIntake?.value} />
-            <StatRow label={t('profile.labels.salt')} value={profile.saltIntake?.value} />
-            <StatRow label={t('profile.labels.junk_food')} value={profile.junkFoodFrequency?.value} />
+            <StatRow label={t('profile.labels.diet_type', { defaultValue: 'Diet Type' })} value={profile?.dietType?.value} highlight />
+            <StatRow label={t('profile.labels.sugar', { defaultValue: 'Sugar' })} value={profile?.sugarIntake?.value} />
+            <StatRow label={t('profile.labels.salt', { defaultValue: 'Salt' })} value={profile?.saltIntake?.value} />
+            <StatRow label={t('profile.labels.junk_food', { defaultValue: 'Junk Food' })} value={profile?.junkFoodFrequency?.value} />
             <div className="flex gap-2 pt-3 flex-wrap">
-              <Pill label="🥬 Leafy Greens" active={!!profile.eatsLeafyGreens?.value} color="emerald" />
-              <Pill label="🍎 Daily Fruits" active={!!profile.eatsFruits?.value} color="emerald" />
+              <Pill label="🥬 Leafy Greens" active={!!profile?.eatsLeafyGreens?.value} color="emerald" />
+              <Pill label="🍎 Daily Fruits" active={!!profile?.eatsFruits?.value} color="emerald" />
             </div>
           </div>
         </Card>
@@ -338,7 +360,7 @@ const HealthProfile = () => {
         {/* 4. Women's Health (conditional) */}
         {isFemale && (
           <Card accent="#e879f9">
-            <CardHeader icon={Venus} title={t('profile.womens_health') || "Women's Health"} iconColor="#e879f9" lastUpdated={profile.pcosDiagnosis?.lastUpdated} />
+            <CardHeader icon={Venus} title={t('profile.womens_health', { defaultValue: "Women's Health" })} iconColor="#e879f9" lastUpdated={profile?.pcosDiagnosis?.lastUpdated} />
             <div className="px-6 py-5">
               <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-3">Reported Indicators</p>
               <div className="flex flex-wrap gap-2">
@@ -349,7 +371,7 @@ const HealthProfile = () => {
                   { id: 'tryingToConceiveDifficulty', label: 'Conception Difficulty' },
                   { id: 'pcosDiagnosis',            label: 'PCOS Diagnosis' },
                 ].map(item => (
-                  <Pill key={item.id} label={item.label} active={!!profile[item.id]?.value} color="fuchsia" />
+                  <Pill key={item.id} label={item.label} active={!!profile?.[item.id]?.value} color="fuchsia" />
                 ))}
               </div>
             </div>
@@ -358,7 +380,7 @@ const HealthProfile = () => {
 
         {/* 5. Respiratory */}
         <Card accent="#38bdf8">
-          <CardHeader icon={Wind} title={t('profile.respiratory') || "Respiratory & Environment"} iconColor="#38bdf8" lastUpdated={profile.wheezing?.lastUpdated} />
+          <CardHeader icon={Wind} title={t('profile.respiratory', { defaultValue: "Respiratory" })} iconColor="#38bdf8" lastUpdated={profile?.wheezing?.lastUpdated} />
           <div className="px-6 py-5">
             <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-3">Reported Indicators</p>
             <div className="flex flex-wrap gap-2">
@@ -370,7 +392,7 @@ const HealthProfile = () => {
                 { id: 'biomassFuelUse',    label: 'Biomass Fuel Use' },
                 { id: 'seasonalAllergies', label: 'Seasonal Allergies' },
               ].map(item => (
-                <Pill key={item.id} label={item.label} active={!!profile[item.id]?.value} color="blue" />
+                <Pill key={item.id} label={item.label} active={!!profile?.[item.id]?.value} color="blue" />
               ))}
             </div>
           </div>
@@ -378,7 +400,7 @@ const HealthProfile = () => {
 
         {/* 6. Mental Wellbeing */}
         <Card accent="#6ee7b7">
-          <CardHeader icon={Brain} title={t('profile.mental_health') || "Mental Wellbeing"} iconColor="#6ee7b7" lastUpdated={profile.mentalHealthDepressed?.lastUpdated} />
+          <CardHeader icon={Brain} title={t('profile.mental_health', { defaultValue: "Mental Wellbeing" })} iconColor="#6ee7b7" lastUpdated={profile?.mentalHealthDepressed?.lastUpdated} />
           <div className="px-6 py-5">
             <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-3">🔒 Strictly Confidential</p>
             <div className="flex flex-wrap gap-2">
@@ -388,7 +410,7 @@ const HealthProfile = () => {
                 { id: 'mentalHealthAnxiety',    label: 'Anxiety / On Edge' },
                 { id: 'energyLevelsLow',        label: 'Low Energy / Fatigue' },
               ].map(item => (
-                <Pill key={item.id} label={item.label} active={!!profile[item.id]?.value} color="emerald" />
+                <Pill key={item.id} label={item.label} active={!!profile?.[item.id]?.value} color="emerald" />
               ))}
             </div>
           </div>
@@ -396,27 +418,27 @@ const HealthProfile = () => {
 
         {/* 7. Allergies & Medical */}
         <Card accent="#f87171">
-          <CardHeader icon={AlertTriangle} title={t('profile.allergies_medical')} iconColor="#f87171" lastUpdated={profile.allergies?.lastUpdated} />
+          <CardHeader icon={AlertTriangle} title={t('profile.allergies_medical', { defaultValue: 'Alerts & History' })} iconColor="#f87171" lastUpdated={profile?.allergies?.lastUpdated} />
           <div className="px-6 py-5 space-y-4">
             <div>
-              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">{t('profile.labels.allergies')}</p>
+              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">{t('profile.labels.allergies', { defaultValue: 'Known Allergies' })}</p>
               <div className="flex flex-wrap gap-2">
-                {profile.allergies?.value?.length > 0
+                {profile?.allergies?.value?.length > 0
                   ? profile.allergies.value.map(a => <Pill key={a} label={a} active color="red" />)
-                  : <span className="text-xs text-gray-600 italic">{t('profile.values.none')}</span>}
+                  : <span className="text-xs text-gray-600 italic">{t('profile.values.none', { defaultValue: 'No known allergies' })}</span>}
               </div>
             </div>
             <div>
-              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">{t('profile.labels.conditions')}</p>
+              <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">{t('profile.labels.conditions', { defaultValue: 'Medical Conditions' })}</p>
               <div className="flex flex-wrap gap-2">
-                {profile.medicalHistory?.value?.length > 0
+                {profile?.medicalHistory?.value?.length > 0
                   ? profile.medicalHistory.value.map(c => <Pill key={c} label={c} active color="sky" />)
-                  : <span className="text-xs text-gray-600 italic">{t('profile.values.no_history')}</span>}
+                  : <span className="text-xs text-gray-600 italic">{t('profile.values.no_history', { defaultValue: 'No records reported' })}</span>}
               </div>
             </div>
-            {profile.otherConditions?.value && (
+            {profile?.otherConditions?.value && (
               <div className="border-t border-white/6 pt-3">
-                <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-1">{t('profile.labels.obs_title')}</p>
+                <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-1">{t('profile.labels.obs_title', { defaultValue: 'Observations' })}</p>
                 <p className="text-xs text-gray-400 italic leading-relaxed">"{profile.otherConditions.value}"</p>
               </div>
             )}
@@ -435,16 +457,16 @@ const HealthProfile = () => {
                 <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center mb-4">
                   <Zap size={20} className="text-white" />
                 </div>
-                <h3 className="text-xl font-black text-white mb-2">{t('profile.action.checkup')}</h3>
+                <h3 className="text-xl font-black text-white mb-2">{t('profile.action.checkup', { defaultValue: 'Diagnostics' })}</h3>
                 <p className="text-emerald-100/80 text-sm leading-relaxed">
-                  {profile.createdAt
-                    ? `${t('profile.action.report_generated')} ${getRelativeTime(profile.createdAt) || 'some time ago'}. ${t('profile.action.update_stats')}`
-                    : t('profile.action.update_stats')}
+                  {profile?.createdAt
+                    ? `${t('profile.action.report_generated', { defaultValue: 'Ledger initialized' })} ${getRelativeTime(profile.createdAt) || 'some time ago'}. ${t('profile.action.update_stats', { defaultValue: 'Keep syncing your matrix.' })}`
+                    : t('profile.action.update_stats', { defaultValue: 'Sync your data for AI assessment.' })}
                 </p>
               </div>
               <Link to="/"
                 className="mt-6 flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur border border-white/20 text-white font-bold py-3 rounded-2xl transition-all active:scale-95 text-sm">
-                {t('profile.action.go_dashboard')} <ArrowRight size={16} />
+                {t('profile.action.go_dashboard', { defaultValue: 'Dashboard' })} <ArrowRight size={16} />
               </Link>
             </div>
           </div>
@@ -452,12 +474,12 @@ const HealthProfile = () => {
       </div>
 
       {/* Dedicated Contextual Observations Section - Center Aligned */}
-      {profile.otherConditions?.value && (
+      {profile?.otherConditions?.value && (
         <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 lg:p-12 text-center animate-in zoom-in duration-500 shadow-xl group hover:border-emerald-500/30 transition-all mt-8">
            <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl w-fit mx-auto mb-6 group-hover:scale-110 transition-transform">
               <History size={24} />
            </div>
-           <h3 className="text-xs text-gray-400 uppercase tracking-[0.3em] font-black mb-4">{t('profile.labels.obs_title')}</h3>
+           <h3 className="text-xs text-gray-400 uppercase tracking-[0.3em] font-black mb-4">{t('profile.labels.obs_title', { defaultValue: 'Clinical Context' })}</h3>
           <p className="text-xl md:text-2xl text-white font-black italic max-w-4xl mx-auto leading-relaxed">
             "{profile.otherConditions.value}"
           </p>
