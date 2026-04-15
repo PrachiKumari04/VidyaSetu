@@ -105,9 +105,8 @@ const AppLayout = () => {
       <div className="fixed bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full dark:bg-blue-500/15 blur-[140px] pointer-events-none z-0" style={{background: theme === 'dark' ? '' : 'radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, transparent 70%)'}} />
       
       <Sidebar />
-      
-      <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300 md:ml-72 overflow-y-auto">
-        <main className="p-4 sm:p-8 md:p-12 w-full vs-main-content bg-transparent dark:bg-transparent">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300 md:ml-72 h-screen overflow-y-auto scrollbar-hide">
+        <main className="flex-1 p-4 sm:p-8 md:p-12 w-full vs-main-content bg-transparent dark:bg-transparent">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/profile" element={<HealthProfile />} />

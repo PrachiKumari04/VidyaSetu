@@ -352,7 +352,7 @@ const Dashboard = () => {
         <div className="lg:col-span-8 space-y-10">
           
           {/* AI Executive Summary */}
-          <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-6 rounded-[2rem] relative overflow-hidden transition-all duration-500 shadow-[0_10px_40px_rgba(35,60,111,0.06)] dark:shadow-none group hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] hover:border-blue-100 dark:hover:border-emerald-500/40">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-[2rem] relative overflow-hidden transition-all duration-500 shadow-[0_8px_32px_rgba(0,0,0,0.4)] group hover:-translate-y-2 hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] hover:border-emerald-500/30">
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 dark:bg-emerald-500/20 blur-[80px] rounded-full pointer-events-none transition-transform duration-700 group-hover:scale-150" />
             <h2 className="text-emerald-700 dark:text-emerald-400 font-extrabold mb-3 flex items-center uppercase tracking-widest text-xs">
                <Cpu className="w-5 h-5 mr-2" /> {t('dashboard.ai_perspective')}
@@ -485,7 +485,7 @@ const Dashboard = () => {
         {/* Right Column - Secondary Data */}
         <div className="lg:col-span-4 space-y-6">
            {/* 3D Holographic Bio-Matrix Card */}
-           <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 rounded-[2.5rem] min-h-[520px] relative overflow-hidden group hover:border-blue-100 dark:hover:border-emerald-500/40 transition-all duration-500 shadow-[0_10px_40px_rgba(35,60,111,0.06)] dark:shadow-none hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] hover:-translate-y-1">
+           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] min-h-[520px] relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500 shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] hover:-translate-y-1">
                {/* Background Grid and Atmosphere */}
                <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-50 dark:opacity-100" />
                <h3 className="absolute top-6 left-6 text-emerald-700/80 dark:text-emerald-400/40 text-[11px] font-black uppercase tracking-[0.3em] flex items-center z-20">
@@ -501,7 +501,7 @@ const Dashboard = () => {
 
            {/* Latest Vitals Integration (Step 82) */}
            {latestVitals && latestVitals.length > 0 && (
-              <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/40 dark:border-white/10 p-6 rounded-[2.5rem] shadow-xl group hover:border-emerald-500/30 transition-all relative overflow-hidden">
+              <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-[2.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)] group hover:border-rose-500/30 hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all relative overflow-hidden">
                 <div className="absolute top-[-50%] left-[-50%] w-full h-full bg-rose-500/5 blur-[80px] rounded-full pointer-events-none" />
                 <div className="flex justify-between items-center mb-6 relative z-10">
                   <h3 className="text-slate-900 dark:text-white font-bold flex items-center text-lg">
@@ -529,7 +529,7 @@ const Dashboard = () => {
             )}
 
            {/* Step Tracker Placeholder */}
-           <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-6 rounded-[2rem] group hover:border-blue-100 dark:hover:border-emerald-500/40 transition-all duration-500 shadow-[0_10px_40px_rgba(35,60,111,0.06)] dark:shadow-none hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] hover:-translate-y-1 relative overflow-hidden">
+           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-[2rem] group hover:border-emerald-500/30 transition-all duration-500 shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] hover:-translate-y-1 relative overflow-hidden">
               <div className="absolute top-[-50%] right-[-50%] w-full h-full bg-emerald-500/15 dark:bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-700" />
               <div className="flex justify-between items-center mb-6 relative z-10">
                 <h3 className="text-slate-900 dark:text-white font-bold flex items-center text-lg">
@@ -565,7 +565,7 @@ const Dashboard = () => {
            </div>
 
            {/* General Tips */}
-           <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-6 rounded-[2rem] shadow-[0_10px_40px_rgba(35,60,111,0.06)] dark:shadow-none hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] hover:-translate-y-1 hover:border-blue-100 dark:hover:border-emerald-500/40 transition-all duration-500 relative overflow-hidden group">
+           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] hover:-translate-y-1 hover:border-emerald-500/30 transition-all duration-500 relative overflow-hidden group">
               <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-emerald-500/5 to-transparent pointer-events-none" />
               <h3 className="text-slate-900 dark:text-white font-black mb-4 flex items-center relative z-10 text-lg">
                  <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-500 mr-2" /> {t('dashboard.lifestyle_routine')}
@@ -603,7 +603,7 @@ const Dashboard = () => {
               }}
             />
 
-            <div className="bg-red-950/20 border border-red-900/30 p-6 rounded-[2rem] text-center">
+            <div className="bg-red-500/5 backdrop-blur-sm border border-red-500/20 p-6 rounded-[2rem] text-center shadow-[0_8px_32px_rgba(239,68,68,0.05)]">
                <div className="w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <ShieldAlert className="w-4 h-4 text-red-500" />
                </div>
@@ -637,7 +637,7 @@ const Dashboard = () => {
 const AdviceCard = ({ label, text, icon, onFeedback, done }) => {
   const { t } = useTranslation();
   return (
-    <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-6 rounded-[2rem] flex items-start group hover:border-blue-100 dark:hover:border-emerald-500/40 transition-all duration-500 shadow-[0_8px_30px_rgba(35,60,111,0.05)] dark:shadow-none hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(35,60,111,0.08)] relative overflow-hidden">
+    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-[2rem] flex items-start group hover:border-emerald-500/30 transition-all duration-500 shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/0 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       <div className="mr-5 shrink-0 mt-1 relative z-10">{icon}</div>
       <div className="flex-1">
