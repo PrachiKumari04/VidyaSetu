@@ -4,14 +4,15 @@ import { Link } from 'react-router-dom';
 
 const DisclaimerBanner = () => {
   return (
-    <footer className="mt-20 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl py-12 px-6">
+    <footer className="mt-auto py-12 px-6">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-red-50 dark:bg-red-500/5 border border-red-100 dark:border-red-500/10 rounded-3xl p-8 flex flex-col md:flex-row gap-6 items-start">
-           <div className="p-4 bg-red-100 dark:bg-red-500/10 rounded-2xl text-red-600 dark:text-red-500">
+        <div className="bg-red-500/5 backdrop-blur-2xl border border-red-500/20 shadow-[0_8px_32px_rgba(239,68,68,0.1)] rounded-[2.5rem] p-8 flex flex-col md:flex-row gap-6 items-start relative overflow-hidden group hover:border-red-500/30 transition-all duration-500">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 blur-[80px] rounded-full pointer-events-none" />
+           <div className="p-4 bg-red-500/10 rounded-2xl text-red-500 relative z-10 shrink-0">
               <AlertTriangle className="w-8 h-8" />
            </div>
-           <div>
-              <h4 className="text-gray-900 dark:text-white font-bold mb-2">Medical Disclaimer</h4>
+           <div className="relative z-10">
+              <h4 className="text-gray-900 dark:text-white font-black mb-2 tracking-tight">Medical Disclaimer</h4>
               <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-w-4xl">
                 VaidyaSetu is an AI-powered health assistant designed for educational and screening purposes only. 
                 The insights, risk scores, and interaction alerts provided are generated based on clinical databases and the Llama 3 model. 

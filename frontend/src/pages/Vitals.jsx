@@ -43,7 +43,7 @@ const VitalCard = ({ title, value, unit, type, status, trend, timestamp, icon: I
   return (
     <div 
       onClick={onClick}
-      className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-6 rounded-[2.5rem] hover:border-blue-100 dark:hover:border-emerald-500/40 transition-all duration-500 cursor-pointer group shadow-[0_10px_40px_rgba(35,60,111,0.06)] dark:shadow-none hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] relative overflow-hidden"
+      className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-[2.5rem] hover:border-emerald-500/30 transition-all duration-500 cursor-pointer group shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] relative overflow-hidden"
     >
       <div className="absolute top-[-50%] left-[-50%] w-full h-full bg-emerald-500/10 dark:bg-emerald-500/5 blur-[60px] rounded-full pointer-events-none transition-transform duration-700 group-hover:scale-150" />
       <div className="flex justify-between items-start mb-4 relative z-10">
@@ -472,8 +472,8 @@ const Vitals = () => {
       )}
 
       {/* Quick Entry Bar (Step 16) */}
-      <div className="p-2 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-4 min-w-max pb-4">
+      <div className="p-2">
+        <div className="flex flex-wrap gap-4 pb-4 justify-center md:justify-start">
           {[
             { id: 'bp', icon: Heart, label: 'Blood Pressure', color: 'text-rose-500' },
             { id: 'glucose', icon: Activity, label: 'Glucose Level', color: 'text-amber-500' },
@@ -488,7 +488,7 @@ const Vitals = () => {
             <button
               key={item.id}
               onClick={() => setModal({ open: true, type: item.id })}
-              className="flex items-center gap-3 px-6 py-4 bg-white dark:bg-none dark:bg-gray-950/40 backdrop-blur-3xl border border-slate-100 dark:border-gray-800 rounded-3xl hover:border-blue-100 dark:hover:border-emerald-500/40 transition-all duration-500 hover:-translate-y-1 shadow-[0_8px_30px_rgba(35,60,111,0.05)] hover:shadow-[0_15px_40px_rgba(35,60,111,0.08)] dark:shadow-none group"
+              className="flex items-center gap-3 px-6 py-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl hover:border-emerald-500/40 transition-all duration-500 hover:-translate-y-1 shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] group"
             >
               <item.icon className={`w-5 h-5 ${item.color} group-hover:scale-110 transition-transform`} />
               <span className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Log {item.label}</span>
@@ -601,7 +601,7 @@ const Vitals = () => {
                       </h3>
                       <button onClick={() => setGoalModalOpen(true)} className="text-[10px] font-black text-emerald-500 uppercase hover:underline">Customize Goals</button>
                    </div>
-                    <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-8 rounded-[2.5rem] shadow-[0_10px_40px_rgba(35,60,111,0.06)] hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] transition-all duration-500 dark:shadow-none space-y-6">
+                    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[2.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.1)] transition-all duration-500 space-y-6">
                       {goals.length > 0 ? goals.map(g => (
                         <div key={g._id} className="space-y-3">
                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">
@@ -626,7 +626,7 @@ const Vitals = () => {
                    <h3 className="text-xs font-black uppercase text-gray-700 dark:text-gray-300 tracking-widest px-4 flex items-center gap-2">
                      <RefreshCw className="w-4 h-4 text-emerald-500" /> Sync Intelligence
                    </h3>
-                   <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-8 rounded-[2.5rem] shadow-[0_10px_40px_rgba(35,60,111,0.06)] hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] transition-all duration-500 dark:shadow-none">
+                   <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[2.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.1)] transition-all duration-500">
                       <div className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-white/5">
                          <div className="flex items-center gap-4">
                             <div className="p-3 bg-white dark:bg-gray-950 rounded-xl shadow-sm">
@@ -657,7 +657,7 @@ const Vitals = () => {
 
              {/* Precision Logs Table */}
              <div className="space-y-8">
-                <div className="bg-white dark:bg-none dark:bg-gray-950/40 backdrop-blur-2xl border border-slate-100 dark:border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_10px_40px_rgba(35,60,111,0.05)] dark:shadow-none relative">
+                <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-900/50">
@@ -797,7 +797,7 @@ const Vitals = () => {
                     const rangeLabel = isInRange === true ? 'In Range' : isInRange === false ? 'Out of Range' : 'N/A';
                     const rangeLabelColor = isInRange === true ? 'text-emerald-500 bg-emerald-500/10' : isInRange === false ? 'text-red-500 bg-red-500/10' : 'text-gray-400 bg-gray-100 dark:bg-gray-800';
                     return (
-                    <div key={lab._id} className={`bg-white dark:bg-gray-950 border ${rangeColor} p-8 rounded-[3rem] shadow-2xl space-y-6 group hover:border-emerald-500/20 transition-all`}>
+                    <div key={lab._id} className={`bg-white/5 backdrop-blur-2xl border ${rangeColor} p-8 rounded-[3rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)] space-y-6 group hover:border-emerald-500/30 transition-all`}>
                        <div className="flex justify-between items-start">
                           <div className="p-4 bg-emerald-500/10 rounded-2xl">
                              <FlaskConical className="w-6 h-6 text-emerald-500" />
@@ -982,7 +982,7 @@ const Vitals = () => {
 };
 
 const TrendAnalysisCard = ({ title, subtitle, icon: Icon, color, data, Chart, extra }) => (
-  <div className={`bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 p-8 rounded-[3rem] shadow-[0_10px_40px_rgba(35,60,111,0.06)] dark:shadow-none space-y-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(35,60,111,0.1)] hover:border-${color}-100 dark:hover:border-${color}-500/30 relative overflow-hidden`}>
+  <div className={`bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[3rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)] space-y-8 group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_rgba(16,185,129,0.15)] hover:border-${color}-500/30 relative overflow-hidden`}>
     <div className={`absolute top-[-20%] right-[-10%] w-64 h-64 bg-${color}-500/5 dark:bg-${color}-500/5 blur-[80px] rounded-full group-hover:bg-${color}-500/10 transition-colors duration-700 pointer-events-none`} />
     <div className="flex justify-between items-start relative z-10">
       <div className="flex items-center gap-4">

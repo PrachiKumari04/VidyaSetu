@@ -123,6 +123,22 @@ const HologramMannequin = ({ riskLevel = 0 }) => {
       if (child.isMesh || child.isSkinnedMesh) {
          child.material = premiumHoloMaterial;
       }
+
+      // Drop arms to sides
+      if (child.isBone) {
+        if (child.name.includes('LeftArm')) {
+          child.rotation.z = -1.1; // Rotate left arm down slightly less
+        }
+        if (child.name.includes('RightArm')) {
+          child.rotation.z = 1.1; // Rotate right arm down slightly less
+        }
+        if (child.name.includes('LeftShoulder')) {
+          child.rotation.z = -0.2; // Relax left shoulder
+        }
+        if (child.name.includes('RightShoulder')) {
+          child.rotation.z = 0.2; // Relax right shoulder
+        }
+      }
     });
 
     return { scale, cx: center.x, cy: center.y, cz: center.z };

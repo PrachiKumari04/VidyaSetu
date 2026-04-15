@@ -124,7 +124,7 @@ const Sidebar = () => {
                     elements: { 
                       userButtonAvatarBox: "w-8 h-8", 
                       userButtonBox: "flex-row-reverse",
-                      userButtonOuterIdentifier: "text-slate-800 dark:text-gray-300 font-bold" 
+                      userButtonOuterIdentifier: "text-slate-900 dark:!text-white font-bold" 
                     } 
                   }} 
                 />

@@ -118,8 +118,8 @@ const AppLayout = () => {
       </button>
 
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300">
-        <main className="p-4 sm:p-8 md:p-12 w-full overflow-auto vs-main-content bg-transparent dark:bg-transparent">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300 overflow-y-auto h-screen scrollbar-hide">
+        <main className="flex-1 p-4 md:p-8 w-full vs-main-content bg-transparent dark:bg-transparent">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/profile" element={<HealthProfile />} />
