@@ -175,7 +175,9 @@ const Settings = () => {
       i18n.changeLanguage(isoCode);
       localStorage.setItem('i18nextLng', isoCode);
     }
-  }, [profile?.settings?.language, i18n]);
+    // Only sync from profile when the profile language itself changes (initial load)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.settings?.language]);
 
   // Handle Google OAuth callback
   useEffect(() => {
