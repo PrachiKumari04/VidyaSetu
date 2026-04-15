@@ -468,38 +468,6 @@ const HealthProfile = () => {
       )}
     </div>
   );
-};me(profile.createdAt) || 'some time ago'}. Sync for fresh insights.`
-                    : 'Update your profile to unlock AI health insights.'}
-                </p>
-              </div>
-              <Link to="/"
-                className="mt-6 flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur border border-white/20 text-white font-bold py-3 rounded-2xl transition-all active:scale-95 text-sm">
-                Go to Dashboard <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </Card>
-
->>>>>>> profile
-      </div>
-
-      {/* Dedicated Contextual Observations Section - Center Aligned */}
-      {profile.otherConditions?.value && (
-        <div className="bg-white dark:bg-none dark:bg-white/5 backdrop-blur-3xl border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-8 lg:p-12 text-center animate-in zoom-in duration-500 shadow-xl group hover:border-emerald-500/30 transition-all">
-           <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl w-fit mx-auto mb-6 group-hover:scale-110 transition-transform">
-              <History size={24} />
-           </div>
-           <h3 className="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-[0.3em] font-black mb-4">{t('profile.labels.obs_title')}</h3>
-          <p className="text-xl md:text-2xl text-slate-900 dark:text-white font-black italic max-w-4xl mx-auto leading-relaxed">
-            "{profile.otherConditions.value}"
-          </p>
-          <div className="mt-8 flex justify-center">
-             <div className="h-1 w-12 bg-emerald-500/30 rounded-full" />
-          </div>
-        </div>
-      )}
-    </div>
-  );
 };
 
 export default HealthProfile;
