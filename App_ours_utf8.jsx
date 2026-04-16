@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { SignedIn, SignedOut, SignIn, SignUp, useUser } from '@clerk/clerk-react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -29,7 +29,7 @@ import MedicationSchedule from './pages/MedicationSchedule';
 import AlertSettings from './pages/AlertSettings';
 import MyMedicines from './pages/MyMedicines';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://vaidyasetu-eyg9.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 // Guard: redirect unauthenticated users to /sign-in
 const ProtectedRoute = ({ children }) => {
@@ -125,10 +125,10 @@ const AppLayout = () => {
         </main>
         
         <DisclaimerBanner />
-        <Chatbot />
       </div>
+      <Chatbot />
 
-      {/* Floating Theme Toggle — bottom-left on mobile, top-right on desktop */}
+      {/* Floating Theme Toggle ΓÇö bottom-left on mobile, top-right on desktop */}
       <button
         onClick={toggleTheme}
         className="fixed bottom-6 left-6 md:bottom-auto md:left-auto md:top-6 md:right-6 z-[100] p-3 bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl text-emerald-500 hover:scale-110 active:scale-95 transition-all shadow-2xl"

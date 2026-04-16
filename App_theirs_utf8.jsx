@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { SignedIn, SignedOut, SignIn, SignUp, useUser } from '@clerk/clerk-react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -128,7 +128,7 @@ const AppLayout = () => {
         <Chatbot />
       </div>
 
-      {/* Floating Theme Toggle — bottom-left on mobile, top-right on desktop */}
+      {/* Floating Theme Toggle ΓÇö bottom-left on mobile, top-right on desktop */}
       <button
         onClick={toggleTheme}
         className="fixed bottom-6 left-6 md:bottom-auto md:left-auto md:top-6 md:right-6 z-[100] p-3 bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl text-emerald-500 hover:scale-110 active:scale-95 transition-all shadow-2xl"
