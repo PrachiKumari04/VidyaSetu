@@ -125,8 +125,8 @@ const AppLayout = () => {
         </main>
         
         <DisclaimerBanner />
-        <Chatbot />
       </div>
+      <Chatbot />
 
       {/* Floating Theme Toggle — bottom-left on mobile, top-right on desktop */}
       <button
