@@ -363,7 +363,7 @@ router.get('/:diseaseId/questionnaire', async (req, res) => {
 router.post('/:diseaseId/questionnaire', async (req, res) => {
   try {
     const { diseaseId } = req.params;
-    const { clerkId, answers, userProfile, recalculateFullRisk } = req.body;
+    const { clerkId, answers, userProfile } = req.body;
     
     if (!clerkId) {
       return res.status(400).json({ status: 'error', message: 'clerkId is required' });
@@ -385,15 +385,87 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
       console.warn('[Questionnaire] Could not fetch medications:', medErr.message);
     }
     
-    // Merge database profile with frontend profile data (use most complete data)
+    // 1. Map raw questionnaire answers to structured UserProfile fields
+    const fieldMapping = {
+      // Diabetes
+      'waist_circumference': 'waistCircumference',
+      'diabetes_family_history': 'familyHistoryDiabetes',
+      'physical_activity': 'activityLevel',
+      'gestational_diabetes': 'gestationalDiabetesHistory',
+      'frequent_thirst': 'frequentThirst',
+      'frequent_urination': 'frequentUrination',
+      'blurred_vision': 'blurredVision',
+      'slow_healing': 'slowHealingWounds',
+      'tingling_extremities': 'tinglingExtremities',
+      
+      // Hypertension
+      'family_history_htn': 'familyHistoryHypertension',
+      'salt_intake': 'saltIntake',
+      'stress_level': 'stressLevel',
+      'sleep_quality': 'sleepQuality',
+      'previous_bp_readings': 'bloodPressureNotes',
+      
+      // Thyroid
+      'family_history_thyroid': 'familyHistoryThyroid',
+      'weight_changes': 'weightChangeUnexplained',
+      'fatigue_level': 'fatiguePersistent',
+      'temperature_sensitivity': 'coldIntolerance',
+      
+      // PCOS
+      'menstrual_cycle': 'menstrualCycleIrregular',
+      'hirsutism': 'facialBodyHairExcess'
+    };
+
+    const now = new Date();
+    const mappedUpdatesForDB = {};
+    const localProfileInjections = {};
+
+    // Map direct answers
+    Object.entries(answers || {}).forEach(([key, value]) => {
+      const profileField = fieldMapping[key];
+      if (profileField) {
+        mappedUpdatesForDB[profileField] = { value, lastUpdated: now, updateType: 'real_change' };
+        localProfileInjections[profileField] = { value }; // For immediate calculation
+      }
+    });
+
+    // Handle specific multi-select symptom mapping
+    if (answers && answers.symptoms && Array.isArray(answers.symptoms)) {
+      const symptomMap = {
+        'frequent_urination': 'frequentUrination',
+        'excessive_thirst': 'frequentThirst',
+        'blurred_vision': 'blurredVision',
+        'slow_healing': 'slowHealingWounds',
+        'tingling_extremities': 'tinglingExtremities',
+        'unexplained_weight_loss': 'weightChangeUnexplained',
+        'fatigue': 'fatiguePersistent'
+      };
+      
+      answers.symptoms.forEach(s => {
+        const field = symptomMap[s];
+        if (field) {
+          mappedUpdatesForDB[field] = { value: true, lastUpdated: now, updateType: 'real_change' };
+          localProfileInjections[field] = { value: true };
+        }
+      });
+      
+      if (answers.symptoms.includes('none')) {
+        Object.values(symptomMap).forEach(field => {
+           if (!mappedUpdatesForDB[field]) {
+             mappedUpdatesForDB[field] = { value: false, lastUpdated: now, updateType: 'real_change' };
+             localProfileInjections[field] = { value: false };
+           }
+        });
+      }
+    }
+
+    // Merge database profile with frontend profile data AND the new locally mapped answers!
     const comprehensiveProfile = {
-      // Database data
       ...dbProfile,
-      
-      // Frontend profile data (overrides if more complete)
       ...(userProfile || {}),
+      ...localProfileInjections, // Newly answered symptoms overriding old data
       
-      // Questionnaire answers
+      // Keep raw answers for fallback
       questionnaireAnswers: answers,
       
       // Ensure arrays exist and are populated
@@ -401,12 +473,12 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
       activeMedications: activeMeds.length > 0 ? activeMeds : (userProfile?.activeMedications || dbProfile?.activeMedications || [])
     };
     
-    console.log(`[Questionnaire] Considering:`);
+    console.log(`[Questionnaire] Considering for ${diseaseId}:`);
     console.log(`  - Age: ${comprehensiveProfile?.age?.value || comprehensiveProfile?.age}`);
     console.log(`  - BMI: ${comprehensiveProfile?.bmi?.value || comprehensiveProfile?.bmi}`);
     console.log(`  - Allergies: ${comprehensiveProfile.allergies.length} known`);
     console.log(`  - Medications: ${comprehensiveProfile.activeMedications.length} active`);
-    console.log(`  - Questionnaire answers: ${Object.keys(answers || {}).length}`);
+    console.log(`  - Questionnaire mapped fields:`, Object.keys(localProfileInjections));
     
     // Calculate baseline and questionnaire-enriched scores separately, then blend 40/60.
     const baselineInsights = calculateDetailedInsights(dbProfile, diseaseId);
@@ -423,87 +495,11 @@ router.post('/:diseaseId/questionnaire', async (req, res) => {
       riskScore: finalRiskScore
     };
     
-    // PERSIST QUESTIONNAIRE ANSWERS TO USER PROFILE (CRITICAL FIX)
+    // PERSIST QUESTIONNAIRE ANSWERS TO USER PROFILE
     try {
-      const profileToUpdate = await UserProfile.findOne({ clerkId });
-      if (profileToUpdate) {
-        const fieldMapping = {
-          // Diabetes
-          'waist_circumference': 'waistCircumference',
-          'diabetes_family_history': 'familyHistoryDiabetes',
-          'physical_activity': 'activityLevel',
-          'gestational_diabetes': 'gestationalDiabetesHistory',
-          'frequent_thirst': 'frequentThirst',
-          'frequent_urination': 'frequentUrination',
-          'blurred_vision': 'blurredVision',
-          'slow_healing': 'slowHealingWounds',
-          'tingling_extremities': 'tinglingExtremities',
-          
-          // Hypertension
-          'family_history_htn': 'familyHistoryHypertension',
-          'salt_intake': 'saltIntake',
-          'stress_level': 'stressLevel',
-          'sleep_quality': 'sleepQuality',
-          'previous_bp_readings': 'bloodPressureNotes',
-          
-          // Thyroid
-          'family_history_thyroid': 'familyHistoryThyroid',
-          'weight_changes': 'weightChangeUnexplained',
-          'fatigue_level': 'fatiguePersistent',
-          'temperature_sensitivity': 'coldIntolerance',
-          
-          // PCOS
-          'menstrual_cycle': 'menstrualCycleIrregular',
-          'hirsutism': 'facialBodyHairExcess'
-        };
-
-        const now = new Date();
-        const updates = {};
-
-        // 1. Map direct answers
-        Object.entries(answers).forEach(([key, value]) => {
-          const profileField = fieldMapping[key];
-          if (profileField && profileToUpdate[profileField] !== undefined) {
-            updates[profileField] = {
-              value: value,
-              lastUpdated: now,
-              updateType: 'real_change'
-            };
-          }
-        });
-
-        // 2. Handle specific multi-select symptom mapping
-        if (answers.symptoms && Array.isArray(answers.symptoms)) {
-          const symptomMap = {
-            'frequent_urination': 'frequentUrination',
-            'excessive_thirst': 'frequentThirst',
-            'blurred_vision': 'blurredVision',
-            'slow_healing': 'slowHealingWounds',
-            'tingling_extremities': 'tinglingExtremities',
-            'unexplained_weight_loss': 'weightChangeUnexplained',
-            'fatigue': 'fatiguePersistent'
-          };
-          
-          answers.symptoms.forEach(s => {
-            const field = symptomMap[s];
-            if (field) {
-              updates[field] = { value: true, lastUpdated: now, updateType: 'real_change' };
-            }
-          });
-          
-          // If 'none' is selected, we can optionally clear symptoms (but careful here)
-          if (answers.symptoms.includes('none')) {
-            Object.values(symptomMap).forEach(field => {
-               // Only set to false if we didn't just set it to true (though 'none' shouldn't coexist)
-               if (!updates[field]) updates[field] = { value: false, lastUpdated: now, updateType: 'real_change' };
-            });
-          }
-        }
-
-        if (Object.keys(updates).length > 0) {
-          console.log(`[Questionnaire] Persisting ${Object.keys(updates).length} fields to UserProfile for ${clerkId}`);
-          await UserProfile.updateOne({ clerkId }, { $set: updates });
-        }
+      if (Object.keys(mappedUpdatesForDB).length > 0) {
+        console.log(`[Questionnaire] Persisting ${Object.keys(mappedUpdatesForDB).length} fields to UserProfile for ${clerkId}`);
+        await UserProfile.updateOne({ clerkId }, { $set: mappedUpdatesForDB });
       }
     } catch (saveErr) {
       console.warn('[Questionnaire] Failed to persist answers to UserProfile:', saveErr.message);

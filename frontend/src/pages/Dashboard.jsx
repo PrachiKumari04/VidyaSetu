@@ -361,11 +361,30 @@ const Dashboard = () => {
           </div>
 
           <div className="space-y-6">
-            <h3 className="text-gray-900 dark:text-white font-black text-xl tracking-tight">{t('dashboard.predictive_risks')}</h3>
-            <p className="text-xs text-gray-400 font-medium">{t('dashboard.risk_instructions')}</p>
+            {/* Enhanced Section Header */}
+            <div className="relative">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-gray-900 dark:text-white font-black text-2xl tracking-tight flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <Activity className="w-5 h-5 text-white" />
+                  </div>
+                  {t('dashboard.predictive_risks')}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400">{
+                    Object.entries(report?.risk_scores || {}).filter(([_, score]) => score >= 70).length
+                  } High Risk</span>
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium pl-[52px]">
+                {t('dashboard.risk_instructions')}
+              </p>
+              <div className="absolute -bottom-4 left-0 right-0 h-px bg-gradient-to-r from-emerald-500/50 via-teal-500/30 to-transparent" />
+            </div>
             
-            {/* Disease Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Disease Cards Grid - Enhanced Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
               {(() => {
                 const riskEntries = Object.entries(report?.risk_scores || {});
                 const normalizeDiseaseId = (diseaseId = '') => diseaseId.toLowerCase().replace(/[_-\s]/g, '');
@@ -389,9 +408,12 @@ const Dashboard = () => {
 
                 if (visibleEntries.length === 0) {
                   return (
-                    <div className="md:col-span-2 rounded-[2rem] border border-amber-500/25 bg-amber-500/5 p-8 text-center text-sm text-amber-100">
-                      <p className="font-bold text-amber-400 mb-2 uppercase tracking-widest text-[10px]">{t('dashboard.no_risk_vectors')}</p>
-                        <p className="text-gray-400 mb-4">
+                    <div className="md:col-span-2 rounded-3xl border-2 border-dashed border-emerald-300 dark:border-emerald-700/50 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 dark:from-emerald-950/20 dark:to-teal-950/10 p-10 text-center">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                        <CheckCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <p className="font-bold text-emerald-700 dark:text-emerald-300 mb-2 text-lg">{t('dashboard.no_risk_vectors')}</p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
                           {t('dashboard.report_empty')}
                         </p>
                         <button
@@ -411,7 +433,7 @@ const Dashboard = () => {
                               setLoading(false);
                             }
                           }}
-                          className="px-6 py-3 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-wider"
+                          className="px-8 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-bold uppercase tracking-wider hover:shadow-lg hover:shadow-emerald-500/30 transition-all hover:-translate-y-0.5 active:scale-95"
                         >
                           {t('dashboard.refresh_risks')}
                         </button>
@@ -441,13 +463,15 @@ const Dashboard = () => {
               if (remainingCount === 0) return null;
 
               return (
-                <button
-                  type="button"
-                  onClick={() => setShowAllRiskCards(prev => !prev)}
-                  className="px-5 py-2 rounded-xl border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider hover:bg-emerald-500/10 transition-colors"
-                >
-                  {showAllRiskCards ? t('dashboard.show_less') : `${t('dashboard.show_more')} (${remainingCount})`}
-                </button>
+                <div className="flex justify-center pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllRiskCards(prev => !prev)}
+                    className="px-6 py-3 rounded-2xl border-2 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-sm font-bold uppercase tracking-wider hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-md"
+                  >
+                    {showAllRiskCards ? t('dashboard.show_less') : `${t('dashboard.show_more')} (${remainingCount})`}
+                  </button>
+                </div>
               );
             })()}
           </div>

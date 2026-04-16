@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, 
-  Activity, Heart, Brain, Scale, Moon, Stethoscope
+  Activity, Heart, Brain, Scale, Moon, Stethoscope, TrendingUp, TrendingDown, ArrowRight
 } from 'lucide-react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -149,6 +149,7 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
   };
 
   const handleSubmit = async () => {
+    const previousScore = currentScore;
     calculateRisk();
     
     // Prepare comprehensive user data for backend recalculation
@@ -224,15 +225,21 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
       if (res.data.status === 'success') {
         // Update with backend-calculated score
         const backendData = res.data.data;
-        setCalculatedScore(backendData.riskScore);
+        const newScore = backendData.riskScore;
+        
+        setCalculatedScore(newScore);
         setScoreBreakdown({
           baseline: backendData.baselineScore,
           questionnaire: backendData.questionnaireScore,
           totalPoints: backendData.totalPoints,
           details: backendData.factorBreakdown || [],
+          protectiveFactors: backendData.protectiveFactors || [],
           mitigations: backendData.mitigationSteps || [],
           allergies: backendData.allergyConsiderations || [],
-          medications: backendData.medicationConsiderations || []
+          medications: backendData.medicationConsiderations || [],
+          previousScore: previousScore,
+          newScore: newScore,
+          scoreChange: newScore - previousScore
         });
       }
     } catch (err) {
@@ -376,14 +383,14 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-4 md:inset-6 lg:inset-8 bg-white dark:bg-gray-950 rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-2xl h-auto max-h-[90vh] bg-white/95 dark:bg-gray-950/90 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] z-[500] overflow-hidden flex flex-col border border-slate-100 dark:border-white/10"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-white">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-white shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-black">{questionnaire.title}</h2>
-                  <p className="text-sm text-white/80 mt-1">{questionnaire.description}</p>
+                  <h2 className="text-xl font-extrabold tracking-tight">{questionnaire.title}</h2>
+                  <p className="text-xs text-white/80 mt-1">{questionnaire.description}</p>
                 </div>
                 <button
                   onClick={onClose}
@@ -395,13 +402,13 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
 
               {/* Progress Bar */}
               <div className="space-y-2">
-                <div className="flex justify-between text-xs font-bold">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
                   <span>{t('questionnaire.question_progress', { defaultValue: 'Question' })} {Math.min(currentStep + 1, Math.max(1, questionCount))} {t('questionnaire.of', { defaultValue: 'of' })} {Math.max(1, questionCount)}</span>
                   <span>{Math.round(progress)}% {t('questionnaire.complete', { defaultValue: 'Complete' })}</span>
                 </div>
-                <div className="w-full bg-white/30 rounded-full h-2">
+                <div className="w-full bg-white/30 rounded-full h-1.5 overflow-hidden">
                   <motion.div
-                    className="bg-white rounded-full h-2"
+                    className="bg-white rounded-full h-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
                     transition={{ duration: 0.3 }}
@@ -411,184 +418,355 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 md:p-8">
               {calculatedScore === null ? (
                 /* Question View */
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-lg mx-auto">
                   {!currentQuestion && (
-                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30 text-sm text-amber-700 dark:text-amber-300">
+                    <div className="p-6 bg-amber-50/80 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800/30 text-sm text-amber-700 dark:text-amber-300">
                       No questionnaire questions available for this condition yet.
                     </div>
                   )}
                   {currentQuestion && (
-                    <>
-                  <div className="mb-6">
-                    <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-black uppercase tracking-wider rounded-full">
-                      {currentQuestion.category}
-                    </span>
-                    <span className="ml-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-black uppercase tracking-wider rounded-full">
-                      {currentQuestion.weight} priority
-                    </span>
-                  </div>
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="mb-6 flex items-center gap-2">
+                        <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                          {currentQuestion.category}
+                        </span>
+                        <span className="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                          {currentQuestion.weight} priority
+                        </span>
+                      </div>
 
-                  <h3 className="text-xl font-black text-gray-900 dark:text-white mb-6">
-                    {currentQuestion.question}
-                  </h3>
+                      <h3 className="text-xl md:text-3xl font-black text-gray-900 dark:text-white mb-8 tracking-tight leading-tight">
+                        {currentQuestion.question}
+                      </h3>
 
-                  {/* Choice Type */}
-                  {currentQuestion.type === 'choice' && (
-                    <div className="space-y-3">
-                      {currentQuestion.options.map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => handleAnswer(currentQuestion.id, option.value)}
-                          className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                            answers[currentQuestion.id] === option.value
-                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                              : 'border-gray-200 dark:border-gray-800 hover:border-emerald-300'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-gray-900 dark:text-white">
-                              {option.label}
-                            </span>
-                            {answers[currentQuestion.id] === option.value && (
-                              <CheckCircle className="w-5 h-5 text-emerald-500" />
-                            )}
-                          </div>
-                        </button>
-                      ))}
+                      {/* Choice Type */}
+                      {currentQuestion.type === 'choice' && (
+                        <div className="space-y-3">
+                          {currentQuestion.options.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => handleAnswer(currentQuestion.id, option.value)}
+                              className={`w-full p-6 rounded-2xl border-2 text-left transition-all duration-300 group hover:-translate-y-1 ${
+                                answers[currentQuestion.id] === option.value
+                                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-xl shadow-emerald-500/20'
+                                  : 'border-slate-100 dark:border-white/5 hover:border-emerald-300 hover:shadow-lg dark:hover:border-emerald-500/50 bg-white/50 dark:bg-transparent'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-gray-900 dark:text-white text-lg">
+                                  {option.label}
+                                </span>
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                                  answers[currentQuestion.id] === option.value
+                                    ? 'bg-emerald-500' : 'bg-gray-100 dark:bg-gray-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30'
+                                }`}>
+                                  {answers[currentQuestion.id] === option.value && (
+                                    <CheckCircle className="w-4 h-4 text-white" />
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Multi-Select Type */}
+                      {currentQuestion.type === 'multi-select' && (
+                        <div className="space-y-3">
+                          {currentQuestion.options.map((option) => {
+                            const isSelected = (answers[currentQuestion.id] || []).includes(option.value);
+                            return (
+                              <button
+                                key={option.value}
+                                onClick={() => handleMultiSelect(currentQuestion.id, option.value)}
+                                className={`w-full p-6 rounded-2xl border-2 text-left transition-all duration-300 group hover:-translate-y-1 ${
+                                  isSelected
+                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-xl shadow-emerald-500/20'
+                                    : 'border-slate-100 dark:border-white/5 hover:border-emerald-300 hover:shadow-lg dark:hover:border-emerald-500/50 bg-white/50 dark:bg-transparent'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-gray-900 dark:text-white text-lg">
+                                    {option.label}
+                                  </span>
+                                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
+                                    isSelected
+                                      ? 'bg-emerald-500' : 'bg-gray-100 dark:bg-gray-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30'
+                                  }`}>
+                                    {isSelected && (
+                                      <CheckCircle className="w-4 h-4 text-white" />
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Number Input Type */}
+                      {currentQuestion.type === 'number' && (
+                        <div className="relative">
+                            <input
+                              type="number"
+                              value={answers[currentQuestion.id] || ''}
+                              onChange={(e) => handleAnswer(currentQuestion.id, e.target.value)}
+                              placeholder={currentQuestion.placeholder}
+                              className="w-full p-6 border-2 border-slate-100 dark:border-white/5 rounded-2xl text-xl font-bold text-gray-900 dark:text-white bg-white/50 dark:bg-black/20 focus:border-emerald-500 focus:bg-emerald-50/50 dark:focus:bg-emerald-900/10 outline-none transition-all shadow-inner focus:shadow-emerald-500/20"
+                            />
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {/* Multi-Select Type */}
-                  {currentQuestion.type === 'multi-select' && (
-                    <div className="space-y-3">
-                      {currentQuestion.options.map((option) => {
-                        const isSelected = (answers[currentQuestion.id] || []).includes(option.value);
-                        return (
-                          <button
-                            key={option.value}
-                            onClick={() => handleMultiSelect(currentQuestion.id, option.value)}
-                            className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                              isSelected
-                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                                : 'border-gray-200 dark:border-gray-800 hover:border-emerald-300'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-gray-900 dark:text-white">
-                                {option.label}
-                              </span>
-                              {isSelected && (
-                                <CheckCircle className="w-5 h-5 text-emerald-500" />
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Number Input Type */}
-                  {currentQuestion.type === 'number' && (
-                    <input
-                      type="number"
-                      value={answers[currentQuestion.id] || ''}
-                      onChange={(e) => handleAnswer(currentQuestion.id, e.target.value)}
-                      placeholder={currentQuestion.placeholder}
-                      className="w-full p-4 border-2 border-gray-200 dark:border-gray-800 rounded-xl text-lg font-bold text-gray-900 dark:text-white bg-transparent focus:border-emerald-500 outline-none transition-colors"
-                    />
-                  )}
-                    </>
                   )}
                 </div>
               ) : (
                 /* Results View */
-                <div className="max-w-3xl mx-auto space-y-6">
-                  {/* Score Display */}
-                  <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-8 text-white text-center">
-                    <h3 className="text-lg font-bold mb-2">{t('questionnaire.updated_score', { defaultValue: 'Your Updated Risk Score' })}</h3>
-                    <div className="text-6xl font-black mb-2">{calculatedScore}%</div>
-                    <p className="text-sm text-white/80">
-                      {t('questionnaire.updated_score_desc', { defaultValue: 'Based on comprehensive assessment with' })} {questionnaire.questions.length} {t('questionnaire.targeted_questions', { defaultValue: 'targeted questions' })}
+                <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                  {/* Score Comparison Display */}
+                  <div className={`rounded-[2.5rem] p-6 sm:p-8 shadow-xl relative overflow-hidden border ${
+                    calculatedScore >= 70 ? 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30 border-red-200 dark:border-red-800/30 shadow-red-500/10' :
+                    calculatedScore >= 40 ? 'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/30 border-amber-200 dark:border-amber-800/30 shadow-amber-500/10' :
+                    'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-900/30 border-emerald-200 dark:border-emerald-800/30 shadow-emerald-500/10'
+                  }`}>
+                    <div className={`absolute top-[-50%] right-[-20%] w-[150%] h-[150%] blur-[120px] rounded-full pointer-events-none ${
+                        calculatedScore >= 70 ? 'bg-red-500/10' :
+                        calculatedScore >= 40 ? 'bg-amber-500/10' :
+                        'bg-emerald-500/10'
+                    }`} />
+                    
+                    {/* Before/After Comparison */}
+                    <div className="relative z-10">
+                      <h3 className={`text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] mb-4 text-center ${
+                          calculatedScore >= 70 ? 'text-red-500' :
+                          calculatedScore >= 40 ? 'text-amber-500' :
+                          'text-emerald-600 dark:text-emerald-400'
+                      }`}>Risk Assessment Results</h3>
+                      
+                      <div className="flex flex-wrap items-stretch justify-center gap-4 mb-6">
+                        {/* Previous Score */}
+                        <div className="flex-1 min-w-[110px] flex flex-col items-center justify-center bg-white/40 dark:bg-black/20 px-4 py-4 rounded-3xl border border-white/40 dark:border-white/5">
+                          <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Previous</div>
+                          <motion.div 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="text-4xl md:text-5xl font-black text-slate-500/50 dark:text-white/30"
+                          >
+                            {scoreBreakdown.previousScore}%
+                          </motion.div>
+                        </div>
+                        
+                        {/* Arrow */}
+                        <motion.div
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: 0.4 }}
+                          className="flex items-center justify-center shrink-0 text-slate-400 hidden sm:flex"
+                        >
+                          <ArrowRight className="w-6 h-6" />
+                        </motion.div>
+                        <div className="w-[2px] h-4 bg-slate-400/30 rounded-full sm:hidden shrink-0 mx-auto" />
+                        
+                        {/* New Score */}
+                        <div className={`flex-1 min-w-[110px] flex flex-col items-center justify-center px-4 py-4 rounded-3xl border shadow-xl relative overflow-hidden ${
+                          calculatedScore >= 70 ? 'bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-400/30 shadow-red-500/20' :
+                          calculatedScore >= 40 ? 'bg-gradient-to-br from-amber-500/20 to-amber-600/20 border-amber-400/30 shadow-amber-500/20' :
+                          'bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-emerald-400/30 shadow-emerald-500/20'
+                        }`}>
+                          <div className="absolute inset-0 bg-white/40 dark:bg-black/20 blur-[10px]" />
+                          <div className={`relative z-10 text-[9px] font-black uppercase tracking-widest mb-1 ${
+                            calculatedScore >= 70 ? 'text-red-600 dark:text-red-400' :
+                            calculatedScore >= 40 ? 'text-amber-600 dark:text-amber-400' :
+                            'text-emerald-600 dark:text-emerald-400'
+                          }`}>Updated</div>
+                          <motion.div 
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
+                            className={`text-5xl md:text-6xl font-black relative z-10 leading-none ${
+                                calculatedScore >= 70 ? 'text-red-700 dark:text-red-300' :
+                                calculatedScore >= 40 ? 'text-amber-700 dark:text-amber-300' :
+                                'text-emerald-700 dark:text-emerald-300'
+                            }`}
+                          >
+                            {calculatedScore}%
+                          </motion.div>
+                        </div>
+                      </div>
+                      
+                      {/* Score Change Indicator */}
+                      <div className="flex justify-center">
+                        <motion.div
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.8 }}
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-5 py-2.5 bg-white/50 dark:bg-black/20 rounded-full border border-white/50 dark:border-white/5"
+                        >
+                          {scoreBreakdown.scoreChange > 0 ? (
+                            <>
+                              <TrendingUp className="w-5 h-5 text-red-500 dark:text-red-400" />
+                              <span className="text-sm font-bold text-red-600 dark:text-red-400">+{scoreBreakdown.scoreChange}% increase</span>
+                            </>
+                          ) : scoreBreakdown.scoreChange < 0 ? (
+                            <>
+                              <TrendingDown className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{Math.abs(scoreBreakdown.scoreChange)}% decrease</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className={`w-5 h-5 ${
+                                calculatedScore >= 70 ? 'text-red-500' :
+                                calculatedScore >= 40 ? 'text-amber-500' :
+                                'text-emerald-500'
+                              }`} />
+                              <span className={`text-sm font-bold ${
+                                calculatedScore >= 70 ? 'text-red-600 dark:text-red-400' :
+                                calculatedScore >= 40 ? 'text-amber-600 dark:text-amber-400' :
+                                'text-emerald-600 dark:text-emerald-400'
+                              }`}>Impact verified</span>
+                            </>
+                          )}
+                        </motion.div>
+                      </div>
+                    </div>
+                    
+                    <p className={`text-[9px] font-bold uppercase tracking-[0.2em] text-center mt-6 pt-4 border-t ${
+                        calculatedScore >= 70 ? 'text-red-500/60 border-red-500/20' :
+                        calculatedScore >= 40 ? 'text-amber-500/60 border-amber-500/20' :
+                        'text-emerald-600/60 border-emerald-500/20'
+                    }`}>
+                      Completed • {new Date().toLocaleDateString()}
                     </p>
                   </div>
 
-                  {/* Breakdown */}
-                  <div className="space-y-4">
-                    <h4 className="text-lg font-black text-gray-900 dark:text-white">{t('questionnaire.score_breakdown', { defaultValue: 'Score Breakdown' })}</h4>
+                  {/* Impact Analysis Grid */}
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex-1 min-w-[100px] p-4 bg-white shadow-sm dark:bg-white/[0.03] rounded-3xl border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center group transition-colors">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Profile Data</div>
+                      <div className="text-xl md:text-2xl font-black text-slate-900 dark:text-white italic leading-tight">
+                        {scoreBreakdown.baseline}%
+                      </div>
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1">40% weight</div>
+                    </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
-                        <div className="text-sm text-gray-500 mb-1">Baseline Risk (Onboarding)</div>
-                        <div className="text-2xl font-black text-gray-900 dark:text-white">
-                          {scoreBreakdown.baseline}%
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">40% weight</div>
+                    <div className="flex-1 min-w-[100px] p-4 bg-emerald-50 dark:bg-emerald-500/[0.05] rounded-3xl border border-emerald-200 dark:border-emerald-500/10 flex flex-col items-center justify-center text-center group transition-colors">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-500 mb-1">Assessment</div>
+                      <div className="text-xl md:text-2xl font-black text-emerald-600 dark:text-emerald-400 italic leading-tight">
+                        {scoreBreakdown.questionnaire}%
                       </div>
-                      
-                      <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
-                        <div className="text-sm text-emerald-600 dark:text-emerald-400 mb-1">Questionnaire Impact</div>
-                        <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                          +{scoreBreakdown.questionnaire}%
-                        </div>
-                        <div className="text-xs text-emerald-500 mt-1">60% weight</div>
+                      <div className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter mt-1">60% weight</div>
+                    </div>
+
+                    <div className="flex-1 min-w-[100px] p-4 bg-blue-50 dark:bg-blue-500/[0.05] rounded-3xl border border-blue-200 dark:border-blue-500/10 flex flex-col items-center justify-center text-center group transition-colors">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-500 mb-1">Factors</div>
+                      <div className="text-xl md:text-2xl font-black text-blue-600 dark:text-blue-400 italic leading-tight">
+                        {scoreBreakdown.details.length}
                       </div>
+                      <div className="text-[9px] font-bold text-blue-500 uppercase tracking-tighter mt-1">analyzed</div>
                     </div>
                   </div>
 
-                  {/* Detailed Factor Breakdown */}
-                  <div className="space-y-3">
-                    <h4 className="text-lg font-black text-gray-900 dark:text-white">
-                      Detailed Risk Factors ({scoreBreakdown.details.length})
+                  {/* Risk Factors Breakdown */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-red-500" />
+                      Risk Factors ({scoreBreakdown.details.length})
                     </h4>
                     
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                       {scoreBreakdown.details.map((detail, idx) => (
-                        <div
+                        <motion.div
                           key={idx}
-                          className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="p-4 bg-white dark:bg-white/[0.02] rounded-2xl border border-gray-100 dark:border-white/5 flex items-center justify-between group hover:border-emerald-500/30 transition-all"
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="font-bold text-gray-900 dark:text-white text-sm mb-1">
-                                {detail.question}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                Your answer: <span className="font-bold text-gray-700 dark:text-gray-300">{detail.answer}</span>
-                              </div>
+                          <div className="flex-1">
+                            <div className="text-xs font-bold text-gray-900 dark:text-white mb-1">
+                              {detail.question || detail.name}
                             </div>
-                            <div className="ml-4 text-right">
-                              <div className={`font-black text-lg ${
-                                detail.points > 0 ? 'text-red-500' : 'text-emerald-500'
-                              }`}>
-                                {detail.points > 0 ? '+' : ''}{detail.points}%
-                              </div>
-                              <div className="text-[10px] text-gray-400 uppercase">
-                                {detail.weight}
-                              </div>
+                            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">
+                              {detail.answer || detail.displayValue}
                             </div>
                           </div>
-                        </div>
+                          <div className={`ml-4 flex items-center gap-2 font-black text-sm italic ${
+                            (detail.points || detail.impact) > 0 ? 'text-red-500' : 'text-emerald-500'
+                          }`}>
+                            {(detail.points || detail.impact) > 0 ? (
+                              <TrendingUp className="w-4 h-4" />
+                            ) : (
+                              <TrendingDown className="w-4 h-4" />
+                            )}
+                            {(detail.points || detail.impact) > 0 ? '+' : ''}{detail.points || detail.impact}%
+                          </div>
+                        </motion.div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Additional Factors Considered */}
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800/30">
-                    <h5 className="font-bold text-blue-900 dark:text-blue-400 mb-2 flex items-center">
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      Additional Factors Considered
+                  {/* Protective Factors */}
+                  {scoreBreakdown.protectiveFactors?.length > 0 && (
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        Protective Factors ({scoreBreakdown.protectiveFactors.length})
+                      </h4>
+                      
+                      <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                        {scoreBreakdown.protectiveFactors.map((factor, idx) => (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-200 dark:border-emerald-800/30 flex items-center justify-between"
+                          >
+                            <div className="flex-1">
+                              <div className="text-xs font-bold text-gray-900 dark:text-white mb-1">
+                                {factor.name}
+                              </div>
+                              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase font-bold tracking-tight">
+                                {factor.explanation}
+                              </div>
+                            </div>
+                            <div className="ml-4 flex items-center gap-2 font-black text-sm italic text-emerald-500">
+                              <TrendingDown className="w-4 h-4" />
+                              -{factor.impact}%
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Summary Message */}
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1 }}
+                    className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200 dark:border-blue-800/30"
+                  >
+                    <h5 className="font-bold text-blue-900 dark:text-blue-400 mb-2 flex items-center gap-2">
+                      <Heart className="w-4 h-4" />
+                      Assessment Summary
                     </h5>
-                    <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-                      <li>✓ Your age, gender, and BMI from onboarding</li>
-                      <li>✓ Known allergies: {profile?.allergies?.value?.length || 0} identified</li>
-                      <li>✓ Current medications: {profile?.activeMedications?.value?.length || 0} reviewed</li>
-                      <li>✓ Lifestyle factors: diet, exercise, smoking status</li>
-                      <li>✓ Previous medical history and vital signs</li>
+                    <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+                      Your risk assessment for <strong>{diseaseId?.replace('_', ' ')}</strong> has been updated based on:
+                    </p>
+                    <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1 mt-3 ml-4">
+                      <li>✓ Your existing health profile data (age, BMI, lifestyle)</li>
+                      <li>✓ {Object.keys(answers).length} questionnaire responses</li>
+                      <li>✓ {profile?.allergies?.length || 0} known allergies reviewed</li>
+                      <li>✓ {profile?.activeMedications?.length || 0} current medications considered</li>
                     </ul>
-                  </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-3 font-bold">
+                      💡 Tip: Complete your health profile for even more accurate assessments.
+                    </p>
+                  </motion.div>
                 </div>
               )}
             </div>
@@ -638,16 +816,16 @@ const QuestionnaireModal = ({ isOpen, onClose, diseaseId, currentScore, profile,
                   )}
                 </div>
               ) : (
-                <div className="flex items-center justify-end space-x-3">
+                <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 sm:space-x-3 w-full">
                   <button
                     onClick={onClose}
-                    className="px-6 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    className="w-full sm:w-auto px-6 py-3 sm:py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 sm:bg-transparent sm:hover:bg-transparent rounded-xl transition-all"
                   >
                     {t('common.close', { defaultValue: 'Close' })}
                   </button>
                   <button
                     onClick={handleUpdateRisk}
-                    className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-all"
+                    className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.23)] hover:-translate-y-0.5 transition-all"
                   >
                     {t('questionnaire.update_risk_score', { defaultValue: 'Update Risk Score' })}
                   </button>
