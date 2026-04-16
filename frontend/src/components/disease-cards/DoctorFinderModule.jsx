@@ -32,11 +32,7 @@ const DoctorFinderModule = ({
   }, [profileSettings?.currentLocation]);
 
   const persistFilters = async (newFilters) => {
-<<<<<<< HEAD
-    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
-=======
     const API_URL = import.meta.env.VITE_API_URL || 'https://vaidyasetu-eyg9.onrender.com/api';
->>>>>>> origin/main
     try {
       await axios.patch(`${API_URL}/profile/settings/${clerkId}`, {
         settings: { ...profileSettings, doctorSearchFilters: newFilters }
@@ -221,11 +217,7 @@ const DoctorFinderModule = ({
 
           <button 
             onClick={async () => {
-<<<<<<< HEAD
-              const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
-=======
               const API_URL = import.meta.env.VITE_API_URL || 'https://vaidyasetu-eyg9.onrender.com/api';
->>>>>>> origin/main
               if (!clerkId) return;
               const city = isManual ? manualCity : location?.city;
               try {
