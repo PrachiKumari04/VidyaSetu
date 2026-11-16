@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { SignedIn, SignedOut, SignIn, SignUp, useUser } from '@clerk/clerk-react';
+import React from 'react';
+import { SignIn, SignUp } from '@clerk/clerk-react';
 import { dark } from '@clerk/themes';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { Loader2 } from 'lucide-react';
-import axios from 'axios';
 
 // Context
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -34,41 +32,7 @@ import Onboarding from './pages/Onboarding';
 import Vitals from './pages/Vitals';
 import MyMedicines from './pages/MyMedicines';
 
-import { API_URL } from './config/api';
-
-const ProtectedRoute = ({ children }) => {
-  return (
-    <>
-      <SignedIn>{children}</SignedIn>
-      <SignedOut>
-        <Navigate to="/sign-in" replace />
-      </SignedOut>
-    </>
-  );
-};
-
 const AppLayout = () => {
-  const { user, isLoaded } = useUser();
-  const { theme } = useTheme();
-  const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    // Session validation completed - allow direct navigation to MediKiosk
-    setChecking(false);
-  }, [isLoaded, user]);
-
-  if (checking || !isLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-[#030712]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
-          <p className="text-gray-400 text-sm">Validating MediKiosk session...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-[#030712] transition-colors duration-500">
       <Sidebar />
@@ -80,27 +44,7 @@ const AppLayout = () => {
         </div>
 
         <main className="flex-1 px-4 sm:px-8 pb-12">
-          <Routes>
-            {/* Core MediKiosk First-Mile Clinical Flow */}
-            <Route path="/intake" element={<PatientIntake />} />
-            <Route path="/waiting" element={<WaitingRoom />} />
-            <Route path="/doctor" element={<DoctorDashboard />} />
-            <Route path="/consent" element={<ConsentSettings />} />
-
-            {/* General Patient & Profile Views */}
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/profile" element={<HealthProfile />} />
-            <Route path="/profile/edit" element={<ProfileEditor />} />
-            <Route path="/prescriptions" element={<Prescriptions />} />
-            <Route path="/vitals" element={<Vitals />} />
-            <Route path="/medicines" element={<MyMedicines />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Outlet />
         </main>
       </div>
       <Chatbot />
@@ -108,7 +52,7 @@ const AppLayout = () => {
   );
 };
 
-export default function App() {
+const AppContent = () => {
   const { theme } = useTheme();
 
   return (
@@ -117,6 +61,7 @@ export default function App() {
         <ScrollToTop />
         <ErrorBoundary>
           <Routes>
+            {/* Clerk Authentication Routes */}
             <Route
               path="/sign-in/*"
               element={
@@ -133,17 +78,36 @@ export default function App() {
                 </div>
               }
             />
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            />
+
+            {/* Main Application Layout with Top-Level Routes via Outlet */}
+            <Route element={<AppLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="intake" element={<PatientIntake />} />
+              <Route path="waiting" element={<WaitingRoom />} />
+              <Route path="doctor" element={<DoctorDashboard />} />
+              <Route path="consent" element={<ConsentSettings />} />
+              <Route path="vitals" element={<Vitals />} />
+              <Route path="prescriptions" element={<Prescriptions />} />
+              <Route path="medicines" element={<MyMedicines />} />
+              <Route path="profile" element={<HealthProfile />} />
+              <Route path="profile/edit" element={<ProfileEditor />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="privacy" element={<Privacy />} />
+              <Route path="terms" element={<Terms />} />
+              <Route path="onboarding" element={<Onboarding />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
           </Routes>
         </ErrorBoundary>
       </BrowserRouter>
     </GoogleOAuthProvider>
+  );
+};
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
