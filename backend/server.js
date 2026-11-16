@@ -42,6 +42,9 @@ app.use(cors());
 app.use(express.json());
 app.use(resolveLanguage);
 
+// Suppress deprecated `new` option warning — use returnDocument globally
+mongoose.set('returnDocument', 'after');
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB Atlas'))

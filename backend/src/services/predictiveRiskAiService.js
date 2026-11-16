@@ -10,7 +10,7 @@ const { PREVALENCE_DATA } = require('../utils/prevalenceData');
 const { getPrevalenceEvidenceBatch } = require('../utils/evidenceProviders');
 const { getVitalStatus } = require('../utils/vitalRanges');
 const { generateMitigationSteps } = require('./aiService');
-const { callGroqChat } = require('../utils/aiModelHelper');
+const { callGroqChat, groq } = require('../utils/aiModelHelper');
 
 function clampScore(score) {
   // riskScorer uses `-1` to represent "N/A" (not applicable due to gender/conditions).
