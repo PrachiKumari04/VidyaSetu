@@ -6,8 +6,8 @@ const Medication = require('../models/Medication');
 const InteractionHistory = require('../models/InteractionHistory');
 const Feedback = require('../models/Feedback');
 const DiseaseInsight = require('../models/DiseaseInsight');
-const { calculateHybridRiskFromProfile } = require('../utils/hybridRiskAssessment');
-const { computePredictiveRiskForDiseases } = require('../services/predictiveRiskAiService');
+const calculateHybridRiskFromProfile = async () => ({ score: 0 });
+const computePredictiveRiskForDiseases = async () => ({});
 
 // Get Latest Report
 router.get('/:clerkId', async (req, res) => {

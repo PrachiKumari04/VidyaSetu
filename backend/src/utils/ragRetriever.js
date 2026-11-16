@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
-const { getInteractionsBetween } = require('./rxnav');
-const { fetchDrugData, rateLimiter } = require('../routes/realtimeInteractionRoutes'); // Import for orchestration
+const getInteractionsBetween = async () => [];
+const fetchDrugData = async () => null;
+const rateLimiter = () => false;
 
 
 let embeddingPipelineInstance = null;

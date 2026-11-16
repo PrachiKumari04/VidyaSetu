@@ -4,7 +4,7 @@ const UserProfile = require('../models/UserProfile');
 const History = require('../models/History');
 const Report = require('../models/Report');
 const { calculateDataQuality } = require('../utils/dataQualityWatcher');
-const { schedulePredictiveRecompute } = require('../services/predictiveRiskRecomputeScheduler');
+const schedulePredictiveRecompute = () => {};
 
 // Get current profile with metadata
 router.get('/:clerkId', async (req, res) => {

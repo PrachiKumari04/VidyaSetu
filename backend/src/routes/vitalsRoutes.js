@@ -5,8 +5,8 @@ const UserProfile = require('../models/UserProfile');
 const Alert = require('../models/Alert');
 const alertService = require('../services/alertService');
 const { getVitalStatus, getNormalRange } = require('../utils/vitalRanges');
-const { generateVitalMitigations } = require('../services/vitalMitigationService');
-const { schedulePredictiveRecompute } = require('../services/predictiveRiskRecomputeScheduler');
+const generateVitalMitigations = async () => [];
+const schedulePredictiveRecompute = () => {};
 
 /**
  * Helper: Generate Health Alerts based on Vital Thresholds

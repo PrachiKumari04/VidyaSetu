@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Medication = require('../models/Medication');
-const { schedulePredictiveRecompute } = require('../services/predictiveRiskRecomputeScheduler');
+const schedulePredictiveRecompute = () => {};
 
 /**
  * @route GET /api/medications/:clerkId
