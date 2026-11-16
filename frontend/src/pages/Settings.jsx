@@ -11,7 +11,7 @@ import {
   CheckCircle2, RefreshCw, XCircle, AlertTriangle,
   Mail, Phone, Calendar, Info, Settings2, Moon, Sun, Monitor  as MonitorIcon,
   Maximize, Type, Image as ImageIcon, FileText, Volume2, Mic, Star,
-  MessageSquare, Trash
+  MessageSquare, Trash, X, Send
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { generateArchivePDF } from '../utils/pdfGenerator';
@@ -95,6 +95,20 @@ const Settings = () => {
   const [googleFitConnected, setGoogleFitConnected] = useState(localStorage.getItem('googleFitConnected') === 'true');
   const [syncingFit, setSyncingFit] = useState(false);
   const [aiDataSharing, setAiDataSharing] = useState(true);
+
+  // Incident Report & Rating Modal States
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [rateModalOpen, setRateModalOpen] = useState(false);
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportForm, setReportForm] = useState({
+     type: 'Bug Report',
+     subject: '',
+     description: '',
+     priority: 'Medium'
+  });
+  const [ratingValue, setRatingValue] = useState(5);
+  const [ratingComment, setRatingComment] = useState('');
 
   const [profileFormData, setProfileFormData] = useState({
      name: '',
@@ -417,15 +431,67 @@ const Settings = () => {
   };
 
   const handleInitializeReport = () => {
-    const reportType = window.prompt("Enter Incident Type (Bug/Feature/Data Conflict):");
-    if (reportType) {
-      alert(`Incident [${reportType}] initialized. Our clinical engineering team will review your session logs.`);
-    }
+    setReportSuccess(false);
+    setReportForm({
+       type: 'Bug Report',
+       subject: '',
+       description: '',
+       priority: 'Medium'
+    });
+    setReportModalOpen(true);
   };
 
   const handleRateApp = () => {
-    alert("Thank you for your feedback! Redirecting to VaidyaSetu Evaluation Portal...");
-    window.open('https://github.com/akshatatcodes/VaidyaSetu', '_blank');
+    setRateModalOpen(true);
+  };
+
+  const handleSubmitReport = async (e) => {
+    e.preventDefault();
+    if (!reportForm.subject || !reportForm.description) {
+      alert("Please enter both a subject and description.");
+      return;
+    }
+    setSubmittingReport(true);
+    try {
+      await axios.post(`${API_URL}/feedback`, {
+        clerkId: user?.id || 'user_demo',
+        context: `Incident Report: ${reportForm.type}`,
+        query: reportForm.subject,
+        response: `[Priority: ${reportForm.priority}] ${reportForm.description}`,
+        rating: 'up'
+      });
+      setReportSuccess(true);
+      setTimeout(() => {
+        setReportModalOpen(false);
+        setReportSuccess(false);
+      }, 2200);
+    } catch (err) {
+      console.error("Failed to submit incident report:", err);
+      alert("Submission failed. Please try again.");
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
+
+  const handleSubmitRating = async () => {
+    setSubmittingReport(true);
+    try {
+      await axios.post(`${API_URL}/feedback`, {
+        clerkId: user?.id || 'user_demo',
+        context: 'Platform Rating',
+        query: `${ratingValue} Star Rating`,
+        response: ratingComment || 'User rating submitted.',
+        rating: ratingValue >= 4 ? 'up' : 'down'
+      });
+      alert(`Thank you for rating VaidyaSetu ${ratingValue} Stars!`);
+      setRateModalOpen(false);
+      setRatingComment('');
+    } catch (err) {
+      console.error("Failed to submit rating:", err);
+      alert("Rating submission failed.");
+    } finally {
+      setSubmittingReport(false);
+    }
   };
 
   const handleSharePlatform = async () => {
@@ -844,6 +910,172 @@ const Settings = () => {
                </div>
             </div>
          </div>
+      )}
+
+      {/* Report Incident Modal Form */}
+      {reportModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#030712]/90 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-900 border border-emerald-500/30 rounded-[3rem] p-8 md:p-10 max-w-xl w-full space-y-6 shadow-3xl shadow-emerald-500/20 relative animate-in zoom-in duration-300">
+            <button 
+              onClick={() => setReportModalOpen(false)}
+              className="absolute top-6 right-6 p-3 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-6">
+              <div className="p-4 bg-emerald-500/10 rounded-2xl">
+                <MessageSquare className="w-8 h-8 text-emerald-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Report Incident</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Submit a bug report or clinical feature request</p>
+              </div>
+            </div>
+
+            {reportSuccess ? (
+              <div className="py-12 text-center space-y-4 animate-in zoom-in duration-500">
+                <div className="p-6 bg-emerald-500/20 rounded-full w-max mx-auto">
+                  <CheckCircle2 className="w-16 h-16 text-emerald-500 animate-bounce" />
+                </div>
+                <h4 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tight">Incident Report Filed!</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Reference Ticket: #INC-{Math.floor(100000 + Math.random() * 900000)}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">Our engineering team has received your report.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitReport} className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 mb-2">Incident Type</label>
+                  <select 
+                    value={reportForm.type}
+                    onChange={(e) => setReportForm({ ...reportForm, type: e.target.value })}
+                    className="w-full p-4 bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="Bug Report">🐛 Bug Report / Technical Defect</option>
+                    <option value="Clinical Feature Request">💡 Clinical Feature Request</option>
+                    <option value="Data Discrepancy">⚖️ Data Discrepancy / Risk Score Conflict</option>
+                    <option value="General Support">❓ General Inquiry / Account Support</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 mb-2">Subject / Title</label>
+                    <input 
+                      type="text"
+                      required
+                      placeholder="e.g. Vitals sync timeout on mobile"
+                      value={reportForm.subject}
+                      onChange={(e) => setReportForm({ ...reportForm, subject: e.target.value })}
+                      className="w-full p-4 bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl text-xs font-medium text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 mb-2">Priority</label>
+                    <select 
+                      value={reportForm.priority}
+                      onChange={(e) => setReportForm({ ...reportForm, priority: e.target.value })}
+                      className="w-full p-4 bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Critical">Critical</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 mb-2">Detailed Description</label>
+                  <textarea 
+                    rows={4}
+                    required
+                    placeholder="Describe what happened, steps to reproduce, or desired feature details..."
+                    value={reportForm.description}
+                    onChange={(e) => setReportForm({ ...reportForm, description: e.target.value })}
+                    className="w-full p-4 bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl text-xs font-medium text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setReportModalOpen(false)}
+                    className="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-black rounded-2xl uppercase tracking-widest text-[10px] hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={submittingReport}
+                    className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2"
+                  >
+                    {submittingReport ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Submit Incident Report'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Rate App Modal Form */}
+      {rateModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#030712]/90 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-900 border border-amber-500/30 rounded-[3rem] p-8 md:p-10 max-w-md w-full space-y-6 text-center shadow-3xl shadow-amber-500/20 relative animate-in zoom-in duration-300">
+            <button 
+              onClick={() => setRateModalOpen(false)}
+              className="absolute top-6 right-6 p-3 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="p-5 bg-amber-500/10 rounded-full w-max mx-auto">
+              <Star className="w-12 h-12 text-amber-500 fill-amber-500 animate-pulse" />
+            </div>
+
+            <div>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Rate VaidyaSetu</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Your evaluation guides our clinical AI development</p>
+            </div>
+
+            <div className="flex justify-center gap-3 py-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button 
+                  key={star}
+                  onClick={() => setRatingValue(star)}
+                  className="p-2 transition-transform hover:scale-125 focus:outline-none"
+                >
+                  <Star className={`w-8 h-8 ${star <= ratingValue ? 'text-amber-500 fill-amber-500' : 'text-gray-300 dark:text-gray-700'}`} />
+                </button>
+              ))}
+            </div>
+
+            <textarea 
+              rows={3}
+              placeholder="Leave optional clinical feedback or review notes..."
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              className="w-full p-4 bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl text-xs font-medium text-gray-900 dark:text-white focus:outline-none focus:border-amber-500 text-left"
+            />
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setRateModalOpen(false)}
+                className="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-black rounded-2xl uppercase tracking-widest text-[10px]"
+              >
+                Close
+              </button>
+              <button 
+                onClick={handleSubmitRating}
+                disabled={submittingReport}
+                className="flex-1 py-4 bg-amber-500 hover:bg-amber-400 text-white font-black rounded-2xl uppercase tracking-widest text-[10px] shadow-xl shadow-amber-500/20"
+              >
+                {submittingReport ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : 'Submit Rating'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

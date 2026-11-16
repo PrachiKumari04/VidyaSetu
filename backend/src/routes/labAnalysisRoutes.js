@@ -2,9 +2,7 @@ const express = require('express');
 const router = express.Router();
 const LabResult = require('../models/LabResult');
 const UserProfile = require('../models/UserProfile');
-const Groq = require('groq-sdk');
-
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const { callGroqChat } = require('../utils/aiModelHelper');
 
 /**
  * POST /api/lab-results/analyze
@@ -188,7 +186,7 @@ IMPORTANT GUIDELINES:
 7. Include both immediate and long-term recommendations
 8. Always include medical disclaimer context`;
 
-  const completion = await groq.chat.completions.create({
+  const completion = await callGroqChat({
     messages: [
       {
         role: 'system',
@@ -199,7 +197,6 @@ IMPORTANT GUIDELINES:
         content: prompt
       }
     ],
-    model: 'llama-3.3-70b-versatile',
     response_format: { type: 'json_object' },
     temperature: 0.3,
     max_tokens: 2000

@@ -3,9 +3,7 @@ const router = express.Router();
 const { matchMedicines, checkInteractions } = require('../utils/interactionEngine');
 const InteractionHistory = require('../models/InteractionHistory');
 const alertService = require('../services/alertService');
-const { Groq } = require('groq-sdk');
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const { callGroqChat } = require('../utils/aiModelHelper');
 
 // 1. Medicine Fuzzy Matching
 router.post('/match', async (req, res) => {
@@ -47,9 +45,8 @@ router.post('/explain-interaction', async (req, res) => {
     const { drug1, drug2 } = req.body;
     const outputLanguage = req.resolvedLanguage || 'en';
     const prompt = `Explain to a patient in simple, compassionate terms why taking ${drug1} and ${drug2} together might be dangerous. Keep it strictly under 80 words. Reply only in ${outputLanguage}.`;
-    const completion = await groq.chat.completions.create({
+    const completion = await callGroqChat({
       messages: [{ role: 'system', content: "You are VaidyaSetu AI, a health safety assistant." }, { role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
     });
     res.json({ status: 'success', explanation: completion.choices[0]?.message?.content });
   } catch (error) {

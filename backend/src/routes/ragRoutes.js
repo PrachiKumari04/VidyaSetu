@@ -10,7 +10,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { Groq } = require('groq-sdk');
+const { callGroqChat } = require('../utils/aiModelHelper');
 const { retrieveRelevantKnowledge } = require('../utils/ragRetriever');
 const { compileRagPrompt } = require('../utils/ragPromptEngine');
 const { generateMedicineBreakdown } = require('../services/medicineInfoService');
@@ -18,8 +18,6 @@ const { checkDirectInteractions } = require('../utils/interactionChecker');
 const Alert = require('../models/Alert');
 const UserProfile = require('../models/UserProfile');
 const Medication = require('../models/Medication');
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // POST /api/rag/check-safety
 router.post('/check-safety', async (req, res) => {
@@ -67,43 +65,24 @@ router.post('/check-safety', async (req, res) => {
 
     // 3. Resilient Groq Call (Fallback Logic)
     let report = null;
-    let modelUsed = 'llama-3.3-70b-versatile';
     let isFallback = false;
 
     try {
-      console.log(`[Groq] Attempting Analysis (70B Model)...`);
-      const completion = await groq.chat.completions.create({
+      console.log(`[Groq] Attempting Analysis...`);
+      const completion = await callGroqChat({
         messages: [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
-        model: modelUsed,
         response_format: { type: 'json_object' }
       });
       report = JSON.parse(completion.choices[0]?.message?.content || '{}');
     } catch (err) {
-      if (err.status === 429 || err.message.includes('rate_limit')) {
-        console.warn(`[Groq] 70B Rate Limited. Falling back to 8B Model...`);
-        modelUsed = 'llama-3.1-8b-instant';
-        isFallback = true;
-        
-        try {
-          const fallbackCompletion = await groq.chat.completions.create({
-            messages: [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }],
-            model: modelUsed,
-            response_format: { type: 'json_object' }
-          });
-          report = JSON.parse(fallbackCompletion.choices[0]?.message?.content || '{}');
-        } catch (fallbackErr) {
-          console.error(`[Groq] Fallback Failed: ${fallbackErr.message}`);
-          // Tier 3: Return raw context if LLM is completely down
-          report = {
-            hasInteraction: true,
-            severity: 'Review Evidence',
-            summary: "AI analysis is currently unavailable due to high demand. Please review the raw evidence sources below for safety guidance.",
-            interactions: []
-          };
-        }
-      } else {
-        throw err; // Rethrow non-rate-limit errors
-      }
+      console.error(`[Groq] Analysis Failed: ${err.message}`);
+      // Tier 3: Return raw context if LLM is completely down
+      report = {
+        hasInteraction: true,
+        severity: 'Review Evidence',
+        summary: "AI analysis is currently unavailable due to high demand. Please review the raw evidence sources below for safety guidance.",
+        interactions: []
+      };
     }
 
     // LAYER 3: Post-Processing Verification - Ensure direct database matches are included

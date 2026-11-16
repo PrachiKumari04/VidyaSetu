@@ -1,7 +1,5 @@
-const Groq = require('groq-sdk');
 const { MITIGATION_LIBRARY } = require('../utils/mitigationLibrary');
-
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const { callGroqChat } = require('../utils/aiModelHelper');
 
 /**
  * PROBLEM 1: Step 1.6 - Generate mitigation steps using LLM or robust fallback.
@@ -23,7 +21,7 @@ async function generateMitigationSteps(profile, diseaseId, riskScore, language =
   const medNames = medications.map(m => typeof m === 'string' ? m : (m.name || m.medication || '')).filter(m => m);
 
   // 1. Try LLM Generation first if key exists
-  if (groq) {
+  if (process.env.GROQ_API_KEY) {
     try {
       const prompt = `
         As a clinical health advisor, generate 3-5 personalized recovery and mitigation steps for:
@@ -64,9 +62,8 @@ async function generateMitigationSteps(profile, diseaseId, riskScore, language =
         }
       `;
 
-      const chatCompletion = await groq.chat.completions.create({
+      const chatCompletion = await callGroqChat({
         messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.1-8b-instant',
         temperature: 0.2,
         response_format: { type: 'json_object' }
       });

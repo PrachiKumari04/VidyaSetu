@@ -7,6 +7,27 @@ const GRAY = [100, 100, 100];
 const RED = [239, 68, 68];
 
 /**
+ * Trigger HTML5 download with explicit .pdf extension
+ */
+export function downloadPdf(doc, filename) {
+  const safeFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+  try {
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = safeFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    console.warn('[PDF Generator] Download fallback:', err);
+    doc.save(safeFilename);
+  }
+}
+
+/**
  * Add branded header to a jsPDF document
  */
 export function addHeader(doc, title, userName, subtitle) {
@@ -181,7 +202,7 @@ export function generateDashboardPDF(userName, report, profile, medications) {
   }
 
   addDisclaimer(doc);
-  doc.save(`VaidyaSetu-Risk-Report-${Date.now()}.pdf`);
+  downloadPdf(doc, `VaidyaSetu-Risk-Report-${Date.now()}.pdf`);
 }
 
 /**
@@ -398,7 +419,7 @@ export function generateVitalsPDF(userName, currentVitals, formatValue, getStatu
   });
 
   addDisclaimer(doc);
-  doc.save(`VaidyaSetu_Vitals_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+  downloadPdf(doc, `VaidyaSetu_Vitals_Report_${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
 
@@ -499,7 +520,7 @@ export function generateArchivePDF(userName, data) {
   }
 
   addDisclaimer(doc);
-  doc.save(`VaidyaSetu-Health-Archive-${Date.now()}.pdf`);
+  downloadPdf(doc, `VaidyaSetu-Health-Archive-${Date.now()}.pdf`);
 }
 
 // Helper: check if a lab result is in reference range

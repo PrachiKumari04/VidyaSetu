@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { Groq } = require('groq-sdk');
 const UserProfile = require('../models/UserProfile');
 const Report = require('../models/Report');
 const Vital = require('../models/Vital');
@@ -8,8 +7,7 @@ const { calculatePreliminaryRisk } = require('../utils/riskScorer');
 
 const Medication = require('../models/Medication');
 const aiService = require('../services/aiService');
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const { callGroqChat } = require('../utils/aiModelHelper');
 
 // Phase E: AI Report Generation with Change Context
 router.post('/generate-report', async (req, res) => {
@@ -151,9 +149,8 @@ router.post('/generate-report', async (req, res) => {
     - Precautions: Consider user's allergies (${allergies.join(', ') || 'none'}) and active medications (${activeMeds.map(m => m.name).join(', ') || 'none'}).
     `;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await callGroqChat({
       messages: [{ role: 'system', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' }
     });
 

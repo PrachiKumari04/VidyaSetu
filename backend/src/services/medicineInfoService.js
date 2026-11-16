@@ -1,10 +1,8 @@
-const { Groq } = require('groq-sdk');
 const { GoogleGenAI } = require('@google/genai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { getDrugComposition } = require('../utils/rxnav');
 const { getDrugWarnings } = require('../utils/openfda');
-
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const { callGroqChat } = require('../utils/aiModelHelper');
 const geminiGenai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 const geminiLegacy = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
@@ -202,14 +200,13 @@ Return output STRICTLY as this JSON structure:
 
     let responseContent = null;
 
-    if (groq) {
+    if (process.env.GROQ_API_KEY) {
       try {
-        const response = await groq.chat.completions.create({
+        const response = await callGroqChat({
           messages: [
             { role: 'system', content: 'You are a medical pharmacist assistant. Return ONLY valid JSON, no markdown formatting.' },
             { role: 'user', content: prompt }
           ],
-          model: 'llama-3.3-70b-versatile',
           response_format: { type: 'json_object' },
           temperature: 0.3,
           max_tokens: 3000

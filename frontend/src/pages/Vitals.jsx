@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle2, RefreshCw, Calendar,
   ChevronRight, Download, Trash2, Filter, Trash, FileText,
   FlaskConical, Trophy, Zap, Thermometer, Wind, Stethoscope,
-  TrendingUp, X
+  TrendingUp, X, Sparkles
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -343,6 +343,22 @@ const Vitals = () => {
     syncGoogleFit();
   };
 
+  const handleSeedSampleVitals = async () => {
+    setSyncing(true);
+    try {
+      const res = await axios.post(`${API_URL}/vitals/seed-sample/${activeUser.id}`);
+      if (res.data.status === 'success') {
+        fetchVitals({ silent: true });
+        window.dispatchEvent(new CustomEvent('vaidya:alerts-refresh'));
+      }
+    } catch (err) {
+      console.error("Seed vitals failed", err);
+      alert("Failed to load sample vitals: " + (err.response?.data?.message || err.message));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleVitalCardClick = (vitalType, value) => {
     // If no value, open add modal. If has value, show analysis.
     if (!value || (typeof value === 'object' && !value.systolic)) {
@@ -457,6 +473,13 @@ const Vitals = () => {
           <p className="text-slate-600 dark:text-gray-300 font-medium text-lg">{t('vitals.monitoring_desc')}</p>
         </div>
         <div className="flex flex-col sm:flex-row flex-wrap gap-4 w-full md:w-auto mt-4 md:mt-0">
+           <button 
+              onClick={handleSeedSampleVitals}
+              disabled={syncing}
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl"
+           >
+              <Sparkles className="w-5 h-5 text-emerald-500" /> {syncing ? 'Loading...' : 'Load Sample Vitals'}
+           </button>
            <button 
               onClick={handleExportJSON}
               className="w-full sm:w-auto px-6 py-3 bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:border-emerald-500/50 transition-all shadow-xl text-gray-600 dark:text-gray-300 hover:text-emerald-500"

@@ -5,11 +5,17 @@ const UserProfile = require('../models/UserProfile');
 const Report = require('../models/Report');
 const InteractionHistory = require('../models/InteractionHistory');
 
-// Save Feedback
+// Save Feedback / Incident Report
 router.post('/', async (req, res) => {
   try {
     const { clerkId, context, query, response, rating } = req.body;
-    const feedback = await Feedback.create({ clerkId, context, query, response, rating });
+    const feedback = await Feedback.create({ 
+      clerkId: clerkId || 'user_demo', 
+      context: context || 'Incident Report', 
+      query: query || 'General Incident', 
+      response: response || '', 
+      rating: rating || 'up' 
+    });
     res.json({ status: 'success', data: feedback });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });

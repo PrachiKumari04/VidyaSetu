@@ -9,8 +9,7 @@
  * - Lifestyle factors (diet, activity)
  */
 
-const { Groq } = require('groq-sdk');
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const { callGroqChat } = require('../utils/aiModelHelper');
 
 /**
  * Generate personalized mitigation steps for abnormal vitals
@@ -22,8 +21,7 @@ const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_
  * @returns {Object} Mitigation steps and precautions
  */
 async function generateVitalMitigations({ vitalType, currentValue, status, userProfile }) {
-  // If Groq is not available, return rule-based mitigations
-  if (!groq) {
+  if (!process.env.GROQ_API_KEY) {
     console.warn('[VitalMitigations] Groq not available, using rule-based fallback');
     return getRuleBasedMitigations(vitalType, status, userProfile);
   }
@@ -31,7 +29,7 @@ async function generateVitalMitigations({ vitalType, currentValue, status, userP
   try {
     const prompt = buildMitigationPrompt(vitalType, currentValue, status, userProfile);
     
-    const response = await groq.chat.completions.create({
+    const response = await callGroqChat({
       messages: [
         {
           role: 'system',
@@ -42,7 +40,6 @@ async function generateVitalMitigations({ vitalType, currentValue, status, userP
           content: prompt
         }
       ],
-      model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' },
       temperature: 0.3,
       max_tokens: 1500

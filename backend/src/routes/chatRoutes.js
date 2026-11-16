@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { Groq } = require('groq-sdk');
 const UserProfile = require('../models/UserProfile');
 const Report = require('../models/Report');
 const Vital = require('../models/Vital');
 const Medication = require('../models/Medication');
 const LabResult = require('../models/LabResult');
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const { callGroqChat } = require('../utils/aiModelHelper');
 
 // AI Symptom Chatbot
 router.post('/symptom', async (req, res) => {
@@ -128,33 +126,13 @@ IMPORTANT GUIDELINES:
 7. Always include a standard medical disclaimer
 8. Be warm, conversational, and supportive`;
 
-    let completion;
-    try {
-      // Try primary model first
-      completion = await groq.chat.completions.create({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...(conversationHistory || []),
-          { role: 'user', content: message }
-        ],
-        model: 'llama-3.3-70b-versatile',
-      });
-    } catch (primaryError) {
-      // Fallback to smaller model if rate limited
-      if (primaryError.status === 429 || primaryError.message?.includes('rate_limit')) {
-        console.log('[Chat] Rate limited, falling back to llama-3.1-8b-instant');
-        completion = await groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...(conversationHistory || []),
-            { role: 'user', content: message }
-          ],
-          model: 'llama-3.1-8b-instant',
-        });
-      } else {
-        throw primaryError;
-      }
-    }
+    const completion = await callGroqChat({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...(conversationHistory || []),
+        { role: 'user', content: message }
+      ]
+    });
 
     res.json({
       status: 'success',

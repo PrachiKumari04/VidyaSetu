@@ -1,4 +1,3 @@
-const { Groq } = require('groq-sdk');
 const UserProfile = require('../models/UserProfile');
 const Vital = require('../models/Vital');
 const Medication = require('../models/Medication');
@@ -11,8 +10,7 @@ const { PREVALENCE_DATA } = require('../utils/prevalenceData');
 const { getPrevalenceEvidenceBatch } = require('../utils/evidenceProviders');
 const { getVitalStatus } = require('../utils/vitalRanges');
 const { generateMitigationSteps } = require('./aiService');
-
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const { callGroqChat } = require('../utils/aiModelHelper');
 
 function clampScore(score) {
   // riskScorer uses `-1` to represent "N/A" (not applicable due to gender/conditions).
@@ -545,9 +543,8 @@ OUTPUT SCHEMA:
   }
 }`;
 
-  const chatCompletion = await groq.chat.completions.create({
+  const chatCompletion = await callGroqChat({
     messages: [{ role: 'user', content: prompt }],
-    model: 'llama-3.3-70b-versatile',
     temperature: 0.2,
     response_format: { type: 'json_object' }
   });

@@ -445,4 +445,38 @@ router.post('/mitigations', async (req, res) => {
   }
 });
 
+/**
+ * @route POST /api/vitals/seed-sample/:clerkId
+ * @desc Seed sample baseline vitals for a user
+ */
+router.post('/seed-sample/:clerkId', async (req, res) => {
+  try {
+    const clerkId = req.params.clerkId;
+    const samples = [
+      { type: 'blood_pressure', value: { systolic: 120, diastolic: 80 }, unit: 'mmHg', source: 'manual' },
+      { type: 'blood_glucose', value: 95, unit: 'mg/dL', source: 'manual' },
+      { type: 'heart_rate', value: 72, unit: 'BPM', source: 'manual' },
+      { type: 'oxygen_saturation', value: 98, unit: '%', source: 'manual' },
+      { type: 'sleep_duration', value: 7.5, unit: 'hours', source: 'manual' },
+      { type: 'steps', value: 7500, unit: 'steps', source: 'manual' },
+      { type: 'water_intake', value: 2500, unit: 'ml', source: 'manual' },
+      { type: 'body_temperature', value: 98.6, unit: '°F', source: 'manual' },
+      { type: 'weight', value: 68, unit: 'kg', source: 'manual' }
+    ];
+
+    const inserted = await Promise.all(
+      samples.map(sample => 
+        Vital.create({ ...sample, clerkId, timestamp: new Date() })
+      )
+    );
+
+    schedulePredictiveRecompute({ clerkId });
+
+    res.json({ status: 'success', message: 'Sample vitals seeded successfully', data: inserted });
+  } catch (error) {
+    console.error('Seed sample vitals error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
 module.exports = router;
