@@ -31,6 +31,7 @@ const queueRoutes = require('./src/routes/queueRoutes');
 const summaryRoutes = require('./src/routes/summaryRoutes');
 const consentRoutes = require('./src/routes/consentRoutes');
 const encounterRoutes = require('./src/routes/encounterRoutes');
+const labOrderRoutes = require('./src/routes/labOrderRoutes');
 
 const { resolveLanguage } = require('./src/middleware/languageResolver');
 const { runReminderService } = require('./src/services/reminderService');
@@ -69,6 +70,7 @@ app.use('/api/queue', queueRoutes);
 app.use('/api/summary', summaryRoutes);
 app.use('/api/consent', consentRoutes);
 app.use('/api/encounters', encounterRoutes);
+app.use('/api/lab-orders', labOrderRoutes);
 
 // Retained Supporting Clinical Services
 app.use('/api/user', userRoutes);

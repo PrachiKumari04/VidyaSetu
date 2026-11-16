@@ -22,25 +22,31 @@ router.post('/start', async (req, res) => {
       painAreas = [],
       vitals = {},
       clinicalMode = 'modern',
+      serviceType = 'opd',
+      whoNeedsCare = { recipient: 'self' },
       departmentId = 'General OPD',
       doctorId = 'doc_default',
       doctorName = 'OPD Duty Doctor'
     } = req.body;
 
-    if (!patientId || !complaint) {
-      return res.status(400).json({ error: 'patientId and complaint are required' });
+    const activeComplaint = complaint || (Array.isArray(symptoms) ? symptoms.map(s => typeof s === 'string' ? s : (s.text || '')).filter(Boolean).join(', ') : symptoms);
+
+    if (!patientId || !activeComplaint) {
+      return res.status(400).json({ error: 'patientId and complaint/symptoms are required' });
     }
 
     // STEP 1: SAFETY FIRST - Run Rule-based Red Flag Engine BEFORE any AI
-    const redFlagResult = evaluateRedFlags(symptoms.length > 0 ? symptoms : [complaint], vitals);
+    const redFlagResult = evaluateRedFlags(symptoms.length > 0 ? symptoms : [activeComplaint], vitals);
 
     const encounter = await Encounter.create({
       patientId,
-      patientName: patientName || 'Patient',
-      age: Number(age) || 30,
-      gender: gender || 'Unspecified',
-      complaint,
+      patientName: (whoNeedsCare?.recipient === 'family' && whoNeedsCare.name) ? whoNeedsCare.name : (patientName || 'Patient'),
+      age: (whoNeedsCare?.recipient === 'family' && whoNeedsCare.age) ? Number(whoNeedsCare.age) : (Number(age) || 30),
+      gender: (whoNeedsCare?.recipient === 'family' && whoNeedsCare.gender) ? whoNeedsCare.gender : (gender || 'Unspecified'),
+      complaint: activeComplaint,
       clinicalMode,
+      serviceType,
+      whoNeedsCare,
       departmentId,
       doctorId,
       doctorName,

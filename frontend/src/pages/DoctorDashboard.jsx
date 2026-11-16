@@ -39,6 +39,20 @@ export default function DoctorDashboard() {
   const [diagnosis, setDiagnosis] = useState('');
   const [prescription, setPrescription] = useState('');
   const [advice, setAdvice] = useState('');
+  const [selectedLabTests, setSelectedLabTests] = useState([]);
+  const [labInstructions, setLabInstructions] = useState('');
+  const [followUpWindow, setFollowUpWindow] = useState('none');
+
+  const COMMON_LAB_TESTS = [
+    'Complete Blood Count (CBC)',
+    'Fasting Blood Glucose (FBS)',
+    'Lipid Profile (Cholesterol/Triglycerides)',
+    'Liver Function Test (LFT)',
+    'Kidney Function Test (KFT / Creatinine)',
+    'Urine Routine & Microscopic',
+    'Thyroid Profile (TSH, T3, T4)',
+    'Serum Electrolytes (Na/K/Cl)'
+  ];
 
   const fetchQueue = async () => {
     try {
@@ -138,21 +152,54 @@ export default function DoctorDashboard() {
   const handleCompleteConsultation = async () => {
     if (!activePatient) return;
     try {
+      const labOrdersPayload = selectedLabTests.map(testName => ({
+        testName,
+        instructions: labInstructions || 'Standard Hospital Protocol',
+        status: 'ordered'
+      }));
+
+      let followUpPayload = { required: false };
+      if (followUpWindow !== 'none') {
+        const daysMap = { '3_days': 3, '1_week': 7, '2_weeks': 14, '1_month': 30 };
+        const followDate = new Date();
+        followDate.setDate(followDate.getDate() + (daysMap[followUpWindow] || 7));
+        followUpPayload = {
+          required: true,
+          date: followDate,
+          window: followUpWindow.replace('_', ' ')
+        };
+      }
+
       await axios.post(`${API_URL.replace('/api', '')}/api/encounters/${activePatient.encounterId}/complete`, {
         diagnosis,
         advice,
-        prescription: { notes: prescription }
+        prescription: { notes: prescription },
+        labOrders: labOrdersPayload,
+        followUp: followUpPayload
       });
-      alert('Consultation closed & recorded to patient longitudinal encounter!');
+
+      let alertMsg = 'Consultation concluded & stored to longitudinal encounter record!';
+      if (labOrdersPayload.length > 0) {
+        alertMsg += `\n🧪 ${labOrdersPayload.length} Lab Test(s) ordered & routed to Pathology Lab.`;
+      }
+      if (followUpPayload.required) {
+        alertMsg += `\n📋 Auto Follow-Up scheduled for ${followUpPayload.date.toLocaleDateString()} (No re-registration required).`;
+      }
+      alert(alertMsg);
+
       setActivePatient(null);
       setSummaryData(null);
       setActiveEncounter(null);
       setDiagnosis('');
       setPrescription('');
       setAdvice('');
+      setSelectedLabTests([]);
+      setLabInstructions('');
+      setFollowUpWindow('none');
       fetchQueue();
     } catch (err) {
       console.error(err);
+      alert('Error finalizing consultation: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -536,7 +583,7 @@ export default function DoctorDashboard() {
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Clinical Advice & Follow-Up Instructions
+                    Clinical Advice & Patient Instructions
                   </label>
                   <input
                     type="text"
@@ -545,6 +592,94 @@ export default function DoctorDashboard() {
                     onChange={e => setAdvice(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   />
+                </div>
+
+                {/* ── LAB INVESTIGATIONS ORDER PAD (Image 4) ── */}
+                <div className="p-4 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-900/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase tracking-wider text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                      <FlaskConical className="w-4 h-4" />
+                      Order Hospital Lab Investigations (Dispatches to Central Lab)
+                    </span>
+                    <span className="text-[10px] font-bold text-purple-600 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+                      {selectedLabTests.length} ordered
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {COMMON_LAB_TESTS.map((test) => {
+                      const checked = selectedLabTests.includes(test);
+                      return (
+                        <label
+                          key={test}
+                          className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs font-medium cursor-pointer transition ${
+                            checked
+                              ? 'bg-purple-600 text-white border-purple-600 font-bold shadow-xs'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-purple-400'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={checked}
+                            onChange={() => {
+                              if (checked) {
+                                setSelectedLabTests(selectedLabTests.filter(t => t !== test));
+                              } else {
+                                setSelectedLabTests([...selectedLabTests, test]);
+                              }
+                            }}
+                          />
+                          <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
+                            checked ? 'bg-white border-white text-purple-600' : 'border-slate-300 dark:border-slate-600'
+                          }`}>
+                            {checked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          </span>
+                          <span className="truncate">{test}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {selectedLabTests.length > 0 && (
+                    <input
+                      type="text"
+                      placeholder="Special instructions for lab technician (e.g., Fasting 12 hrs, Stat urgency)..."
+                      value={labInstructions}
+                      onChange={e => setLabInstructions(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-800 rounded-lg p-2.5 text-xs text-slate-900 dark:text-white"
+                    />
+                  )}
+                </div>
+
+                {/* ── AUTO FOLLOW-UP SCHEDULING (Image 4: Auto, No Re-Registration) ── */}
+                <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-900/60 space-y-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" />
+                    Auto Follow-Up Booking (No Re-Registration Needed)
+                  </span>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {[
+                      { id: 'none', label: 'No Follow-up Required' },
+                      { id: '3_days', label: 'Review in 3 Days' },
+                      { id: '1_week', label: 'Review in 1 Week' },
+                      { id: '2_weeks', label: 'Review in 2 Weeks' },
+                      { id: '1_month', label: 'Review in 1 Month' }
+                    ].map(opt => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setFollowUpWindow(opt.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                          followUpWindow === opt.id
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <button

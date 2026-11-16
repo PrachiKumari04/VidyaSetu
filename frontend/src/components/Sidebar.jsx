@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import React from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import { 
   Home, 
   FileText, 
@@ -11,64 +11,67 @@ import {
   Clock, 
   ShieldCheck, 
   ClipboardList,
-  UserCheck,
   Building2,
-  SlidersHorizontal,
-  ChevronRight
+  FlaskConical,
+  TestTube2,
+  QrCode
 } from 'lucide-react';
 import { UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import { useTheme } from '../context/ThemeContext';
+import { useRole } from '../context/RoleContext';
 import { useUser } from '@clerk/clerk-react';
-import { useTranslation } from 'react-i18next';
 
 const Sidebar = () => {
   const { theme } = useTheme();
+  const { role, selectRole } = useRole();
   const { user } = useUser();
-  const { t } = useTranslation();
-  const location = useLocation();
 
-  // Mode: 'patient' or 'doctor'
-  const isDoctorRoute = location.pathname.startsWith('/doctor');
-  const [mode, setMode] = useState(() => {
-    return isDoctorRoute ? 'doctor' : (localStorage.getItem('portal_mode') || 'patient');
-  });
-
-  useEffect(() => {
-    if (isDoctorRoute) {
-      setMode('doctor');
-      localStorage.setItem('portal_mode', 'doctor');
-    }
-  }, [isDoctorRoute]);
-
-  const switchMode = (newMode) => {
-    setMode(newMode);
-    localStorage.setItem('portal_mode', newMode);
-  };
-
-  // Patient Navigation Items
+  // 1. Patient Navigation (Strictly patient features only)
   const patientNavItems = [
-    { to: '/', icon: Home, label: 'Patient Dashboard' },
-    { to: '/intake', icon: ClipboardList, label: 'OPD Intake & Body Map' },
+    { to: '/', icon: Home, label: 'Patient Home' },
+    { to: '/intake', icon: ClipboardList, label: 'First-Mile OPD Intake' },
     { to: '/waiting', icon: Clock, label: 'Live Queue & Token' },
-    { to: '/vitals', icon: Activity, label: 'Vitals & Measurements' },
-    { to: '/prescriptions', icon: FileText, label: 'Medical Documents' },
+    { to: '/vitals', icon: Activity, label: 'Vitals & Device Capture' },
+    { to: '/prescriptions', icon: FileText, label: 'Medical Documents & OCR' },
     { to: '/medicines', icon: Pill, label: 'Active Medicines' },
-    { to: '/consent', icon: ShieldCheck, label: 'Consent & Privacy' },
+    { to: '/consent', icon: ShieldCheck, label: 'DPDP Privacy Consent' },
     { to: '/profile', icon: UserCircle, label: 'Health Profile' },
     { to: '/settings', icon: Settings, label: 'Settings' }
   ];
 
-  // Doctor Navigation Items
+  // 2. Doctor Navigation (Strictly clinician features only)
   const doctorNavItems = [
     { to: '/doctor', icon: Stethoscope, label: 'Doctor OPD Cockpit' },
-    { to: '/prescriptions', icon: FileText, label: 'Electronic Rx & Orders' },
+    { to: '/prescriptions', icon: FileText, label: 'Electronic Prescriptions' },
     { to: '/vitals', icon: Activity, label: 'Vitals Telemetry' },
-    { to: '/intake', icon: ClipboardList, label: 'Kiosk Intake Preview' },
-    { to: '/waiting', icon: Clock, label: 'OPD Waiting Room TV' },
-    { to: '/settings', icon: Settings, label: 'Station Settings' }
+    { to: '/waiting', icon: Clock, label: 'OPD Waiting TV Screen' },
+    { to: '/settings', icon: Settings, label: 'Doctor Station Settings' }
   ];
 
-  const currentNavItems = mode === 'doctor' ? doctorNavItems : patientNavItems;
+  // 3. Lab Technician Navigation (Strictly laboratory features only)
+  const labNavItems = [
+    { to: '/lab', icon: FlaskConical, label: 'Lab Workorders Queue' },
+    { to: '/vitals', icon: Activity, label: 'Patient Clinical Vitals' },
+    { to: '/prescriptions', icon: FileText, label: 'Attached Lab Reports' },
+    { to: '/settings', icon: Settings, label: 'Lab Configuration' }
+  ];
+
+  let currentNavItems = patientNavItems;
+  let brandingTitle = 'Patient Intake System';
+  let brandingAccent = 'text-emerald-500';
+  let badgeText = 'Kiosk Patient Portal';
+
+  if (role === 'doctor') {
+    currentNavItems = doctorNavItems;
+    brandingTitle = 'Clinician Decision Suite';
+    brandingAccent = 'text-blue-500';
+    badgeText = 'OPD Room 104 • Dr. R. Sharma (MD)';
+  } else if (role === 'lab') {
+    currentNavItems = labNavItems;
+    brandingTitle = 'Pathology & Diagnostic Lab';
+    brandingAccent = 'text-purple-500';
+    badgeText = 'Central Hospital Pathology Lab';
+  }
 
   return (
     <>
@@ -76,81 +79,59 @@ const Sidebar = () => {
       <div
         className="vs-sidebar hidden md:flex flex-col w-72 h-screen fixed top-0 left-0 bottom-0 px-5 py-6 backdrop-blur-3xl border-r text-slate-700 dark:text-gray-300 shrink-0 z-50 transition-all duration-500 overflow-y-auto"
         style={theme === 'dark' ? {
-          background: mode === 'doctor' ? 'rgba(8, 14, 28, 0.85)' : 'rgba(5, 11, 20, 0.7)',
-          borderColor: mode === 'doctor' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.05)',
+          background: role === 'doctor' 
+            ? 'rgba(8, 14, 28, 0.9)' 
+            : role === 'lab' 
+            ? 'rgba(18, 10, 30, 0.9)' 
+            : 'rgba(5, 11, 20, 0.8)',
+          borderColor: role === 'doctor' ? 'rgba(59, 130, 246, 0.2)' : role === 'lab' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)',
           boxShadow: '4px 0 24px rgba(0,0,0,0.2)'
         } : {
-          background: mode === 'doctor' 
+          background: role === 'doctor'
             ? 'linear-gradient(170deg, #ffffff 0%, #eff6ff 60%, #e0f2fe 100%)'
+            : role === 'lab'
+            ? 'linear-gradient(170deg, #ffffff 0%, #faf5ff 60%, #f3e8ff 100%)'
             : 'linear-gradient(170deg, #ffffff 0%, #f0fdf4 55%, #f0fdf4 100%)',
-          borderColor: mode === 'doctor' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(16, 185, 129, 0.18)',
-          boxShadow: mode === 'doctor' ? '4px 0 40px rgba(59, 130, 246, 0.1)' : '4px 0 40px rgba(16,185,129,0.1)'
+          borderColor: role === 'doctor' ? 'rgba(59, 130, 246, 0.2)' : role === 'lab' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(16, 185, 129, 0.18)',
+          boxShadow: '4px 0 40px rgba(0,0,0,0.05)'
         }}
       >
         {/* MediKiosk Brand Header */}
-        <div className="flex flex-col items-center justify-center mb-5 text-center">
+        <div className="flex flex-col items-center justify-center mb-4 text-center">
           <div className="flex items-center gap-1.5">
             <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Medi<span className={mode === 'doctor' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-500'}>Kiosk</span>
+              Medi<span className={brandingAccent}>Kiosk</span>
             </h2>
           </div>
-          <span className={`text-[10px] tracking-widest uppercase font-bold mt-0.5 ${
-            mode === 'doctor' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'
-          }`}>
-            {mode === 'doctor' ? 'Clinician Decision Suite' : 'Patient Intake System'}
+          <span className="text-[10px] tracking-widest uppercase font-bold text-slate-400 mt-0.5">
+            {brandingTitle}
           </span>
         </div>
 
-        {/* ── ROLE SWITCHER PILL ── */}
-        <div className="mb-5 p-1 bg-slate-200/60 dark:bg-slate-800/80 rounded-2xl flex items-center gap-1 border border-slate-300/50 dark:border-slate-700/50">
-          <button
-            type="button"
-            onClick={() => switchMode('patient')}
-            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              mode === 'patient'
-                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            <span>👤 Patient</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode('doctor')}
-            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              mode === 'doctor'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            <Stethoscope className="w-3.5 h-3.5" />
-            <span>Doctor</span>
-          </button>
+        {/* Role Badge Indicator */}
+        <div className="mb-5 p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 bg-white/70 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+          {role === 'doctor' ? (
+            <Stethoscope className="w-4 h-4 text-blue-500 shrink-0" />
+          ) : role === 'lab' ? (
+            <FlaskConical className="w-4 h-4 text-purple-500 shrink-0" />
+          ) : (
+            <UserCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+          )}
+          <span className="truncate text-slate-700 dark:text-slate-200">{badgeText}</span>
         </div>
 
-        {/* Doctor Station Meta Card (Visible only in Doctor Mode) */}
-        {mode === 'doctor' && (
-          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-900/60 text-xs">
-            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold">
-              <Building2 className="w-4 h-4 shrink-0" />
-              <span>OPD Room 104 • General</span>
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Attending: <strong>Dr. R. Sharma (MD)</strong>
-            </p>
-          </div>
-        )}
-
-        {/* Nav Links */}
+        {/* Role Navigation Links */}
         <nav className="flex flex-col space-y-1.5 flex-1">
           {currentNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.to === '/' || item.to === '/doctor' || item.to === '/lab'}
               className={({ isActive }) => {
-                const activeColor = mode === 'doctor'
+                const activeColor = role === 'doctor'
                   ? 'text-blue-700 dark:text-blue-300 bg-blue-500/10 border-blue-500/20'
+                  : role === 'lab'
+                  ? 'text-purple-700 dark:text-purple-300 bg-purple-500/10 border-purple-500/20'
                   : 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/20';
 
                 return `flex items-center px-3.5 py-2.5 rounded-xl transition text-sm ${
@@ -166,35 +147,6 @@ const Sidebar = () => {
           ))}
         </nav>
 
-        {/* Quick Portal Switch Shortcut at bottom */}
-        <div className="pt-3 pb-3">
-          {mode === 'patient' ? (
-            <Link
-              to="/doctor"
-              onClick={() => switchMode('doctor')}
-              className="w-full py-2.5 px-3 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold transition flex items-center justify-between border border-blue-200 dark:border-blue-900/60"
-            >
-              <span className="flex items-center gap-2">
-                <Stethoscope className="w-4 h-4 text-blue-600" />
-                Doctor Station Login
-              </span>
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          ) : (
-            <Link
-              to="/"
-              onClick={() => switchMode('patient')}
-              className="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold transition flex items-center justify-between border border-emerald-200 dark:border-emerald-900/60"
-            >
-              <span className="flex items-center gap-2">
-                <Home className="w-4 h-4 text-emerald-600" />
-                Patient Kiosk View
-              </span>
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          )}
-        </div>
-
         {/* User Card */}
         <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800">
           <SignedIn>
@@ -202,11 +154,9 @@ const Sidebar = () => {
               <UserButton />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                  {user?.fullName || (mode === 'doctor' ? 'Dr. Consultation Mode' : 'OPD Patient')}
+                  {user?.fullName || (role === 'doctor' ? 'Dr. Sharma' : role === 'lab' ? 'Lab Tech 01' : 'OPD Patient')}
                 </p>
-                <p className="text-[10px] text-slate-400 truncate">
-                  {mode === 'doctor' ? 'Clinical Officer' : 'Kiosk Terminal'}
-                </p>
+                <p className="text-[10px] text-slate-400 truncate uppercase font-semibold">{role} account</p>
               </div>
             </div>
           </SignedIn>
@@ -224,20 +174,13 @@ const Sidebar = () => {
       <div className="md:hidden flex items-center justify-between px-4 h-14 border-b z-50 sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-black text-slate-900 dark:text-white">
-            Medi<span className={mode === 'doctor' ? 'text-blue-500' : 'text-emerald-500'}>Kiosk</span>
+            Medi<span className={brandingAccent}>Kiosk</span>
           </h2>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-500">
-            {mode}
+            {role}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => switchMode(mode === 'doctor' ? 'patient' : 'doctor')}
-            className="text-xs font-bold px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-          >
-            {mode === 'doctor' ? '👤 Patient' : '🩺 Doctor'}
-          </button>
           <SignedIn><UserButton /></SignedIn>
         </div>
       </div>

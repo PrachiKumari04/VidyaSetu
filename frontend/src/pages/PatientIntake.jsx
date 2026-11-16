@@ -15,8 +15,19 @@ import {
   Stethoscope, 
   Flame, 
   Wind,
-  MapPin
+  MapPin,
+  User,
+  Users,
+  Building2,
+  FileText,
+  UploadCloud,
+  Clock,
+  QrCode,
+  ArrowLeft,
+  Phone,
+  Check
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import axios from 'axios';
 import { API_URL } from '../config/api';
 import InteractiveBodyMap from '../components/InteractiveBodyMap';
@@ -32,28 +43,50 @@ const QUICK_SYMPTOMS = [
   { label: 'General Fatigue', level: 'low', icon: HelpCircle }
 ];
 
+const AVAILABLE_DOCTORS = [
+  { id: 'doc_default', name: 'Dr. Rajesh Sharma, MD', department: 'General Medicine OPD', room: 'Room 104', queueCount: 2, avgWaitMin: 15 },
+  { id: 'doc_internal', name: 'Dr. Ananya Sen, MBBS', department: 'Internal Medicine', room: 'Room 108', queueCount: 0, avgWaitMin: 3 },
+  { id: 'doc_ayush', name: 'Dr. Priya Kulkarni, BAMS', department: 'AYUSH / Ayurveda', room: 'Room 112', queueCount: 1, avgWaitMin: 8 }
+];
+
 export default function PatientIntake() {
   const { user } = useUser();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1); // 1: Intake & Red-Flag, 2: Adaptive Questions, 3: Success Token
+  // Stepper Flow (1: Auth/Who, 2: Service, 3: Symptoms & Body Map, 4: Safety & Questions, 5: Docs & Vitals, 6: Doctor & Token)
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Step 1: Identity & Who Needs Care
+  const [phoneNumber, setPhoneNumber] = useState(user?.primaryPhoneNumber?.phoneNumber || '+91 98765 43210');
+  const [recipient, setRecipient] = useState('self'); // 'self' | 'family'
+  const [familyDetails, setFamilyDetails] = useState({ relation: 'Child', name: '', age: '', gender: 'Male' });
+
+  // Step 2: Service Selection
+  const [serviceType, setServiceType] = useState('opd'); // 'opd' | 'lab' | 'followup'
   const [clinicalMode, setClinicalMode] = useState('modern'); // 'modern' or 'ayush'
+
+  // Step 3: Symptoms & Body Map
   const [complaint, setComplaint] = useState('');
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [painAreas, setPainAreas] = useState([]);
-  const [vitals, setVitals] = useState({ bpSystolic: '', bpDiastolic: '', heartRate: '', spO2: '', temperature: '' });
-  
-  // Triage state
+  const [listening, setListening] = useState(false);
+
+  // Step 4: Red-Flag & Adaptive Questions
   const [evaluating, setEvaluating] = useState(false);
   const [encounterId, setEncounterId] = useState(null);
   const [redFlags, setRedFlags] = useState([]);
   const [priority, setPriority] = useState('routine');
   const [adaptiveQuestions, setAdaptiveQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
-  const [tokenResult, setTokenResult] = useState(null);
 
-  // Voice recording simulation
-  const [listening, setListening] = useState(false);
+  // Step 5: Document Upload & Vitals
+  const [uploadedDocName, setUploadedDocName] = useState('');
+  const [ocrPreviewText, setOcrPreviewText] = useState('');
+  const [vitals, setVitals] = useState({ bpSystolic: '120', bpDiastolic: '80', heartRate: '75', spO2: '98', temperature: '98.6' });
+
+  // Step 6: Choose Doctor & Issued Token
+  const [selectedDoctor, setSelectedDoctor] = useState(AVAILABLE_DOCTORS[0]);
+  const [tokenResult, setTokenResult] = useState(null);
 
   const toggleSymptom = (label) => {
     if (selectedSymptoms.includes(label)) {
@@ -82,11 +115,10 @@ export default function PatientIntake() {
     recognition.start();
   };
 
-  // Step 1 Submit: Starts Encounter & Runs Rule Engine First
-  const handleStartIntake = async (e) => {
-    e.preventDefault();
+  // Triggered when advancing from Step 3 to Step 4 (Runs Rule Engine First!)
+  const handleEvaluateSafetyAndQuestions = async () => {
     if (!complaint && selectedSymptoms.length === 0 && painAreas.length === 0) {
-      alert('Please describe your complaint, select symptoms, or tap a location on the Body Map.');
+      alert('Please describe your symptoms, select quick cards, or tap on the Body Map.');
       return;
     }
 
@@ -96,11 +128,22 @@ export default function PatientIntake() {
         ...selectedSymptoms.map(s => ({ text: s, method: 'quickcard' })),
         ...painAreas.map(p => ({ text: `${p.label} (${p.intensity} - ${p.quality})`, method: 'bodymap', bodyLocation: p.id }))
       ];
-      const activeComplaint = complaint || selectedSymptoms.join(', ') || (painAreas.length > 0 ? `Pain localized in ${painAreas.map(p => p.label).join(', ')}` : 'General checkup');
-      
+      const activeComplaint = complaint || selectedSymptoms.join(', ') || (painAreas.length > 0 ? `Pain localized in ${painAreas.map(p => p.label).join(', ')}` : 'General consultation');
+
       const res = await axios.post(`${API_URL.replace('/api', '')}/api/intake/start`, {
         patientId: user?.id || 'guest_patient_001',
-        patientName: user?.fullName || 'Patient',
+        patientName: recipient === 'family' ? familyDetails.name || 'Family Member' : (user?.fullName || 'Patient'),
+        age: recipient === 'family' ? Number(familyDetails.age) || 28 : 30,
+        gender: recipient === 'family' ? familyDetails.gender : 'Unspecified',
+        whoNeedsCare: {
+          recipient,
+          relation: familyDetails.relation,
+          name: familyDetails.name,
+          age: Number(familyDetails.age),
+          gender: familyDetails.gender
+        },
+        serviceType,
+        clinicalMode,
         complaint: activeComplaint,
         symptoms: allSymptoms,
         painAreas,
@@ -111,7 +154,9 @@ export default function PatientIntake() {
           spO2: Number(vitals.spO2) || undefined,
           temperature: Number(vitals.temperature) || undefined
         },
-        clinicalMode
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        departmentId: selectedDoctor.department
       });
 
       if (res.data?.success) {
@@ -119,21 +164,29 @@ export default function PatientIntake() {
         setPriority(res.data.triagePriority);
         setRedFlags(res.data.redFlags || []);
         setAdaptiveQuestions(res.data.adaptiveQuestions || []);
-        setStep(2);
+        setCurrentStep(4);
       }
     } catch (err) {
       console.error(err);
-      alert('Error initiating clinical intake: ' + (err.response?.data?.error || err.message));
+      alert('Error evaluating intake: ' + (err.response?.data?.error || err.message));
     } finally {
       setEvaluating(false);
     }
   };
 
-  // Step 2 Submit: Saves Adaptive Answers & Issues Real-time Token
-  const handleFinalizeQuestions = async () => {
+  const handleSimulateDocumentUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedDocName(file.name);
+      setOcrPreviewText(`[OCR Extraction from ${file.name}]: Document verified. Past history of seasonal reactive airway disease, prescribed Levocetirizine 5mg BD. Vitals recorded.`);
+    }
+  };
+
+  // Final Step: Issue Live Token
+  const handleIssueToken = async () => {
     setEvaluating(true);
     try {
-      // 1. Submit answers
+      // 1. Submit adaptive answers if any
       const answersPayload = Object.keys(answers).map(qId => {
         const qObj = adaptiveQuestions.find(q => q.id === qId);
         return {
@@ -143,122 +196,371 @@ export default function PatientIntake() {
         };
       });
 
-      if (answersPayload.length > 0) {
+      if (answersPayload.length > 0 && encounterId) {
         await axios.post(`${API_URL.replace('/api', '')}/api/intake/${encounterId}/answers`, {
           answers: answersPayload
         });
       }
 
-      // 2. Issue Queue Token
+      // 2. Finalize Token
       const tokenRes = await axios.post(`${API_URL.replace('/api', '')}/api/intake/${encounterId}/finalize-token`);
       if (tokenRes.data?.success) {
         setTokenResult(tokenRes.data);
-        setStep(3);
+        setCurrentStep(6);
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to issue token: ' + (err.response?.data?.error || err.message));
+      alert('Error finalizing token: ' + (err.response?.data?.error || err.message));
     } finally {
       setEvaluating(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      {/* Stepper Header */}
-      <div className="mb-8 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <ShieldCheck className="text-emerald-500 w-7 h-7" />
-            MediKiosk First-Mile Clinical Intake
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            AI-assisted, rule-verified pre-consultation OPD registration
-          </p>
-        </div>
-
-        {/* Clinical Mode Toggle */}
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-          <button
-            onClick={() => setClinicalMode('modern')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-              clinicalMode === 'modern'
-                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400'
-            }`}
-          >
-            Allopathic (Modern)
-          </button>
-          <button
-            onClick={() => setClinicalMode('ayush')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-              clinicalMode === 'ayush'
-                ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400'
-            }`}
-          >
-            AYUSH / Ayurveda
-          </button>
+    <div className="max-w-4xl mx-auto py-6 space-y-6">
+      
+      {/* ── FLOW STEPPER BAR ── */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center justify-between text-xs font-bold text-slate-400 overflow-x-auto pb-2 sm:pb-0 gap-2">
+          {[
+            { step: 1, label: '1. Identity & Care' },
+            { step: 2, label: '2. Service' },
+            { step: 3, label: '3. Symptoms & Body Map' },
+            { step: 4, label: '4. Safety & Questions' },
+            { step: 5, label: '5. Vitals & OCR' },
+            { step: 6, label: '6. Doctor & Token' }
+          ].map((s) => (
+            <div
+              key={s.step}
+              className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-xl transition ${
+                currentStep === s.step
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-black'
+                  : currentStep > s.step
+                  ? 'text-slate-800 dark:text-slate-200'
+                  : 'text-slate-400 opacity-60'
+              }`}
+            >
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                currentStep === s.step
+                  ? 'bg-emerald-600 text-white'
+                  : currentStep > s.step
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+              }`}>
+                {currentStep > s.step ? '✓' : s.step}
+              </span>
+              <span>{s.label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* STEP 1: Symptom Capture & Red-Flag Screening */}
-      {step === 1 && (
-        <form onSubmit={handleStartIntake} className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-              1. What primary discomfort brings you to the hospital today?
+      {/* ── STEP 1: PATIENT SIGN-IN & WHO NEEDS CARE ── */}
+      {currentStep === 1 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+          <div>
+            <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              Step 1 of 6 • Patient Entry
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+              Patient Identification & Care Recipient
             </h2>
-            <div className="relative">
-              <textarea
-                rows={3}
-                value={complaint}
-                onChange={(e) => setComplaint(e.target.value)}
-                placeholder="E.g., Severe pressure in chest since morning, accompanied by sweating..."
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleSpeechInput}
-                className={`absolute right-3 bottom-3 p-2.5 rounded-xl transition ${
-                  listening ? 'bg-red-500 text-white animate-pulse' : 'bg-emerald-500 text-white hover:bg-emerald-600'
-                }`}
-                title="Speak in English/Hindi"
-              >
-                <Mic className="w-5 h-5" />
-              </button>
-            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Verify your mobile number and select whether this consultation is for yourself or a family member.
+            </p>
+          </div>
 
-            {/* Quick Symptom Chips */}
-            <div className="mt-4">
-              <label className="text-xs font-bold uppercase text-slate-400 mb-2 block tracking-wider">
-                Or Tap Common Presentations:
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {QUICK_SYMPTOMS.map((qs) => {
-                  const active = selectedSymptoms.includes(qs.label);
-                  return (
-                    <button
-                      type="button"
-                      key={qs.label}
-                      onClick={() => toggleSymptom(qs.label)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition ${
-                        active
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                          : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-400'
-                      }`}
-                    >
-                      <qs.icon className="w-3.5 h-3.5" />
-                      {qs.label}
-                    </button>
-                  );
-                })}
-              </div>
+          {/* OTP / Mobile Input */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-emerald-500" />
+              Patient Mobile Number (OTP Verification)
+            </label>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={phoneNumber}
+                onChange={e => setPhoneNumber(e.target.value)}
+                placeholder="+91 98765 43210"
+                className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+              <span className="px-4 py-3 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1 border border-emerald-300 dark:border-emerald-800">
+                <Check className="w-4 h-4" /> Verified
+              </span>
             </div>
           </div>
 
-          {/* 1.5 Interactive Anatomical Body Map */}
+          {/* Who Needs Care (Self vs Family Member) */}
+          <div className="space-y-3">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+              Who is this consultation for?
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div
+                onClick={() => setRecipient('self')}
+                className={`p-5 rounded-2xl border cursor-pointer transition flex items-center gap-4 ${
+                  recipient === 'self'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-sm ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-slate-300'
+                }`}
+              >
+                <div className={`p-3 rounded-xl ${recipient === 'self' ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                  <User className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">Myself (Self)</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Consultation for registered account</p>
+                </div>
+              </div>
+
+              <div
+                onClick={() => setRecipient('family')}
+                className={`p-5 rounded-2xl border cursor-pointer transition flex items-center gap-4 ${
+                  recipient === 'family'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-sm ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-slate-300'
+                }`}
+              >
+                <div className={`p-3 rounded-xl ${recipient === 'family' ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">Family Member</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Child, Parent, Spouse or Dependant</p>
+                </div>
+              </div>
+            </div>
+
+            {/* If Family Member Selected: Details */}
+            {recipient === 'family' && (
+              <div className="p-4 bg-emerald-50/30 dark:bg-emerald-950/10 rounded-2xl border border-emerald-500/20 space-y-3 mt-4 animate-in fade-in">
+                <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">
+                  Family Member Details
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="text-slate-500 block mb-1">Relationship</label>
+                    <select
+                      value={familyDetails.relation}
+                      onChange={e => setFamilyDetails({ ...familyDetails, relation: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
+                    >
+                      <option>Child</option>
+                      <option>Parent</option>
+                      <option>Spouse</option>
+                      <option>Sibling</option>
+                      <option>Other Dependant</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-slate-500 block mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="E.g., Aarav Kumari"
+                      value={familyDetails.name}
+                      onChange={e => setFamilyDetails({ ...familyDetails, name: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-500 block mb-1">Age & Gender</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="Age"
+                        value={familyDetails.age}
+                        onChange={e => setFamilyDetails({ ...familyDetails, age: e.target.value })}
+                        className="w-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
+                      />
+                      <select
+                        value={familyDetails.gender}
+                        onChange={e => setFamilyDetails({ ...familyDetails, gender: e.target.value })}
+                        className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
+                      >
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setCurrentStep(2)}
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 text-sm"
+          >
+            <span>Proceed to Service Selection</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ── STEP 2: CHOOSE SERVICE ── */}
+      {currentStep === 2 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Step 2 of 6 • Hospital Service
+              </span>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                Choose Consultation Service
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Select your required healthcare pathway at MediKiosk.
+              </p>
+            </div>
+            <button
+              onClick={() => setCurrentStep(1)}
+              className="p-2 text-slate-400 hover:text-slate-600 text-xs font-bold flex items-center gap-1"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+          </div>
+
+          {/* Service Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { id: 'opd', title: 'OPD Consultation', desc: 'Face-to-face physician consultation with triage priority', icon: Stethoscope },
+              { id: 'lab', title: 'Laboratory Investigation', desc: 'Direct blood, urine, or pathology test ordering', icon: Activity },
+              { id: 'followup', title: 'Follow-Up Review', desc: 'Fast review without re-registration for ongoing treatment', icon: Clock }
+            ].map((svc) => (
+              <div
+                key={svc.id}
+                onClick={() => setServiceType(svc.id)}
+                className={`p-6 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${
+                  serviceType === svc.id
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-md ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-slate-300'
+                }`}
+              >
+                <div>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                    serviceType === svc.id ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'
+                  }`}>
+                    <svc.icon className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">{svc.title}</h4>
+                  <p className="text-xs text-slate-500 mt-1">{svc.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Clinical Mode (Allopathic vs AYUSH) */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Medical Philosophy Mode</span>
+              <p className="text-[11px] text-slate-500">Adapts questions for Modern Allopathic or AYUSH / Ayurveda</p>
+            </div>
+            <div className="flex bg-slate-200 dark:bg-slate-700 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setClinicalMode('modern')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                  clinicalMode === 'modern' ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-xs' : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                Allopathic
+              </button>
+              <button
+                type="button"
+                onClick={() => setClinicalMode('ayush')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                  clinicalMode === 'ayush' ? 'bg-white dark:bg-slate-800 text-amber-600 shadow-xs' : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                AYUSH / Ayurveda
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setCurrentStep(3)}
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 text-sm"
+          >
+            <span>Proceed to Symptom & Body Map Capture</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ── STEP 3: SYMPTOM CAPTURE & INTERACTIVE BODY MAP ── */}
+      {currentStep === 3 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Step 3 of 6 • Multi-Modal Symptoms
+              </span>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                Symptom Capture & Body Map Localization
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Speak, type, select cards, or tap directly on the body map to describe your discomfort.
+              </p>
+            </div>
+            <button
+              onClick={() => setCurrentStep(2)}
+              className="p-2 text-slate-400 hover:text-slate-600 text-xs font-bold flex items-center gap-1"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+          </div>
+
+          {/* Voice + Text Area */}
+          <div className="relative">
+            <textarea
+              rows={3}
+              value={complaint}
+              onChange={(e) => setComplaint(e.target.value)}
+              placeholder="Describe your primary discomfort (e.g., Heavy crushing pain in chest since 2 hours with sweating)..."
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleSpeechInput}
+              className={`absolute right-3 bottom-3 p-3 rounded-xl transition ${
+                listening ? 'bg-red-500 text-white animate-pulse' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+              }`}
+              title="Speak in Hindi/English"
+            >
+              <Mic className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Quick Symptoms */}
           <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 block">
+              Quick Symptom Chips
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_SYMPTOMS.map((qs) => {
+                const active = selectedSymptoms.includes(qs.label);
+                return (
+                  <button
+                    type="button"
+                    key={qs.label}
+                    onClick={() => toggleSymptom(qs.label)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                      active
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                        : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-400'
+                    }`}
+                  >
+                    <qs.icon className="w-3.5 h-3.5" />
+                    {qs.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── INTERACTIVE BODY MAP ── */}
+          <div className="pt-2">
             <InteractiveBodyMap
               initialAreas={painAreas}
               onPainAreasChange={(areas, summaryText) => {
@@ -269,7 +571,6 @@ export default function PatientIntake() {
                     return cleanPrev ? `${cleanPrev}\n\n[Body Map Pain]: ${summaryText}` : `[Body Map Pain]: ${summaryText}`;
                   });
 
-                  // Automatically correlate high-risk presentation cards
                   areas.forEach(a => {
                     if (a.redFlagKey === 'chest' && !selectedSymptoms.includes('Chest Pain / Tightness')) {
                       setSelectedSymptoms(prev => [...prev, 'Chest Pain / Tightness']);
@@ -283,265 +584,358 @@ export default function PatientIntake() {
             />
           </div>
 
-          {/* Vitals Entry (Optional Kiosk Readings) */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-500" />
-              2. Kiosk Vitals (Optional / Auto-device capture)
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <div>
-                <label className="text-xs text-slate-500 block mb-1">Systolic BP</label>
-                <input
-                  type="number"
-                  placeholder="120"
-                  value={vitals.bpSystolic}
-                  onChange={e => setVitals({...vitals, bpSystolic: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500 block mb-1">Diastolic BP</label>
-                <input
-                  type="number"
-                  placeholder="80"
-                  value={vitals.bpDiastolic}
-                  onChange={e => setVitals({...vitals, bpDiastolic: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500 block mb-1">SpO2 (%)</label>
-                <input
-                  type="number"
-                  placeholder="98"
-                  value={vitals.spO2}
-                  onChange={e => setVitals({...vitals, spO2: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500 block mb-1">Heart Rate</label>
-                <input
-                  type="number"
-                  placeholder="75"
-                  value={vitals.heartRate}
-                  onChange={e => setVitals({...vitals, heartRate: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500 block mb-1">Temp (°F)</label>
-                <input
-                  type="number"
-                  placeholder="98.6"
-                  value={vitals.temperature}
-                  onChange={e => setVitals({...vitals, temperature: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
           <button
-            type="submit"
+            onClick={handleEvaluateSafetyAndQuestions}
             disabled={evaluating}
-            className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition disabled:opacity-50"
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 text-sm disabled:opacity-50"
           >
-            {evaluating ? (
-              <>
-                <Activity className="w-5 h-5 animate-spin" />
-                Evaluating Clinical Rules & Red Flags...
-              </>
-            ) : (
-              <>
-                Perform Clinical Triage & Next Step
-                <ChevronRight className="w-5 h-5" />
-              </>
-            )}
+            <span>Run Rule-First Red Flag Check & Next</span>
+            <ChevronRight className="w-4 h-4" />
           </button>
-        </form>
+        </div>
       )}
 
-      {/* STEP 2: Red-Flag Alert (if any) + 4-5 Adaptive Questions */}
-      {step === 2 && (
-        <div className="space-y-6">
-          {/* Emergency / Urgent Banner if matched */}
-          {priority === 'emergency' && (
-            <div className="bg-red-50 dark:bg-red-950/40 border border-red-500 rounded-2xl p-6 text-red-900 dark:text-red-200">
-              <div className="flex items-center gap-3 font-bold text-lg text-red-600 dark:text-red-400">
-                <AlertTriangle className="w-6 h-6" />
-                CRITICAL RED-FLAG DETECTED: Priority Escalation
-              </div>
-              <p className="mt-2 text-sm text-red-700 dark:text-red-300">
-                The clinician-approved safety rule engine has flagged time-sensitive emergency indicators:
+      {/* ── STEP 4: SAFETY CHECK & ADAPTIVE QUESTIONS ── */}
+      {currentStep === 4 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Step 4 of 6 • Clinical Safety Evaluation
+              </span>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                Rule-Based Triage & Adaptive Clarifications
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Clinician safety engine evaluated your presentation before consultation.
               </p>
-              <ul className="mt-2 space-y-1 list-disc list-inside text-sm">
-                {redFlags.map((rf, i) => (
-                  <li key={i}><strong>{rf.ruleId}:</strong> {rf.description} <em>({rf.guideline})</em></li>
+            </div>
+            <button
+              onClick={() => setCurrentStep(3)}
+              className="p-2 text-slate-400 hover:text-slate-600 text-xs font-bold flex items-center gap-1"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+          </div>
+
+          {/* Red Flag Alert Branch if Emergency */}
+          {priority === 'emergency' ? (
+            <div className="p-6 bg-red-50 dark:bg-red-950/40 border-2 border-red-500 rounded-2xl space-y-3 animate-pulse">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-extrabold text-base">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+                <span>EMERGENCY RED-FLAG TRIGGERED</span>
+              </div>
+              <p className="text-xs text-red-800 dark:text-red-300 font-medium">
+                High-priority clinical safety rule detected (e.g. potential acute coronary syndrome or critical vitals). Your token will be routed to the <strong>Immediate Emergency Priority Queue</strong>.
+              </p>
+              <div className="space-y-1.5 pt-2">
+                {redFlags.map((rf, idx) => (
+                  <div key={idx} className="p-2 bg-white/80 dark:bg-slate-900/80 rounded-lg text-xs text-red-700 dark:text-red-400 font-bold border border-red-200">
+                    Rule {rf.ruleId}: {rf.symptom} — {rf.guideline}
+                  </div>
                 ))}
-              </ul>
-              <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/50 rounded-lg text-xs font-semibold text-red-800 dark:text-red-200">
-                ⚠️ This encounter will be routed straight to Priority / Red-Flag Queue for immediate human verification.
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-400 rounded-2xl flex items-center gap-3">
+              <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
+              <div>
+                <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-300">
+                  Standard Safety Screening Passed
+                </h4>
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                  No immediate life-threatening emergency flagged. Proceeding to adaptive clarifications.
+                </p>
               </div>
             </div>
           )}
 
-          {/* Adaptive Questions Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500" />
-                Adaptive Clinical Follow-Up ({clinicalMode.toUpperCase()} Mode)
-              </h2>
-              <span className="text-xs px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full font-medium">
-                {adaptiveQuestions.length} Questions Missing
-              </span>
-            </div>
-
-            <div className="space-y-6">
-              {adaptiveQuestions.map((q, idx) => (
-                <div key={q.id} className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white mb-2">
-                    {idx + 1}. {q.text}
-                  </p>
-                  
-                  {/* Choice Buttons */}
-                  {q.type === 'choice' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                      {q.options.map(opt => (
+          {/* 4-5 Adaptive Follow-up Questions (Only missing information) */}
+          {adaptiveQuestions.length > 0 && (
+            <div className="space-y-4 pt-2">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                Adaptive Follow-Up Questions (4-5 Items Only)
+              </h3>
+              <div className="space-y-3">
+                {adaptiveQuestions.map((q) => (
+                  <div key={q.id} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                      {q.text}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {q.options?.map((opt) => (
                         <button
                           type="button"
                           key={opt}
                           onClick={() => setAnswers({ ...answers, [q.id]: opt })}
-                          className={`p-2.5 text-left text-xs rounded-lg border transition ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
                             answers[q.id] === opt
-                              ? 'bg-emerald-500 text-white border-emerald-600 font-semibold'
-                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                              ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-xs'
+                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
                           }`}
                         >
                           {opt}
                         </button>
                       ))}
                     </div>
-                  )}
-
-                  {/* Scale 1-10 */}
-                  {q.type === 'scale' && (
-                    <div className="flex items-center gap-2 mt-2">
-                      {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                        <button
-                          type="button"
-                          key={num}
-                          onClick={() => setAnswers({ ...answers, [q.id]: String(num) })}
-                          className={`w-9 h-9 rounded-lg text-xs font-bold border transition ${
-                            answers[q.id] === String(num)
-                              ? 'bg-emerald-500 text-white border-emerald-600'
-                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                          }`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Free text */}
-                  {q.type === 'text' && (
-                    <input
-                      type="text"
-                      placeholder="Type brief details..."
-                      value={answers[q.id] || ''}
-                      onChange={e => setAnswers({ ...answers, [q.id]: e.target.value })}
-                      className="w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-slate-900 dark:text-white"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <button
-              onClick={() => setStep(1)}
-              className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm"
-            >
-              Back
-            </button>
-            <button
-              onClick={handleFinalizeQuestions}
-              disabled={evaluating}
-              className="flex-1 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition disabled:opacity-50"
-            >
-              {evaluating ? 'Issuing Token & Live Queue Registration...' : 'Complete Intake & Generate Live Token'}
-              <CheckCircle className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 3: Live Token Generated */}
-      {step === 3 && tokenResult && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle className="w-9 h-9" />
-          </div>
-
-          <div>
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 ${
-              tokenResult.priority === 'emergency' 
-                ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 animate-pulse'
-                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-            }`}>
-              Priority: {tokenResult.priority}
-            </span>
-            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              {tokenResult.tokenNumber}
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Your consultation token has been broadcasted to the doctor's queue.
-            </p>
-          </div>
-
-          {/* QR Code Presentation */}
-          {tokenResult.qrCode && (
-            <div className="p-4 bg-slate-50 dark:bg-slate-800 inline-block rounded-2xl border border-slate-200 dark:border-slate-700">
-              <img src={tokenResult.qrCode} alt="OPD Token QR" className="w-48 h-48 mx-auto" />
-              <p className="text-xs text-slate-400 mt-2 font-mono">Scan at Doctor Desk / Kiosk</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
-              <p className="text-xs text-slate-400">Current Queue Position</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                #{tokenResult.position}
+          <button
+            onClick={() => setCurrentStep(5)}
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 text-sm"
+          >
+            <span>Proceed to Vitals & Document OCR</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ── STEP 5: DOCUMENT UPLOAD (OCR) & VITALS ENTRY ── */}
+      {currentStep === 5 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Step 5 of 6 • Objective Data
+              </span>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                Upload Documents (OCR) & Vitals Capture
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Attach past prescriptions or lab records and measure physiological vitals.
               </p>
             </div>
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
-              <p className="text-xs text-slate-400">Estimated Wait</p>
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-                ~{tokenResult.estimatedWaitMinutes} mins
+            <button
+              onClick={() => setCurrentStep(4)}
+              className="p-2 text-slate-400 hover:text-slate-600 text-xs font-bold flex items-center gap-1"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+          </div>
+
+          {/* Document Upload & OCR */}
+          <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center space-y-3">
+            <UploadCloud className="w-10 h-10 text-emerald-500 mx-auto" />
+            <div>
+              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Upload Previous Prescriptions or Diagnostic Reports
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                OCR automatically reads medications and builds your longitudinal timeline.
               </p>
+            </div>
+            <label className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-sm transition">
+              <span>Select File (PDF / Image)</span>
+              <input type="file" onChange={handleSimulateDocumentUpload} className="hidden" />
+            </label>
+
+            {uploadedDocName && (
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-emerald-500/40 text-left text-xs space-y-1">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  ✓ {uploadedDocName}
+                </span>
+                <p className="text-[11px] text-slate-500 font-mono">{ocrPreviewText}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Vitals Entry (Manual / Kiosk Telemetry) */}
+          <div className="space-y-3">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Activity className="w-4 h-4 text-emerald-500" />
+              Kiosk Vitals Entry (Auto-detected or Manual)
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+              <div>
+                <label className="text-slate-500 block mb-1">Systolic BP</label>
+                <input
+                  type="number"
+                  value={vitals.bpSystolic}
+                  onChange={e => setVitals({ ...vitals, bpSystolic: e.target.value })}
+                  placeholder="120"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 block mb-1">Diastolic BP</label>
+                <input
+                  type="number"
+                  value={vitals.bpDiastolic}
+                  onChange={e => setVitals({ ...vitals, bpDiastolic: e.target.value })}
+                  placeholder="80"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 block mb-1">SpO2 (%)</label>
+                <input
+                  type="number"
+                  value={vitals.spO2}
+                  onChange={e => setVitals({ ...vitals, spO2: e.target.value })}
+                  placeholder="98"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 block mb-1">Heart Rate</label>
+                <input
+                  type="number"
+                  value={vitals.heartRate}
+                  onChange={e => setVitals({ ...vitals, heartRate: e.target.value })}
+                  placeholder="75"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 block mb-1">Temp (°F)</label>
+                <input
+                  type="number"
+                  value={vitals.temperature}
+                  onChange={e => setVitals({ ...vitals, temperature: e.target.value })}
+                  placeholder="98.6"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-4 max-w-md mx-auto pt-4">
-            <button
-              onClick={() => navigate('/waiting')}
-              className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm shadow-md transition"
-            >
-              Open Live Waiting Screen →
-            </button>
-            <button
-              onClick={() => { setStep(1); setComplaint(''); setSelectedSymptoms([]); }}
-              className="px-5 py-3.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold rounded-xl text-sm"
-            >
-              New Intake
-            </button>
-          </div>
+          <button
+            onClick={() => setCurrentStep(6)}
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 text-sm"
+          >
+            <span>Proceed to Choose Doctor & Token Generation</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       )}
+
+      {/* ── STEP 6: CHOOSE DOCTOR & TOKEN ISSUED ── */}
+      {currentStep === 6 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+          {!tokenResult ? (
+            <>
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Step 6 of 6 • Doctor Selection
+                </span>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                  Choose Available OPD Doctor
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  View real-time queue length and estimated waiting times for attending physicians.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {AVAILABLE_DOCTORS.map((doc) => {
+                  const isChosen = selectedDoctor.id === doc.id;
+                  return (
+                    <div
+                      key={doc.id}
+                      onClick={() => setSelectedDoctor(doc)}
+                      className={`p-4 rounded-2xl border cursor-pointer transition flex items-center justify-between ${
+                        isChosen
+                          ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-sm ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${isChosen ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}`}>
+                          <Stethoscope className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white">{doc.name}</h4>
+                          <p className="text-xs text-slate-500">{doc.department} • {doc.room}</p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 block">
+                          ~{doc.avgWaitMin}m wait
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {doc.queueCount} in queue
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleIssueToken}
+                disabled={evaluating}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition flex items-center justify-center gap-2 text-base disabled:opacity-50"
+              >
+                <QrCode className="w-5 h-5" />
+                <span>Issue Real-Time Token & QR Code</span>
+              </button>
+            </>
+          ) : (
+            /* Token Confirmation Display */
+            <div className="text-center py-6 space-y-6 animate-in zoom-in-95 duration-500">
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-md">
+                <CheckCircle className="w-10 h-10" />
+              </div>
+
+              <div>
+                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-bold uppercase tracking-wider">
+                  Token Successfully Issued
+                </span>
+                <div className="font-mono text-5xl font-black text-slate-900 dark:text-white tracking-tight mt-3">
+                  {tokenResult.token?.tokenNumber || 'OPD-001'}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Assigned to: <strong>{selectedDoctor.name}</strong> ({selectedDoctor.room})
+                </p>
+              </div>
+
+              {/* Scannable QR Code */}
+              <div className="inline-block p-4 bg-white rounded-3xl shadow-lg border-2 border-emerald-500/30">
+                <QRCodeSVG
+                  value={JSON.stringify({
+                    token: tokenResult.token?.tokenNumber,
+                    encounterId: tokenResult.encounterId,
+                    patient: recipient === 'family' ? familyDetails.name : (user?.fullName || 'Patient')
+                  })}
+                  size={160}
+                />
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">
+                  Scan at OPD Door Sensor
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-400 block font-bold">Queue Position</span>
+                  <span className="text-lg font-black text-slate-800 dark:text-slate-200">
+                    #{tokenResult.token?.position || 1}
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-400 block font-bold">Estimated Wait</span>
+                  <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                    ~{tokenResult.token?.estimatedWaitMinutes || 8} mins
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigate('/waiting')}
+                className="w-full max-w-md mx-auto py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 text-sm transition"
+              >
+                <span>Proceed to Live Waiting Room TV</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }

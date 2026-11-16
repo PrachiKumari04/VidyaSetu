@@ -9,6 +9,14 @@ const encounterSchema = new mongoose.Schema({
   doctorName: { type: String },
   departmentId: { type: String, default: 'General OPD' },
   clinicalMode: { type: String, enum: ['modern', 'ayush'], default: 'modern' },
+  serviceType: { type: String, enum: ['opd', 'lab', 'followup'], default: 'opd' },
+  whoNeedsCare: {
+    recipient: { type: String, enum: ['self', 'family'], default: 'self' },
+    relation: String,
+    name: String,
+    age: Number,
+    gender: String
+  },
   
   // Intake Details
   complaint: { type: String, required: true },

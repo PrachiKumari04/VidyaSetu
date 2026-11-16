@@ -38,7 +38,14 @@ router.post('/:id/complete', async (req, res) => {
     if (!encounter) return res.status(404).json({ error: 'Encounter not found' });
 
     encounter.diagnosis = diagnosis || encounter.diagnosis;
-    encounter.prescription = prescription || encounter.prescription;
+    if (typeof prescription === 'string') {
+      encounter.prescription = {
+        notes: prescription,
+        medicines: [{ name: prescription, dosage: '', frequency: '', duration: '' }]
+      };
+    } else if (prescription && typeof prescription === 'object') {
+      encounter.prescription = prescription;
+    }
     encounter.advice = advice || encounter.advice;
     encounter.labOrders = labOrders;
     encounter.referral = referral;
