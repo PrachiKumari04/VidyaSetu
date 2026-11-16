@@ -82,6 +82,7 @@ export default function PatientIntake() {
   // Step 5: Document Upload & Vitals
   const [uploadedDocName, setUploadedDocName] = useState('');
   const [ocrPreviewText, setOcrPreviewText] = useState('');
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [vitals, setVitals] = useState({ bpSystolic: '120', bpDiastolic: '80', heartRate: '75', spO2: '98', temperature: '98.6' });
 
   // Step 6: Choose Doctor & Issued Token
@@ -177,8 +178,58 @@ export default function PatientIntake() {
   const handleSimulateDocumentUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const isLab = file.name.toLowerCase().includes('lab') || file.name.toLowerCase().includes('blood') || file.name.toLowerCase().includes('report');
+      const ocrText = `[OCR Text from ${file.name}]: Document verified. Extracted clinical notes: Patient history of seasonal reactive airway disease, prescribed Levocetirizine 5mg BD. Past baseline examination noted.`;
+      const doc = {
+        fileName: file.name,
+        documentType: isLab ? 'lab-report' : 'prescription',
+        ocrText,
+        ocrConfidence: 0.95,
+        uploadedAt: new Date()
+      };
+      setUploadedDocuments(prev => [...prev, doc]);
       setUploadedDocName(file.name);
-      setOcrPreviewText(`[OCR Extraction from ${file.name}]: Document verified. Past history of seasonal reactive airway disease, prescribed Levocetirizine 5mg BD. Vitals recorded.`);
+      setOcrPreviewText(ocrText);
+    }
+  };
+
+  const addPresetDocument = (presetType) => {
+    let doc;
+    if (presetType === 'prescription') {
+      doc = {
+        fileName: 'Previous_OPD_Prescription_2025.pdf',
+        documentType: 'prescription',
+        ocrText: 'Prescription: Tab Metformin 500mg BD after meals, Tab Telmisartan 40mg OD morning. Diagnosed with Essential Hypertension and T2DM 1 yr ago. Advised low sodium diet.',
+        ocrConfidence: 0.96,
+        uploadedAt: new Date()
+      };
+    } else if (presetType === 'lab') {
+      doc = {
+        fileName: 'Diagnostic_Lab_Metabolic_Panel.pdf',
+        documentType: 'lab-report',
+        ocrText: 'Pathology Lab: Fasting Blood Sugar: 134 mg/dL (Elevated), HbA1c: 7.2%, Serum Creatinine: 0.92 mg/dL (Normal reference 0.7-1.3), Total Cholesterol: 210 mg/dL.',
+        ocrConfidence: 0.94,
+        uploadedAt: new Date()
+      };
+    } else {
+      doc = {
+        fileName: 'Hospital_Discharge_Summary.pdf',
+        documentType: 'discharge-summary',
+        ocrText: 'Discharge Summary: Episode of acute bronchospasm resolved with bronchodilator nebulization. Advised Levocetirizine 5mg and Budesonide inhaler SOS.',
+        ocrConfidence: 0.95,
+        uploadedAt: new Date()
+      };
+    }
+    setUploadedDocuments(prev => [...prev, doc]);
+    setUploadedDocName(doc.fileName);
+    setOcrPreviewText(doc.ocrText);
+  };
+
+  const removeDocument = (index) => {
+    setUploadedDocuments(prev => prev.filter((_, idx) => idx !== index));
+    if (uploadedDocuments.length <= 1) {
+      setUploadedDocName('');
+      setOcrPreviewText('');
     }
   };
 
@@ -202,8 +253,19 @@ export default function PatientIntake() {
         });
       }
 
-      // 2. Finalize Token
-      const tokenRes = await axios.post(`${API_URL.replace('/api', '')}/api/intake/${encounterId}/finalize-token`);
+      // 2. Submit documents if any
+      if (uploadedDocuments.length > 0 && encounterId) {
+        await axios.post(`${API_URL.replace('/api', '')}/api/intake/${encounterId}/documents`, {
+          documents: uploadedDocuments
+        });
+      }
+
+      // 3. Finalize Token passing both answers and documents
+      const tokenRes = await axios.post(`${API_URL.replace('/api', '')}/api/intake/${encounterId}/finalize-token`, {
+        answers: answersPayload,
+        documents: uploadedDocuments
+      });
+
       if (tokenRes.data?.success) {
         setTokenResult(tokenRes.data);
         setCurrentStep(6);
@@ -718,27 +780,63 @@ export default function PatientIntake() {
           </div>
 
           {/* Document Upload & OCR */}
-          <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center space-y-3">
+          <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center space-y-4">
             <UploadCloud className="w-10 h-10 text-emerald-500 mx-auto" />
             <div>
               <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 Upload Previous Prescriptions or Diagnostic Reports
               </h4>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                OCR automatically reads medications and builds your longitudinal timeline.
+                OCR extracts medications and conditions to summarize for your consulting doctor.
               </p>
             </div>
-            <label className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-sm transition">
-              <span>Select File (PDF / Image)</span>
-              <input type="file" onChange={handleSimulateDocumentUpload} className="hidden" />
-            </label>
 
-            {uploadedDocName && (
-              <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-emerald-500/40 text-left text-xs space-y-1">
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  ✓ {uploadedDocName}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <label className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-sm transition">
+                <span>Select File (PDF / Image)</span>
+                <input type="file" onChange={handleSimulateDocumentUpload} className="hidden" />
+              </label>
+              
+              <button
+                type="button"
+                onClick={() => addPresetDocument('prescription')}
+                className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+              >
+                <span>+ Past Prescription (Metformin/BP)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => addPresetDocument('lab')}
+                className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-500 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+              >
+                <span>+ Lab Report (HbA1c & Sugar)</span>
+              </button>
+            </div>
+
+            {/* Uploaded Documents List */}
+            {uploadedDocuments.length > 0 && (
+              <div className="space-y-2 text-left pt-2">
+                <span className="text-[11px] font-black uppercase text-emerald-600 dark:text-emerald-400">
+                  Attached Documents ({uploadedDocuments.length}) • OCR Extracted:
                 </span>
-                <p className="text-[11px] text-slate-500 font-mono">{ocrPreviewText}</p>
+                {uploadedDocuments.map((doc, idx) => (
+                  <div key={idx} className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-emerald-500/40 text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        ✓ {doc.fileName}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeDocument(idx)}
+                        className="text-slate-400 hover:text-red-500 text-[11px] font-bold"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-mono line-clamp-2">{doc.ocrText}</p>
+                  </div>
+                ))}
               </div>
             )}
           </div>

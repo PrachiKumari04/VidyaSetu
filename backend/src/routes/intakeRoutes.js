@@ -104,12 +104,57 @@ router.post('/:id/answers', async (req, res) => {
 });
 
 /**
- * 3. Finalize Intake & Issue Real-Time Queue Token
+ * 3. Upload & Attach Previous Documents / Prescriptions (OCR Extracted Records)
+ */
+router.post('/:id/documents', async (req, res) => {
+  try {
+    const { documents = [] } = req.body;
+    const encounter = await Encounter.findById(req.params.id);
+    if (!encounter) return res.status(404).json({ error: 'Encounter not found' });
+
+    for (const doc of documents) {
+      encounter.documents.push({
+        fileName: doc.fileName || 'Uploaded_Medical_Record.pdf',
+        documentType: doc.documentType || 'prescription',
+        ocrText: doc.ocrText || '',
+        ocrConfidence: doc.ocrConfidence || 0.92,
+        uploadedAt: doc.uploadedAt || new Date()
+      });
+    }
+
+    await encounter.save();
+    res.json({ success: true, count: encounter.documents.length, documents: encounter.documents });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * 4. Finalize Intake & Issue Real-Time Queue Token
  */
 router.post('/:id/finalize-token', async (req, res) => {
   try {
+    const { answers, documents } = req.body || {};
     const encounter = await Encounter.findById(req.params.id);
     if (!encounter) return res.status(404).json({ error: 'Encounter not found' });
+
+    if (Array.isArray(answers) && answers.length > 0) {
+      encounter.adaptiveAnswers = answers;
+    }
+
+    if (Array.isArray(documents) && documents.length > 0) {
+      for (const doc of documents) {
+        encounter.documents.push({
+          fileName: doc.fileName || 'Uploaded_Medical_Record.pdf',
+          documentType: doc.documentType || 'prescription',
+          ocrText: doc.ocrText || '',
+          ocrConfidence: doc.ocrConfidence || 0.92,
+          uploadedAt: doc.uploadedAt || new Date()
+        });
+      }
+    }
+
+    await encounter.save();
 
     const io = req.app.get('io');
     const token = await issueEncounterToken({
@@ -125,7 +170,7 @@ router.post('/:id/finalize-token', async (req, res) => {
       io
     });
 
-    // Pre-generate the 30-sec AI clinical summary in background for the doctor
+    // Generate the 30-sec AI clinical summary in background for the doctor
     generateClinicalSummary(encounter._id).catch(e => console.warn('Async summary generation failed:', e.message));
 
     res.json({

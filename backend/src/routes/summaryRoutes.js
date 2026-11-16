@@ -9,11 +9,12 @@ const { generateClinicalSummary } = require('../services/clinicalSummaryService'
 router.get('/:encounterId', async (req, res) => {
   try {
     const { encounterId } = req.params;
+    const { regenerate } = req.query;
     const encounter = await Encounter.findById(encounterId);
     if (!encounter) return res.status(404).json({ error: 'Encounter not found' });
 
     let summary = encounter.aiSummary?.draft;
-    if (!summary) {
+    if (!summary || regenerate === 'true') {
       summary = await generateClinicalSummary(encounterId);
     }
 

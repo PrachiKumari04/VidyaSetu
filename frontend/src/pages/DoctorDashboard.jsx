@@ -21,7 +21,9 @@ import {
   ShieldAlert,
   ChevronRight,
   User,
-  Volume2
+  Volume2,
+  Sparkles,
+  HelpCircle
 } from 'lucide-react';
 import { API_URL } from '../config/api';
 
@@ -67,9 +69,10 @@ export default function DoctorDashboard() {
     }
   };
 
-  const loadPatientSummary = async (encounterId) => {
+  const loadPatientSummary = async (encounterId, regenerate = false) => {
     try {
-      const res = await axios.get(`${API_URL.replace('/api', '')}/api/summary/${encounterId}`);
+      const url = `${API_URL.replace('/api', '')}/api/summary/${encounterId}${regenerate ? '?regenerate=true' : ''}`;
+      const res = await axios.get(url);
       if (res.data?.success) {
         setSummaryData(res.data.summary);
         setActiveEncounter(res.data.encounter);
@@ -481,68 +484,135 @@ export default function DoctorDashboard() {
                 </div>
               )}
 
-              {/* 30-Second AI Clinical Summary Draft */}
+              {/* Consolidated Single-Paragraph Case Synthesis */}
               {summaryData && (
-                <div className="bg-slate-50 dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-blue-500" />
-                      30-Second Clinical Draft (Groq Assistive Summary)
-                    </h3>
+                <div className="bg-gradient-to-br from-blue-50/90 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-blue-950/30 rounded-2xl p-6 border-2 border-blue-500/30 dark:border-blue-500/20 shadow-md space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-blue-100 dark:border-slate-800 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 bg-blue-600 text-white rounded-lg">
+                          <Sparkles className="w-4 h-4" />
+                        </span>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                          Consolidated Case Synthesis (One Paragraph)
+                        </h3>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                          Groq AI • 30s Fast Review
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Unified synthesis of chief complaint, answered adaptive questions, and OCR-extracted previous records.
+                      </p>
+                    </div>
                     
-                    {/* Doctor Action Controls: Accept, Edit, Reject */}
+                    {/* Action Controls & Regenerate */}
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => loadPatientSummary(activePatient.encounterId, true)}
+                        title="Regenerate summary with latest data"
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg text-xs transition"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => handleVerifySummary('accepted')}
                         disabled={verifying}
-                        className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
                       >
-                        <CheckCircle className="w-3.5 h-3.5" /> Accept Draft
+                        <CheckCircle className="w-3.5 h-3.5" /> Accept
                       </button>
                       <button
                         onClick={() => handleVerifySummary('edited')}
                         disabled={verifying}
-                        className="flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition shadow-sm"
                       >
                         <Edit3 className="w-3.5 h-3.5" /> Edit
                       </button>
                       <button
                         onClick={() => handleVerifySummary('rejected')}
                         disabled={verifying}
-                        className="flex items-center gap-1 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
                       >
                         <XCircle className="w-3.5 h-3.5" /> Reject
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-sm text-slate-800 dark:text-slate-100 font-medium leading-relaxed bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700">
-                    {summaryData.conciseDraft}
-                  </p>
+                  {/* The Single Paragraph Box */}
+                  <div className="bg-white/95 dark:bg-slate-800/90 p-4 sm:p-5 rounded-xl border border-blue-200/60 dark:border-slate-700 shadow-sm relative">
+                    <div className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200/50 inline-block mb-2">
+                      Clinical One-Paragraph Synthesis
+                    </div>
+                    <p className="text-sm text-slate-800 dark:text-slate-100 font-medium leading-relaxed">
+                      {summaryData.conciseDraft || summaryData.oneParaSynthesis}
+                    </p>
+                  </div>
 
-                  {/* Source-Tagged Evidence Badges */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <p className="text-slate-400 font-bold uppercase tracking-wider mb-1">Chief Symptoms & Source</p>
-                      <ul className="space-y-1">
-                        {summaryData.clinicalFacts?.symptoms?.map((s, idx) => (
-                          <li key={idx} className="flex items-center justify-between text-slate-800 dark:text-slate-200">
-                            <span>• {s.text}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[10px] text-slate-500 font-mono">
-                              {s.source}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Dual Deep-Dive: Answered Adaptive Questions & Uploaded OCR Documents */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
+                    {/* 1. Answered Adaptive Questions */}
+                    <div className="p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-700">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <HelpCircle className="w-3.5 h-3.5 text-blue-500" />
+                          Patient Adaptive Answers ({(activeEncounter?.adaptiveAnswers?.length || summaryData.clinicalFacts?.adaptiveAnswers?.length || 0)})
+                        </span>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono">Patient Input</span>
+                      </div>
+                      
+                      {((activeEncounter?.adaptiveAnswers?.length > 0) || (summaryData.clinicalFacts?.adaptiveAnswers?.length > 0)) ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          {(activeEncounter?.adaptiveAnswers || summaryData.clinicalFacts?.adaptiveAnswers || []).map((ans, idx) => (
+                            <div key={idx} className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-800">
+                              <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                Q: {ans.question}
+                              </p>
+                              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mt-0.5">
+                                → {ans.answer}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-400 italic text-[11px] py-2">
+                          No adaptive follow-up questions answered.
+                        </p>
+                      )}
                     </div>
 
-                    <div className="p-3 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <p className="text-slate-400 font-bold uppercase tracking-wider mb-1">Timeline Shifts & Changes</p>
-                      <ul className="space-y-1 text-slate-700 dark:text-slate-300">
-                        {summaryData.changes?.map((chg, idx) => (
-                          <li key={idx}>• {chg}</li>
-                        ))}
-                      </ul>
+                    {/* 2. Uploaded Previous Documents & OCR */}
+                    <div className="p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-700">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-emerald-500" />
+                          Uploaded Records & OCR Findings ({(activeEncounter?.documents?.length || summaryData.clinicalFacts?.documentsReviewed?.length || 0)})
+                        </span>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono">OCR Extracted</span>
+                      </div>
+
+                      {((activeEncounter?.documents?.length > 0) || (summaryData.clinicalFacts?.documentsReviewed?.length > 0)) ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          {(activeEncounter?.documents || summaryData.clinicalFacts?.documentsReviewed || []).map((doc, idx) => (
+                            <div key={idx} className="p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200/50 dark:border-emerald-900/50">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                                  📄 {doc.fileName}
+                                </span>
+                                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 rounded font-bold">
+                                  {doc.documentType || 'Prescription'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 font-mono line-clamp-3">
+                                {doc.ocrText || 'Document verified. No text extracted.'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-400 italic text-[11px] py-2">
+                          No previous records or prescriptions uploaded for this visit.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
