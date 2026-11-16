@@ -13,9 +13,12 @@ import {
   ArrowRight,
   Sparkles,
   HeartPulse,
-  User
+  User,
+  MapPin,
+  ChevronRight
 } from 'lucide-react';
 import { API_URL } from '../config/api';
+import InteractiveBodyMap from '../components/InteractiveBodyMap';
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -26,6 +29,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState(null);
   const [vitals, setVitals] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dashboardPainAreas, setDashboardPainAreas] = useState([]);
 
   useEffect(() => {
     async function loadData() {
@@ -56,6 +60,29 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto py-6 space-y-8">
+      {/* Role Switcher Announcement Header */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md border border-slate-700/60">
+        <div className="flex items-center gap-3">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+            Patient Kiosk Portal Active
+          </span>
+          <span className="hidden md:inline text-xs text-slate-400">|</span>
+          <p className="text-xs text-slate-300 hidden md:inline">
+            Walk-in OPD patient symptom intake, live queue tracking, and personal records.
+          </p>
+        </div>
+
+        <Link
+          to="/doctor"
+          className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
+        >
+          <Stethoscope className="w-3.5 h-3.5" />
+          <span>Switch to Doctor Station</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
@@ -135,17 +162,6 @@ export default function Dashboard() {
         </Link>
 
         <Link 
-          to="/doctor"
-          className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 shadow-sm transition group"
-        >
-          <div className="w-12 h-12 bg-purple-50 dark:bg-purple-950 text-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
-            <Stethoscope className="w-6 h-6" />
-          </div>
-          <h3 className="font-bold text-slate-900 dark:text-white text-base">Doctor Station</h3>
-          <p className="text-xs text-slate-500 mt-1">Review 30-second AI summary & call patients</p>
-        </Link>
-
-        <Link 
           to="/vitals"
           className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 shadow-sm transition group"
         >
@@ -155,6 +171,46 @@ export default function Dashboard() {
           <h3 className="font-bold text-slate-900 dark:text-white text-base">Vitals & Tests</h3>
           <p className="text-xs text-slate-500 mt-1">Record BP, SpO2, pulse, and lab reports</p>
         </Link>
+
+        <Link 
+          to="/consent"
+          className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 shadow-sm transition group"
+        >
+          <div className="w-12 h-12 bg-purple-50 dark:bg-purple-950 text-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-slate-900 dark:text-white text-base">Consent & Privacy</h3>
+          <p className="text-xs text-slate-500 mt-1">ABDM & DPDP Act compliance controls</p>
+        </Link>
+      </div>
+
+      {/* ── INTERACTIVE BODY PAIN MAP SECTION ON DASHBOARD ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-emerald-500" />
+              Interactive Anatomical Pain Localization
+            </h2>
+            <p className="text-xs text-slate-500">
+              Tap directly where you are experiencing pain to localize symptoms before your consultation.
+            </p>
+          </div>
+
+          {dashboardPainAreas.length > 0 && (
+            <button
+              onClick={() => navigate('/intake')}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition"
+            >
+              <span>Proceed to Intake with ({dashboardPainAreas.length}) zones</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        <InteractiveBodyMap
+          onPainAreasChange={(areas) => setDashboardPainAreas(areas)}
+        />
       </div>
 
       {/* Patient Health Summary Card */}

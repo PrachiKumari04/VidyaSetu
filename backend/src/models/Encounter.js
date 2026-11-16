@@ -18,6 +18,14 @@ const encounterSchema = new mongoose.Schema({
     bodyLocation: String,
     source: { type: String, default: 'patient-reported' }
   }],
+  painAreas: [{
+    id: String,
+    label: String,
+    view: String,
+    intensity: String,
+    quality: String,
+    redFlagKey: String
+  }],
   adaptiveAnswers: [{
     questionId: String,
     question: String,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { 
   Users, 
   AlertTriangle, 
@@ -12,7 +13,15 @@ import {
   Activity,
   Edit3,
   XCircle,
-  Clock
+  Clock,
+  Building2,
+  MapPin,
+  Heart,
+  Thermometer,
+  ShieldAlert,
+  ChevronRight,
+  User,
+  Volume2
 } from 'lucide-react';
 import { API_URL } from '../config/api';
 
@@ -21,6 +30,7 @@ export default function DoctorDashboard() {
   const [queue, setQueue] = useState([]);
   const [activePatient, setActivePatient] = useState(null);
   const [summaryData, setSummaryData] = useState(null);
+  const [activeEncounter, setActiveEncounter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [calling, setCalling] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -48,6 +58,7 @@ export default function DoctorDashboard() {
       const res = await axios.get(`${API_URL.replace('/api', '')}/api/summary/${encounterId}`);
       if (res.data?.success) {
         setSummaryData(res.data.summary);
+        setActiveEncounter(res.data.encounter);
       }
     } catch (err) {
       console.error(err);
@@ -70,8 +81,28 @@ export default function DoctorDashboard() {
     };
   }, []);
 
+  const playCallChime = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.6);
+    } catch (e) {
+      // Audio not permitted without user gesture
+    }
+  };
+
   const handleCallNext = async () => {
     setCalling(true);
+    playCallChime();
     try {
       const res = await axios.post(`${API_URL.replace('/api', '')}/api/queue/doctor/${doctorId}/call-next`);
       if (res.data?.success && res.data.calledToken) {
@@ -79,7 +110,7 @@ export default function DoctorDashboard() {
         loadPatientSummary(res.data.calledToken.encounterId);
         fetchQueue();
       } else {
-        alert(res.data?.message || 'No patients waiting.');
+        alert(res.data?.message || 'No patients waiting in queue.');
       }
     } catch (err) {
       console.error(err);
@@ -112,9 +143,10 @@ export default function DoctorDashboard() {
         advice,
         prescription: { notes: prescription }
       });
-      alert('Consultation closed & recorded to encounter!');
+      alert('Consultation closed & recorded to patient longitudinal encounter!');
       setActivePatient(null);
       setSummaryData(null);
+      setActiveEncounter(null);
       setDiagnosis('');
       setPrescription('');
       setAdvice('');
@@ -127,50 +159,103 @@ export default function DoctorDashboard() {
   const emergencies = queue.filter(t => t.priority === 'emergency');
   const routine = queue.filter(t => t.priority !== 'emergency');
 
+  const painAreas = activeEncounter?.painAreas || [];
+
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
+    <div className="max-w-7xl mx-auto py-6 space-y-6">
+      
+      {/* ── DOCTOR COCKPIT TOP ANNOUNCEMENT BANNER ── */}
+      <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg border border-blue-900/40">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-600/30 rounded-xl border border-blue-500/30 text-blue-400">
+            <Building2 className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm tracking-tight text-white">
+                MediKiosk Hospital OPD Consultation Suite
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                Room 104
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Attending Physician: <strong>Dr. Rajesh Sharma, MBBS, MD</strong> • General Medicine OPD
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            Live WebSocket
+          </div>
+
+          <Link
+            to="/"
+            className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+          >
+            <span>👤 Patient Kiosk View</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Main Clinical Actions Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Stethoscope className="text-emerald-500 w-7 h-7" />
-            MediKiosk Clinician Station & Real-Time OPD Queue
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5 tracking-tight">
+            <Stethoscope className="text-blue-600 w-7 h-7" />
+            Doctor Clinical Station & Priority Triage
           </h1>
-          <p className="text-sm text-slate-500">
-            Assisted 30-Second Pre-Consultation Summaries & Live Patient Call
+          <p className="text-xs text-slate-500 mt-1">
+            Real-time OPD queue orchestration, rule-verified red flags, 30-sec AI clinical summaries, and instant call chime.
           </p>
         </div>
 
-        <button
-          onClick={handleCallNext}
-          disabled={calling || queue.length === 0}
-          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-2 transition disabled:opacity-50"
-        >
-          <Users className="w-5 h-5" />
-          {calling ? 'Calling...' : 'Call Next Patient'}
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={fetchQueue}
+            className="p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl transition"
+            title="Refresh Queue"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={handleCallNext}
+            disabled={calling || queue.length === 0}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-lg shadow-blue-600/25 flex items-center gap-2 transition disabled:opacity-50 text-sm"
+          >
+            <Volume2 className="w-5 h-5 text-blue-200" />
+            {calling ? 'Calling Patient...' : 'Call Next Patient'}
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Real-Time Queue */}
-        <div className="space-y-6">
-          {/* Emergency Escalations */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* ── LEFT COLUMN: REAL-TIME OPD QUEUE (4 COLS) ── */}
+        <div className="lg:col-span-4 space-y-6">
+          
+          {/* Emergency Escalations Alert Box */}
           {emergencies.length > 0 && (
-            <div className="bg-red-50 dark:bg-red-950/40 border border-red-400 rounded-2xl p-4">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-red-700 dark:text-red-400 flex items-center gap-1.5 mb-3">
-                <AlertTriangle className="w-4 h-4" />
-                Emergency Priority ({emergencies.length})
+            <div className="bg-red-50 dark:bg-red-950/40 border-2 border-red-500 rounded-2xl p-4 shadow-sm animate-pulse">
+              <h2 className="text-xs font-black uppercase tracking-wider text-red-700 dark:text-red-400 flex items-center gap-1.5 mb-3">
+                <AlertTriangle className="w-4 h-4 text-red-600" />
+                Emergency Red-Flag Priority ({emergencies.length})
               </h2>
               <div className="space-y-2">
                 {emergencies.map(t => (
-                  <div key={t._id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+                  <div key={t._id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-red-300 dark:border-red-900 flex items-center justify-between">
                     <div>
-                      <span className="font-mono font-bold text-red-600 dark:text-red-400">{t.tokenNumber}</span>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">{t.patientName} ({t.age}y, {t.gender})</p>
+                      <span className="font-mono font-black text-red-600 dark:text-red-400 text-sm">{t.tokenNumber}</span>
+                      <p className="text-xs text-slate-800 dark:text-slate-200 font-bold">{t.patientName} ({t.age}y)</p>
+                      <span className="text-[10px] text-red-600 uppercase font-bold">Immediate Doctor Exam</span>
                     </div>
                     <button
                       onClick={() => { setActivePatient(t); loadPatientSummary(t.encounterId); }}
-                      className="px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-lg"
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg shadow-sm"
                     >
                       Open Case
                     </button>
@@ -180,41 +265,57 @@ export default function DoctorDashboard() {
             </div>
           )}
 
-          {/* Routine & Follow-Up Queue */}
+          {/* Routine & AYUSH OPD Queue */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between mb-4">
-              <span>Active Waiting Queue</span>
-              <span className="text-xs px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full">
-                {routine.length} waiting
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-blue-500" />
+                Waiting Patients
+              </span>
+              <span className="text-xs px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-full">
+                {routine.length} in queue
               </span>
             </h2>
 
             {routine.length === 0 ? (
-              <p className="text-xs text-slate-400 py-6 text-center">No patients currently in queue</p>
+              <p className="text-xs text-slate-400 py-8 text-center italic">
+                No routine patients waiting at this moment.
+              </p>
             ) : (
               <div className="space-y-2.5">
                 {routine.map((t, idx) => (
                   <div 
                     key={t._id}
                     onClick={() => { setActivePatient(t); loadPatientSummary(t.encounterId); }}
-                    className={`p-3 rounded-xl border cursor-pointer transition flex items-center justify-between ${
+                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center justify-between ${
                       activePatient?._id === t._id
-                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
-                        : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-slate-300'
+                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 shadow-sm'
+                        : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-blue-300'
                     }`}
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">{t.tokenNumber}</span>
-                        <span className="text-xs px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                        <span className="font-mono font-black text-sm text-slate-900 dark:text-white">{t.tokenNumber}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                           Pos #{idx + 1}
                         </span>
+                        {t.clinicalMode === 'ayush' && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                            AYUSH
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">{t.patientName} • {t.age}y</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+                        {t.patientName} • {t.age}y ({t.gender || 'M'})
+                      </p>
                     </div>
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                      ~{idx * 8}m
-                    </span>
+
+                    <div className="text-right">
+                      <span className="text-xs text-blue-600 dark:text-blue-400 font-bold block">
+                        ~{idx * 8}m
+                      </span>
+                      <span className="text-[10px] text-slate-400">est. wait</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -222,71 +323,153 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
-        {/* Right 2 Columns: 30-Second AI Clinical Summary & Workspace */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* ── RIGHT COLUMN: ACTIVE CONSULTATION EMR WORKSPACE (8 COLS) ── */}
+        <div className="lg:col-span-8 space-y-6">
           {activePatient ? (
             <>
-              {/* Top Banner: Patient identity */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+              {/* Active Patient Identity & Triage Header */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl font-black font-mono text-blue-600 dark:text-blue-400 px-3 py-1 bg-blue-50 dark:bg-blue-950/60 rounded-xl border border-blue-200 dark:border-blue-900">
                       {activePatient.tokenNumber}
                     </span>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                       {activePatient.patientName}
                     </h2>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Age: {activePatient.age || 'Unspecified'} | Gender: {activePatient.gender || 'Unspecified'} | Dept: {activePatient.departmentId}
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    Age: <strong>{activePatient.age || 30} yrs</strong> | Gender: <strong>{activePatient.gender || 'Unspecified'}</strong> | Dept: <strong>{activePatient.departmentId}</strong>
                   </p>
                 </div>
 
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                  activePatient.priority === 'emergency'
-                    ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 animate-pulse'
-                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                }`}>
-                  {activePatient.priority}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                    activePatient.priority === 'emergency'
+                      ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 animate-pulse'
+                      : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                  }`}>
+                    Priority: {activePatient.priority}
+                  </span>
+                </div>
               </div>
 
-              {/* 30-Second AI Clinical Summary */}
+              {/* Patient Vitals Triage Bar */}
+              {activeEncounter?.vitals && (
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-blue-500" />
+                    Kiosk Measured Vitals Telemetry
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                      <span className="text-slate-400 font-bold block mb-0.5">Blood Pressure</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">
+                        {activeEncounter.vitals.bpSystolic || 120} / {activeEncounter.vitals.bpDiastolic || 80} mmHg
+                      </span>
+                    </div>
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                      <span className="text-slate-400 font-bold block mb-0.5">SpO2 Oxygen</span>
+                      <span className={`text-sm font-black ${
+                        (activeEncounter.vitals.spO2 || 98) < 95 ? 'text-red-600' : 'text-emerald-600'
+                      }`}>
+                        {activeEncounter.vitals.spO2 || 98}%
+                      </span>
+                    </div>
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                      <span className="text-slate-400 font-bold block mb-0.5">Heart Rate</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">
+                        {activeEncounter.vitals.heartRate || 76} bpm
+                      </span>
+                    </div>
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                      <span className="text-slate-400 font-bold block mb-0.5">Temperature</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">
+                        {activeEncounter.vitals.temperature || 98.6}°F
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── NEW: PATIENT ANATOMICAL PAIN LOCALIZATION MAP VIEW ── */}
+              {painAreas.length > 0 && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-2xl p-5 border border-amber-300 dark:border-amber-800/60 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-amber-600" />
+                      Patient Documented Anatomical Pain Zones ({painAreas.length})
+                    </h3>
+                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-white/80 dark:bg-slate-900 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-900">
+                      Direct Body Map Input
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {painAreas.map((p, idx) => (
+                      <div 
+                        key={idx}
+                        className="p-3 bg-white/90 dark:bg-slate-900/90 rounded-xl border border-amber-200 dark:border-amber-900 flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-slate-900 dark:text-white">
+                            {p.label}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Quality: <strong>{p.quality}</strong>
+                          </p>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
+                          p.intensity === 'severe'
+                            ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
+                            : p.intensity === 'moderate'
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300'
+                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300'
+                        }`}>
+                          {p.intensity}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 30-Second AI Clinical Summary Draft */}
               {summaryData && (
                 <div className="bg-slate-50 dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-emerald-500" />
-                      30-Second Assistive Summary (Clinician Review Draft)
+                      <FileText className="w-4 h-4 text-blue-500" />
+                      30-Second Clinical Draft (Groq Assistive Summary)
                     </h3>
                     
-                    {/* Doctor Action Controls (FR-15: Accept, Edit, Reject) */}
+                    {/* Doctor Action Controls: Accept, Edit, Reject */}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleVerifySummary('accepted')}
                         disabled={verifying}
-                        className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold"
+                        className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition"
                       >
                         <CheckCircle className="w-3.5 h-3.5" /> Accept Draft
                       </button>
                       <button
                         onClick={() => handleVerifySummary('edited')}
                         disabled={verifying}
-                        className="flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold"
+                        className="flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition"
                       >
                         <Edit3 className="w-3.5 h-3.5" /> Edit
                       </button>
                       <button
                         onClick={() => handleVerifySummary('rejected')}
                         disabled={verifying}
-                        className="flex items-center gap-1 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold"
+                        className="flex items-center gap-1 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition"
                       >
                         <XCircle className="w-3.5 h-3.5" /> Reject
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-sm text-slate-700 dark:text-slate-200 font-medium leading-relaxed bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                  <p className="text-sm text-slate-800 dark:text-slate-100 font-medium leading-relaxed bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700">
                     {summaryData.conciseDraft}
                   </p>
 
@@ -298,7 +481,7 @@ export default function DoctorDashboard() {
                         {summaryData.clinicalFacts?.symptoms?.map((s, idx) => (
                           <li key={idx} className="flex items-center justify-between text-slate-800 dark:text-slate-200">
                             <span>• {s.text}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[10px] text-slate-500">
+                            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[10px] text-slate-500 font-mono">
                               {s.source}
                             </span>
                           </li>
@@ -320,46 +503,53 @@ export default function DoctorDashboard() {
 
               {/* Consultation Output Workspace */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  Consultation Findings & Orders
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <Stethoscope className="w-4 h-4 text-blue-500" />
+                  Doctor Consultation Findings & Orders
                 </h3>
 
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">Physician Clinical Diagnosis</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Physician Clinical Diagnosis
+                  </label>
                   <input
                     type="text"
-                    placeholder="E.g., Acute Bronchitis / Musculoskeletal chest strain"
+                    placeholder="E.g., Acute Musculoskeletal Chest Wall Strain / Tension Headache"
                     value={diagnosis}
                     onChange={e => setDiagnosis(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">Prescription & Rx Details</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Prescription & Medication Orders
+                  </label>
                   <textarea
                     rows={2}
-                    placeholder="E.g., Paracetamol 650mg TDS x 3 days, Steam inhalation..."
+                    placeholder="E.g., Tab Paracetamol 650mg TDS x 3 days; Diclofenac gel topically BD..."
                     value={prescription}
                     onChange={e => setPrescription(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">Clinical Advice & Follow-Up</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Clinical Advice & Follow-Up Instructions
+                  </label>
                   <input
                     type="text"
-                    placeholder="E.g., Review in 5 days if fever persists; CBC test ordered"
+                    placeholder="E.g., Adequate hydration, avoid heavy lifting; Review in 5 days if unresolved"
                     value={advice}
                     onChange={e => setAdvice(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
 
                 <button
                   onClick={handleCompleteConsultation}
-                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-md transition"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-sm shadow-md transition"
                 >
                   Finalize & Conclude Consultation
                 </button>
@@ -369,8 +559,8 @@ export default function DoctorDashboard() {
             <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8">
               <Activity className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <h2 className="text-lg font-bold text-slate-800 dark:text-white">No Active Consultation</h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Select a patient from the waiting queue on the left or tap "Call Next Patient".
+              <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+                Select a patient from the waiting queue on the left or tap "Call Next Patient" to review the pre-consultation summary.
               </p>
             </div>
           )}

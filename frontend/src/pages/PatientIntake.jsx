@@ -8,16 +8,18 @@ import {
   ShieldCheck, 
   Activity, 
   ChevronRight, 
-  Sparkles,
-  CheckCircle,
-  HelpCircle,
-  Heart,
-  Stethoscope,
-  Flame,
-  Wind
+  Sparkles, 
+  CheckCircle, 
+  HelpCircle, 
+  Heart, 
+  Stethoscope, 
+  Flame, 
+  Wind,
+  MapPin
 } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config/api';
+import InteractiveBodyMap from '../components/InteractiveBodyMap';
 
 const QUICK_SYMPTOMS = [
   { label: 'Chest Pain / Tightness', level: 'high', icon: Heart },
@@ -38,6 +40,7 @@ export default function PatientIntake() {
   const [clinicalMode, setClinicalMode] = useState('modern'); // 'modern' or 'ayush'
   const [complaint, setComplaint] = useState('');
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
+  const [painAreas, setPainAreas] = useState([]);
   const [vitals, setVitals] = useState({ bpSystolic: '', bpDiastolic: '', heartRate: '', spO2: '', temperature: '' });
   
   // Triage state
@@ -82,19 +85,25 @@ export default function PatientIntake() {
   // Step 1 Submit: Starts Encounter & Runs Rule Engine First
   const handleStartIntake = async (e) => {
     e.preventDefault();
-    if (!complaint && selectedSymptoms.length === 0) {
-      alert('Please describe your complaint or pick symptoms.');
+    if (!complaint && selectedSymptoms.length === 0 && painAreas.length === 0) {
+      alert('Please describe your complaint, select symptoms, or tap a location on the Body Map.');
       return;
     }
 
     setEvaluating(true);
     try {
-      const activeComplaint = complaint || selectedSymptoms.join(', ');
+      const allSymptoms = [
+        ...selectedSymptoms.map(s => ({ text: s, method: 'quickcard' })),
+        ...painAreas.map(p => ({ text: `${p.label} (${p.intensity} - ${p.quality})`, method: 'bodymap', bodyLocation: p.id }))
+      ];
+      const activeComplaint = complaint || selectedSymptoms.join(', ') || (painAreas.length > 0 ? `Pain localized in ${painAreas.map(p => p.label).join(', ')}` : 'General checkup');
+      
       const res = await axios.post(`${API_URL.replace('/api', '')}/api/intake/start`, {
         patientId: user?.id || 'guest_patient_001',
         patientName: user?.fullName || 'Patient',
         complaint: activeComplaint,
-        symptoms: selectedSymptoms.map(s => ({ text: s, method: 'quickcard' })),
+        symptoms: allSymptoms,
+        painAreas,
         vitals: {
           bpSystolic: Number(vitals.bpSystolic) || undefined,
           bpDiastolic: Number(vitals.bpDiastolic) || undefined,
@@ -246,6 +255,32 @@ export default function PatientIntake() {
                 })}
               </div>
             </div>
+          </div>
+
+          {/* 1.5 Interactive Anatomical Body Map */}
+          <div>
+            <InteractiveBodyMap
+              initialAreas={painAreas}
+              onPainAreasChange={(areas, summaryText) => {
+                setPainAreas(areas);
+                if (summaryText) {
+                  setComplaint(prev => {
+                    const cleanPrev = prev.replace(/\n\n\[Body Map Pain\]:.*$/s, '').trim();
+                    return cleanPrev ? `${cleanPrev}\n\n[Body Map Pain]: ${summaryText}` : `[Body Map Pain]: ${summaryText}`;
+                  });
+
+                  // Automatically correlate high-risk presentation cards
+                  areas.forEach(a => {
+                    if (a.redFlagKey === 'chest' && !selectedSymptoms.includes('Chest Pain / Tightness')) {
+                      setSelectedSymptoms(prev => [...prev, 'Chest Pain / Tightness']);
+                    }
+                    if (a.redFlagKey === 'head' && a.intensity === 'severe' && !selectedSymptoms.includes('Severe Headache')) {
+                      setSelectedSymptoms(prev => [...prev, 'Severe Headache']);
+                    }
+                  });
+                }
+              }}
+            />
           </div>
 
           {/* Vitals Entry (Optional Kiosk Readings) */}

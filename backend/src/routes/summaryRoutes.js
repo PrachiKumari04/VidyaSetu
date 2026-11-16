@@ -21,6 +21,8 @@ router.get('/:encounterId', async (req, res) => {
       success: true,
       encounterId,
       summary,
+      encounter,
+      painAreas: encounter.painAreas || [],
       action: encounter.aiSummary?.action || 'pending'
     });
   } catch (err) {

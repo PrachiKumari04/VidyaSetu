@@ -19,6 +19,7 @@ router.post('/start', async (req, res) => {
       gender,
       complaint,
       symptoms = [],
+      painAreas = [],
       vitals = {},
       clinicalMode = 'modern',
       departmentId = 'General OPD',
@@ -44,6 +45,7 @@ router.post('/start', async (req, res) => {
       doctorId,
       doctorName,
       symptoms: symptoms.map(s => typeof s === 'string' ? { text: s, method: 'text' } : s),
+      painAreas,
       vitals,
       redFlags: redFlagResult.matchedRules.map(r => ({
         ruleId: r.ruleId,

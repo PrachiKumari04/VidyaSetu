@@ -38,6 +38,12 @@ async function generateClinicalSummary(encounterId) {
       location: s.bodyLocation
     })),
     adaptiveAnswers: encounter.adaptiveAnswers || [],
+    painLocalization: (encounter.painAreas || []).map(p => ({
+      region: p.label,
+      intensity: p.intensity,
+      quality: p.quality,
+      source: 'patient-bodymap'
+    })),
     vitals: encounter.vitals ? {
       ...encounter.vitals.toObject ? encounter.vitals.toObject() : encounter.vitals,
       source: encounter.vitals.source || 'patient-reported'
