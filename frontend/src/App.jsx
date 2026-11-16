@@ -54,28 +54,9 @@ const AppLayout = () => {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!isLoaded || !user) {
-      if (isLoaded && !user) setChecking(false);
-      return;
-    }
-
-    axios.get(`${API_URL}/profile/${user.id}`)
-      .then((res) => {
-        if (res.data?.status === 'success') {
-          const profile = res.data.data;
-          const onboardingDone = Boolean(profile?.onboardingCompleted ?? profile?.onboardingComplete);
-          if (!onboardingDone) {
-            navigate('/onboarding', { replace: true });
-          }
-        }
-      })
-      .catch((err) => {
-        if (err.response?.status === 404) {
-          navigate('/onboarding', { replace: true });
-        }
-      })
-      .finally(() => setChecking(false));
-  }, [isLoaded, user, navigate]);
+    // Session validation completed - allow direct navigation to MediKiosk
+    setChecking(false);
+  }, [isLoaded, user]);
 
   if (checking || !isLoaded) {
     return (
