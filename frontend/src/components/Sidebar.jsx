@@ -59,18 +59,15 @@ const Sidebar = () => {
   let currentNavItems = patientNavItems;
   let brandingTitle = 'Patient Intake System';
   let brandingAccent = 'text-emerald-500';
-  let badgeText = 'Kiosk Patient Portal';
 
   if (role === 'doctor') {
     currentNavItems = doctorNavItems;
     brandingTitle = 'Clinician Decision Suite';
     brandingAccent = 'text-blue-500';
-    badgeText = 'OPD Room 104 • Dr. R. Sharma (MD)';
   } else if (role === 'lab') {
     currentNavItems = labNavItems;
     brandingTitle = 'Pathology & Diagnostic Lab';
     brandingAccent = 'text-purple-500';
-    badgeText = 'Central Hospital Pathology Lab';
   }
 
   return (
@@ -108,18 +105,6 @@ const Sidebar = () => {
           </span>
         </div>
 
-        {/* Role Badge Indicator */}
-        <div className="mb-5 p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 bg-white/70 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/80 shadow-xs">
-          {role === 'doctor' ? (
-            <Stethoscope className="w-4 h-4 text-blue-500 shrink-0" />
-          ) : role === 'lab' ? (
-            <FlaskConical className="w-4 h-4 text-purple-500 shrink-0" />
-          ) : (
-            <UserCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-          )}
-          <span className="truncate text-slate-700 dark:text-slate-200">{badgeText}</span>
-        </div>
-
         {/* Role Navigation Links */}
         <nav className="flex flex-col space-y-1.5 flex-1">
           {currentNavItems.map((item) => (
@@ -154,9 +139,11 @@ const Sidebar = () => {
               <UserButton />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                  {user?.fullName || (role === 'doctor' ? 'Dr. Sharma' : role === 'lab' ? 'Lab Tech 01' : 'OPD Patient')}
+                  {user?.fullName || 'Prachi Kumari'}
                 </p>
-                <p className="text-[10px] text-slate-400 truncate uppercase font-semibold">{role} account</p>
+                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 truncate uppercase font-bold tracking-wider">
+                  Admin Account
+                </p>
               </div>
             </div>
           </SignedIn>
