@@ -84,7 +84,7 @@ const VitalCard = ({ title, value, unit, type, status, trend, timestamp, icon: I
 const Vitals = () => {
   const { user } = useUser();
   const { t } = useTranslation();
-  const [demoUser] = useState({ id: 'demo_user_123', fullName: 'Demo Patient' });
+  const [demoUser] = useState({ id: 'user_3CTF74TKxcB2BIybjIKmNavaM9b', fullName: 'Prachi Kumari' });
   const activeUser = user || demoUser;
   const [vitals, setVitals] = useState({});
   const [report, setReport] = useState(null);

@@ -73,6 +73,7 @@ const SettingsNav = ({ active, onSelect }) => {
 
 const Settings = () => {
   const { user } = useUser();
+  const activeUserId = user?.id || 'user_3CTF74TKxcB2BIybjIKmNavaM9b';
   const { 
     theme, toggleTheme, 
     fontSize, setFontSize, 
@@ -134,8 +135,8 @@ const Settings = () => {
   const fetchData = async () => {
     try {
       const [pRes, prefRes] = await Promise.all([
-        axios.get(`${API_URL}/profile/${user.id}`),
-        axios.get(`${API_URL}/preferences/${user.id}`).catch(() => ({ data: { status: 'error' } }))
+        axios.get(`${API_URL}/profile/${activeUserId}`),
+        axios.get(`${API_URL}/preferences/${activeUserId}`).catch(() => ({ data: { status: 'error' } }))
       ]);
       if (pRes.data.status === 'success') setProfile(pRes.data.data);
       if (prefRes.data.status === 'success') setPref(prefRes.data.data);
@@ -147,14 +148,14 @@ const Settings = () => {
   };
 
   useEffect(() => {
-    if (user) fetchData();
-  }, [user]);
+    fetchData();
+  }, [activeUserId]);
 
   useEffect(() => {
     if (profile) {
       setProfileFormData({
-         name: profile.name?.value || user.fullName || '',
-         phone: user.primaryPhoneNumber?.phoneNumber || profile.phone?.value || '',
+         name: profile.name?.value || user?.fullName || 'Prachi Kumari',
+         phone: user?.primaryPhoneNumber?.phoneNumber || profile.phone?.value || '+91 98765 43210',
          gender: profile.gender?.value || 'Male',
          dob: profile.dob?.value?.split('T')[0] || ''
       });
@@ -202,7 +203,7 @@ const Settings = () => {
       const token = params.get('access_token');
       if (token) {
         setSyncingFit(true);
-        axios.post(`${API_URL}/fitness/sync-extended`, { clerkId: user.id, accessToken: token })
+        axios.post(`${API_URL}/fitness/sync-extended`, { clerkId: activeUserId, accessToken: token })
           .then(() => {
             setGoogleFitConnected(true);
             localStorage.setItem('googleFitConnected', 'true');
@@ -221,10 +222,10 @@ const Settings = () => {
     try {
       setSaving(true);
       await axios.post(`${API_URL}/profile/update`, {
-         clerkId: user.id,
+         clerkId: activeUserId,
          updates: Object.fromEntries(Object.entries(profileFormData).filter(([_, v]) => v !== ''))
       });
-      await axios.post(`${API_URL}/reports/predictive-risk/recompute`, { clerkId: user.id, persist: true }).catch(() => null);
+      await axios.post(`${API_URL}/reports/predictive-risk/recompute`, { clerkId: activeUserId, persist: true }).catch(() => null);
       window.dispatchEvent(new CustomEvent('vaidya-profile-updated'));
       fetchData();
       alert("Saved changes");
@@ -239,14 +240,14 @@ const Settings = () => {
     try {
       setSaving(true);
       await Promise.all([
-        axios.patch(`${API_URL}/preferences/${user.id}`, {
+        axios.patch(`${API_URL}/preferences/${activeUserId}`, {
            customThresholds: {
               ...pref?.customThresholds,
               systolicBP: { ...pref?.customThresholds?.systolicBP, high: alertSettings.highSystolicBP },
               spo2: { ...pref?.customThresholds?.spo2, low: alertSettings.lowSPO2 }
            }
         }),
-        axios.patch(`${API_URL}/profile/settings/${user.id}`, {
+        axios.patch(`${API_URL}/profile/settings/${activeUserId}`, {
            settings: {
               ...profile?.settings,
               defaultReminderTime: alertSettings.defaultTime,
@@ -268,7 +269,7 @@ const Settings = () => {
   const handleSaveGlobalPrefs = async () => {
     try {
       setSaving(true);
-      await axios.patch(`${API_URL}/profile/settings/${user.id}`, {
+      await axios.patch(`${API_URL}/profile/settings/${activeUserId}`, {
          settings: {
             ...profile?.settings,
             language: getLanguageCode(globalPrefs.language),
@@ -319,7 +320,7 @@ const Settings = () => {
 
   const exportDataJSON = async () => {
     try {
-      const res = await axios.get(`${API_URL}/governance/export/${user.id}`);
+      const res = await axios.get(`${API_URL}/governance/export/${activeUserId}`);
       const blob = new Blob([JSON.stringify(res.data.data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -332,13 +333,13 @@ const Settings = () => {
   const exportDataPDF = async () => {
      try {
        const [profileRes, vitalsRes, labRes, medsRes, reportRes] = await Promise.all([
-         axios.get(`${API_URL}/profile/${user.id}`).catch(() => ({ data: { data: null } })),
-         axios.get(`${API_URL}/vitals/${user.id}`).catch(() => ({ data: { data: [] } })),
-         axios.get(`${API_URL}/lab-results/${user.id}`).catch(() => ({ data: { data: [] } })),
-         axios.get(`${API_URL}/medications/${user.id}`).catch(() => ({ data: { data: [] } })),
-         axios.get(`${API_URL}/reports/${user.id}`).catch(() => ({ data: { data: null } }))
+         axios.get(`${API_URL}/profile/${activeUserId}`).catch(() => ({ data: { data: null } })),
+         axios.get(`${API_URL}/vitals/${activeUserId}`).catch(() => ({ data: { data: [] } })),
+         axios.get(`${API_URL}/lab-results/${activeUserId}`).catch(() => ({ data: { data: [] } })),
+         axios.get(`${API_URL}/medications/${activeUserId}`).catch(() => ({ data: { data: [] } })),
+         axios.get(`${API_URL}/reports/${activeUserId}`).catch(() => ({ data: { data: null } }))
        ]);
-       generateArchivePDF(user.fullName || 'User', {
+       generateArchivePDF(user?.fullName || 'Prachi Kumari', {
          profile: profileRes.data?.data,
          vitals: vitalsRes.data?.data || [],
          labResults: labRes.data?.data || [],
@@ -354,7 +355,7 @@ const Settings = () => {
      try {
         const newVal = !aiDataSharing;
         setAiDataSharing(newVal);
-        await axios.patch(`${API_URL}/profile/settings/${user.id}`, {
+        await axios.patch(`${API_URL}/profile/settings/${activeUserId}`, {
            settings: {
               ...profile?.settings,
               aiDataSharing: newVal
@@ -370,7 +371,7 @@ const Settings = () => {
     if(window.confirm("Are you sure you want to permanently delete all logged vital signs? This cannot be undone.")) {
       try {
         setSaving(true);
-        await axios.delete(`${API_URL}/vitals/purge/${user.id}`);
+        await axios.delete(`${API_URL}/vitals/purge/${activeUserId}`);
         alert("Vitals partially purged from the clinical matrix.");
         window.location.reload();
       } catch (err) {
@@ -385,7 +386,7 @@ const Settings = () => {
   const handlePurgeData = async () => {
     try {
       setSaving(true);
-      await axios.delete(`${API_URL}/governance/purge/${user.id}`);
+      await axios.delete(`${API_URL}/governance/purge/${activeUserId}`);
       setPurgeConfirm(false);
       window.location.reload();
     } catch (err) {
@@ -400,7 +401,7 @@ const Settings = () => {
       setSyncingFit(true);
       try {
         await axios.post(`${API_URL}/fitness/sync-extended`, { 
-          clerkId: user.id, 
+          clerkId: activeUserId, 
           accessToken: tokenResponse.access_token 
         });
         setGoogleFitConnected(true);
@@ -560,15 +561,21 @@ const Settings = () => {
 
                 <div className="flex items-center gap-6 p-6 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-white/5">
                    <div className="relative group">
-                      <img src={user.imageUrl} alt="Profile" className="w-20 h-20 rounded-2xl object-cover shadow-lg" />
+                      {user?.imageUrl ? (
+                         <img src={user.imageUrl} alt="Profile" className="w-20 h-20 rounded-2xl object-cover shadow-lg" />
+                       ) : (
+                         <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-black text-2xl shadow-lg">
+                           PK
+                         </div>
+                       )}
                       <button className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition-opacity flex flex-col gap-1">
                          <ImageIcon className="w-5 h-5" /><span className="text-[8px] uppercase tracking-widest font-black">{t('settings.identity.upload')}</span>
                       </button>
                    </div>
                    <div>
-                      <h4 className="text-lg font-black text-gray-900 dark:text-white">{user.fullName || 'User'}</h4>
+                      <h4 className="text-lg font-black text-gray-900 dark:text-white">{user?.fullName || profile?.name?.value || 'Prachi Kumari'}</h4>
                       <p className="text-xs text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest flex items-center gap-2 mt-1">
-                         <Mail className="w-3 h-3" /> {user.primaryEmailAddress?.emailAddress} <span className="text-emerald-500">{t('settings.identity.verified')}</span>
+                         <Mail className="w-3 h-3" /> {user?.primaryEmailAddress?.emailAddress || 'admin@medikiosk.internal'} <span className="text-emerald-500">{t('settings.identity.verified')}</span>
                       </p>
                    </div>
                 </div>

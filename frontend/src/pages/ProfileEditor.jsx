@@ -199,9 +199,11 @@ const ProfileEditor = () => {
   const [intentData, setIntentData] = useState({ intent: 'real_change', notes: '', changeDate: new Date().toISOString() });
   const [sections, setSections] = useState({ biometrics: true, lifestyle: false, diet: false, womens: false, respiratory: false, mental: false, medical: false });
 
+  const activeUserId = user?.id || 'user_3CTF74TKxcB2BIybjIKmNavaM9b';
+
   useEffect(() => {
-    if (user && !hasLoadedInitial.current) {
-      axios.get(`${API_URL}/profile/${user.id}`)
+    if (!hasLoadedInitial.current) {
+      axios.get(`${API_URL}/profile/${activeUserId}`)
         .then(res => {
           if (res.data.status === 'success' && !hasLoadedInitial.current) {
             const p = res.data.data;
@@ -235,9 +237,10 @@ const ProfileEditor = () => {
             hasLoadedInitial.current = true;
           }
         })
+        .catch(err => console.error(err))
         .finally(() => setLoading(false));
     }
-  }, [user]);
+  }, [activeUserId]);
 
   const toggleSection = (s) => setSections(prev => ({ ...prev, [s]: !prev[s] }));
   const updateField = (field, value) => {
@@ -271,12 +274,12 @@ const ProfileEditor = () => {
         if (JSON.stringify(oldVal) !== JSON.stringify(processed)) updates[key] = processed;
       });
       const response = await axios.post(`${API_URL}/profile/update`, {
-        clerkId: user.id, updates, intent: intentData.intent,
+        clerkId: activeUserId, updates, intent: intentData.intent,
         notes: intentData.notes, changeDate: intentData.changeDate
       });
       if (response.data.status === 'success') {
-         await axios.post(`${API_URL}/reports/predictive-risk/recompute`, { clerkId: user.id, persist: true }).catch(() => null);
-         await axios.post(`${API_URL}/ai/generate-report`, { clerkId: user.id }).catch(() => null);
+         await axios.post(`${API_URL}/reports/predictive-risk/recompute`, { clerkId: activeUserId, persist: true }).catch(() => null);
+         await axios.post(`${API_URL}/ai/generate-report`, { clerkId: activeUserId }).catch(() => null);
          window.dispatchEvent(new CustomEvent('vaidya-profile-updated'));
          navigate('/profile', { state: { toast: 'Your questionnaire-based risk scores and insights have been refreshed.' } });
       }

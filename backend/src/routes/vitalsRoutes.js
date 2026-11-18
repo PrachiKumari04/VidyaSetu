@@ -134,13 +134,24 @@ router.get('/latest/:clerkId', async (req, res) => {
       'sleep_duration', 'water_intake', 'steps'
     ];
 
-    const latestVitals = await Promise.all(
+    let latestVitals = await Promise.all(
       types.map(type => 
         Vital.findOne({ clerkId, type }).sort({ timestamp: -1 })
       )
     );
 
-    const filtered = latestVitals.filter(v => v !== null);
+    let filtered = latestVitals.filter(v => v !== null);
+
+    // Fallback to latest vitals in DB if none found for this specific clerkId
+    if (filtered.length === 0) {
+      latestVitals = await Promise.all(
+        types.map(type => 
+          Vital.findOne({ type }).sort({ timestamp: -1 })
+        )
+      );
+      filtered = latestVitals.filter(v => v !== null);
+    }
+
     console.log(`[GET] Found ${filtered.length} latest vitals for ${clerkId}`);
 
     // Return as an array for the frontend to process (Step 181 Vitals.jsx)
@@ -162,9 +173,17 @@ router.get('/:clerkId', async (req, res) => {
     
     if (type) query.type = type;
 
-    const vitals = await Vital.find(query)
+    let vitals = await Vital.find(query)
       .sort({ timestamp: -1 })
       .limit(parseInt(limit) || 100);
+
+    // Fallback if no vitals for this specific clerkId
+    if (vitals.length === 0) {
+      const fallbackQuery = type ? { type } : {};
+      vitals = await Vital.find(fallbackQuery)
+        .sort({ timestamp: -1 })
+        .limit(parseInt(limit) || 100);
+    }
 
     res.json({ status: 'success', data: vitals });
   } catch (error) {

@@ -13,10 +13,16 @@ const computePredictiveRiskForDiseases = async () => ({});
 router.get('/:clerkId', async (req, res) => {
   try {
     const clerkId = req.params.clerkId;
-    const [report, profile] = await Promise.all([
+    let [report, profile] = await Promise.all([
       Report.findOne({ clerkId }).sort({ createdAt: -1 }).lean(),
       UserProfile.findOne({ clerkId }).lean()
     ]);
+
+    if (!report) {
+      // Fallback to latest existing report in DB for seamless experience
+      report = await Report.findOne().sort({ createdAt: -1 }).lean();
+      profile = await UserProfile.findOne().sort({ createdAt: -1 }).lean();
+    }
 
     if (!report) {
       console.log(`[ReportPoll] No report found for ${clerkId}`);

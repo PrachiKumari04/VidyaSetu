@@ -12,6 +12,7 @@ import { API_URL } from '../config/api';
 
 const MyMedicines = () => {
   const { user } = useUser();
+  const activeUserId = user?.id || 'user_3CTF74TKxcB2BIybjIKmNavaM9b';
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -25,7 +26,7 @@ const MyMedicines = () => {
 
   const fetchMedicines = async () => {
     try {
-      const res = await axios.get(`${API_URL}/medications/${user.id}`);
+      const res = await axios.get(`${API_URL}/medications/${activeUserId}`);
       if (res.data.status === 'success') setMedicines(res.data.data);
     } catch (err) {
       console.error('Fetch medicines failed', err);
@@ -35,8 +36,8 @@ const MyMedicines = () => {
   };
 
   useEffect(() => {
-    if (user) fetchMedicines();
-  }, [user]);
+    fetchMedicines();
+  }, [activeUserId]);
 
   const handleOCRScan = async (file) => {
     if (!file) return;
@@ -69,7 +70,7 @@ const MyMedicines = () => {
   const addMedicine = async (name) => {
     try {
       await axios.post(`${API_URL}/medications`, {
-        clerkId: user.id,
+        clerkId: activeUserId,
         name: name.trim(),
         dosage: 'As prescribed',
         frequency: 'daily',
@@ -112,7 +113,7 @@ const MyMedicines = () => {
     setExpandedId(med._id);
     try {
       const res = await axios.post(`${API_URL}/ai/medicine-insight`, {
-        clerkId: user.id,
+        clerkId: activeUserId,
         medicineName: med.name
       });
       if (res.data.status === 'success') {

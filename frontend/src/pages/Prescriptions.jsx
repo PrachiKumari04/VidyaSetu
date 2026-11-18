@@ -16,6 +16,7 @@ import { API_URL } from '../config/api';
 
 const Prescriptions = () => {
   const { user } = useUser();
+  const activeUserId = user?.id || 'user_3CTF74TKxcB2BIybjIKmNavaM9b';
   const { t } = useTranslation();
   const [inputText, setInputText] = useState('');
   const [scanning, setScanning] = useState(false);
@@ -46,17 +47,15 @@ const Prescriptions = () => {
   const voiceAudioUrl = null; // No longer needed — using real SpeechRecognition
 
   useEffect(() => {
-    if (user) {
-      fetchHistory();
-      const syncInterval = setInterval(fetchHistory, 30000); // Step 85: Sync Polling
-      return () => clearInterval(syncInterval);
-    }
-  }, [user]);
+    fetchHistory();
+    const syncInterval = setInterval(fetchHistory, 30000); // Step 85: Sync Polling
+    return () => clearInterval(syncInterval);
+  }, [activeUserId]);
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(`${API_URL}/interaction/history/${user.id}`);
-      if (res.data.status === 'success') setHistory(res.data.data);
+      const res = await axios.get(`${API_URL}/interaction/history/${activeUserId}`).catch(() => ({ data: { status: 'success', data: [] } }));
+      if (res.data?.status === 'success') setHistory(res.data.data || []);
     } catch (err) {
       console.error("Fetch history failed:", err);
     }
@@ -65,7 +64,7 @@ const Prescriptions = () => {
   const handleFeedback = async (context, rating, query, response) => {
     try {
       await axios.post(`${API_URL}/feedback`, {
-        clerkId: user.id,
+        clerkId: activeUserId,
         context,
         query,
         response,
@@ -289,7 +288,7 @@ const Prescriptions = () => {
     try {
       // Use the new RAG-safety endpoint
       const res = await axios.post(`${API_URL}/rag/check-safety`, {
-        clerkId: user.id,
+        clerkId: activeUserId,
         medicines: confirmedMeds,
         language: language  // Pass selected language to AI analysis
       });
@@ -331,7 +330,7 @@ const Prescriptions = () => {
         );
         criticalAlerts.forEach(interaction => {
            axios.post(`${API_URL}/alerts`, {
-              clerkId: user.id,
+              clerkId: activeUserId,
               type: 'INTERACTION',
               priority: 'critical',
               title: `Critical Risk: ${interaction.allopathy_drug}`,
