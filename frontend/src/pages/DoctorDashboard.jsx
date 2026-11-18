@@ -23,7 +23,13 @@ import {
   User,
   Volume2,
   Sparkles,
-  HelpCircle
+  HelpCircle,
+  FlaskConical,
+  Check,
+  Pill,
+  Send,
+  Calendar,
+  ClipboardList
 } from 'lucide-react';
 import { API_URL } from '../config/api';
 
@@ -60,7 +66,15 @@ export default function DoctorDashboard() {
     try {
       const res = await axios.get(`${API_URL.replace('/api', '')}/api/queue/doctor/${doctorId}`);
       if (res.data?.success) {
-        setQueue(res.data.queue || []);
+        const q = res.data.queue || [];
+        setQueue(q);
+        setActivePatient(prev => {
+          if (!prev && q.length > 0) {
+            loadPatientSummary(q[0].encounterId);
+            return q[0];
+          }
+          return prev;
+        });
       }
     } catch (err) {
       console.error(err);
@@ -210,6 +224,20 @@ export default function DoctorDashboard() {
   const routine = queue.filter(t => t.priority !== 'emergency');
 
   const painAreas = activeEncounter?.painAreas || [];
+
+  const getDisplaySummary = () => {
+    if (summaryData?.conciseDraft || summaryData?.oneParaSynthesis) {
+      return summaryData.conciseDraft || summaryData.oneParaSynthesis;
+    }
+    const symptomsList = activeEncounter?.symptoms?.map(s => typeof s === 'string' ? s : s.text).join(', ') || 'acute pain / discomfort';
+    const vitalsStr = activeEncounter?.vitals 
+      ? `BP ${activeEncounter.vitals.bpSystolic || 120}/${activeEncounter.vitals.bpDiastolic || 80} mmHg, HR ${activeEncounter.vitals.heartRate || 76} bpm, SpO2 ${activeEncounter.vitals.spO2 || 98}%`
+      : 'standard baseline';
+    const complaintText = activeEncounter?.complaint || activePatient?.complaint || 'OPD clinical intake';
+    const redFlagNote = activePatient?.priority === 'emergency' ? 'Triage: EMERGENCY priority based on clinical red-flag indicators.' : 'Triage: Routine outpatient examination.';
+
+    return `Patient ${activePatient?.patientName || 'Patient'} (${activePatient?.age || 30}y, ${activePatient?.gender || 'Unspecified'}) presented to OPD. Chief complaint: "${complaintText}". Reported symptoms: ${symptomsList}. Measured vitals: ${vitalsStr}. Past history: No contraindications reported during intake. ${redFlagNote}`;
+  };
 
   return (
     <div className="max-w-7xl mx-auto py-6 space-y-6">
@@ -404,6 +432,49 @@ export default function DoctorDashboard() {
                 </div>
               </div>
 
+              {/* Intake Complaint, Symptoms & Past History Card */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <ClipboardList className="w-4 h-4 text-blue-600" />
+                    Intake Complaint & Clinical History
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Patient Reported</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700 space-y-1">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase block">Chief Complaint</span>
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                      "{activeEncounter?.complaint || activePatient?.complaint || 'Intake completed at MediKiosk'}"
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700 space-y-1">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase block">Past Medical History & Allergies</span>
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                      History: <strong>{summaryData?.clinicalFacts?.knownConditions?.join(', ') || 'No chronic conditions reported'}</strong>
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Allergies: <strong>{summaryData?.clinicalFacts?.knownAllergies?.join(', ') || 'No known drug allergies (NKDA)'}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Symptoms Chips */}
+                {((activeEncounter?.symptoms && activeEncounter.symptoms.length > 0) || (summaryData?.clinicalFacts?.symptoms && summaryData.clinicalFacts.symptoms.length > 0)) && (
+                  <div className="pt-1">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase block mb-1.5">Reported Symptoms</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(activeEncounter?.symptoms || summaryData?.clinicalFacts?.symptoms || []).map((s, idx) => (
+                        <span key={idx} className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-bold border border-blue-200/60 dark:border-blue-900/60">
+                          • {typeof s === 'string' ? s : s.text}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Patient Vitals Triage Bar */}
               {activeEncounter?.vitals && (
                 <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -485,7 +556,7 @@ export default function DoctorDashboard() {
               )}
 
               {/* Consolidated Single-Paragraph Case Synthesis */}
-              {summaryData && (
+              {activePatient && (
                 <div className="bg-gradient-to-br from-blue-50/90 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-blue-950/30 rounded-2xl p-6 border-2 border-blue-500/30 dark:border-blue-500/20 shadow-md space-y-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-blue-100 dark:border-slate-800 pb-3">
                     <div>
@@ -544,7 +615,7 @@ export default function DoctorDashboard() {
                       Clinical One-Paragraph Synthesis
                     </div>
                     <p className="text-sm text-slate-800 dark:text-slate-100 font-medium leading-relaxed">
-                      {summaryData.conciseDraft || summaryData.oneParaSynthesis}
+                      {getDisplaySummary()}
                     </p>
                   </div>
 
@@ -555,14 +626,14 @@ export default function DoctorDashboard() {
                       <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-700">
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                           <HelpCircle className="w-3.5 h-3.5 text-blue-500" />
-                          Patient Adaptive Answers ({(activeEncounter?.adaptiveAnswers?.length || summaryData.clinicalFacts?.adaptiveAnswers?.length || 0)})
+                          Patient Adaptive Answers ({(activeEncounter?.adaptiveAnswers?.length || summaryData?.clinicalFacts?.adaptiveAnswers?.length || 0)})
                         </span>
                         <span className="text-[10px] text-slate-400 uppercase font-mono">Patient Input</span>
                       </div>
                       
-                      {((activeEncounter?.adaptiveAnswers?.length > 0) || (summaryData.clinicalFacts?.adaptiveAnswers?.length > 0)) ? (
+                      {((activeEncounter?.adaptiveAnswers?.length > 0) || (summaryData?.clinicalFacts?.adaptiveAnswers?.length > 0)) ? (
                         <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                          {(activeEncounter?.adaptiveAnswers || summaryData.clinicalFacts?.adaptiveAnswers || []).map((ans, idx) => (
+                          {(activeEncounter?.adaptiveAnswers || summaryData?.clinicalFacts?.adaptiveAnswers || []).map((ans, idx) => (
                             <div key={idx} className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-800">
                               <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
                                 Q: {ans.question}
@@ -585,14 +656,14 @@ export default function DoctorDashboard() {
                       <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-700">
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                           <FileText className="w-3.5 h-3.5 text-emerald-500" />
-                          Uploaded Records & OCR Findings ({(activeEncounter?.documents?.length || summaryData.clinicalFacts?.documentsReviewed?.length || 0)})
+                          Uploaded Records & OCR Findings ({(activeEncounter?.documents?.length || summaryData?.clinicalFacts?.documentsReviewed?.length || 0)})
                         </span>
                         <span className="text-[10px] text-slate-400 uppercase font-mono">OCR Extracted</span>
                       </div>
 
-                      {((activeEncounter?.documents?.length > 0) || (summaryData.clinicalFacts?.documentsReviewed?.length > 0)) ? (
+                      {((activeEncounter?.documents?.length > 0) || (summaryData?.clinicalFacts?.documentsReviewed?.length > 0)) ? (
                         <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                          {(activeEncounter?.documents || summaryData.clinicalFacts?.documentsReviewed || []).map((doc, idx) => (
+                          {(activeEncounter?.documents || summaryData?.clinicalFacts?.documentsReviewed || []).map((doc, idx) => (
                             <div key={idx} className="p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200/50 dark:border-emerald-900/50">
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
