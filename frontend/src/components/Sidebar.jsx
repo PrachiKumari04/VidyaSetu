@@ -16,7 +16,7 @@ import {
   TestTube2,
   QrCode
 } from 'lucide-react';
-import { UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
+import { UserButton, SignedIn } from '@clerk/clerk-react';
 import { useTheme } from '../context/ThemeContext';
 import { useRole } from '../context/RoleContext';
 import { useUser } from '@clerk/clerk-react';
@@ -132,9 +132,9 @@ const Sidebar = () => {
           ))}
         </nav>
 
-        {/* User Card */}
-        <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800">
-          <SignedIn>
+        {/* User Card (visible when signed in) */}
+        <SignedIn>
+          <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800">
             <div className="flex items-center gap-3 px-3 py-2 bg-slate-100/60 dark:bg-slate-800/60 rounded-xl border border-slate-200/50 dark:border-slate-800">
               <UserButton />
               <div className="flex-1 min-w-0">
@@ -146,15 +146,8 @@ const Sidebar = () => {
                 </p>
               </div>
             </div>
-          </SignedIn>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition">
-                Sign In
-              </button>
-            </SignInButton>
-          </SignedOut>
-        </div>
+          </div>
+        </SignedIn>
       </div>
 
       {/* ── MOBILE HEADER ── */}

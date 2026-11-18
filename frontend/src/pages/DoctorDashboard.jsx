@@ -222,15 +222,15 @@ export default function DoctorDashboard() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm tracking-tight text-white">
+              <span className="font-extrabold text-sm tracking-tight text-white" style={{ color: '#ffffff' }}>
                 MediKiosk Hospital OPD Consultation Suite
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30" style={{ color: '#93c5fd' }}>
                 Room 104
               </span>
             </div>
-            <p className="text-xs text-slate-300 mt-0.5">
-              Attending Physician: <strong>Dr. Rajesh Sharma, MBBS, MD</strong> • General Medicine OPD
+            <p className="text-xs text-slate-300 mt-0.5" style={{ color: '#cbd5e1' }}>
+              Attending Physician: <strong style={{ color: '#ffffff' }}>Dr. Rajesh Sharma, MBBS, MD</strong> • General Medicine OPD
             </p>
           </div>
         </div>

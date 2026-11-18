@@ -64,11 +64,11 @@ export default function Dashboard() {
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md border border-slate-700/60">
         <div className="flex items-center gap-3">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400" style={{ color: '#34d399' }}>
             Patient Kiosk Portal Active
           </span>
           <span className="hidden md:inline text-xs text-slate-400">|</span>
-          <p className="text-xs text-slate-300 hidden md:inline">
+          <p className="text-xs text-slate-200 hidden md:inline font-medium" style={{ color: '#e2e8f0' }}>
             Walk-in OPD patient symptom intake, live queue tracking, and personal records.
           </p>
         </div>
@@ -76,23 +76,27 @@ export default function Dashboard() {
         <Link
           to="/doctor"
           className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
+          style={{ color: '#ffffff' }}
         >
-          <Stethoscope className="w-3.5 h-3.5" />
-          <span>Switch to Doctor Station</span>
-          <ChevronRight className="w-3.5 h-3.5" />
+          <Stethoscope className="w-3.5 h-3.5 text-white" />
+          <span style={{ color: '#ffffff' }}>Switch to Doctor Station</span>
+          <ChevronRight className="w-3.5 h-3.5 text-white" />
         </Link>
       </div>
 
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
-          <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-wider uppercase">
+          <span
+            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase shadow-sm"
+            style={{ color: '#a7f3d0', backgroundColor: 'rgba(6, 78, 59, 0.65)', border: '1px solid rgba(110, 231, 183, 0.4)' }}
+          >
             AI-Enabled First-Mile Clinical Intake
           </span>
-          <h1 className="text-3xl font-extrabold mt-3 tracking-tight">
+          <h1 className="text-3xl font-extrabold mt-3 tracking-tight text-white" style={{ color: '#ffffff' }}>
             Namaste, {user?.firstName || 'Patient'}
           </h1>
-          <p className="mt-1 text-emerald-50 text-sm max-w-xl">
+          <p className="mt-1 text-sm max-w-xl font-medium" style={{ color: '#d1fae5' }}>
             MediKiosk prepares your structured history and vital signs before your OPD consultation, saving precious clinical time.
           </p>
         </div>
@@ -102,7 +106,7 @@ export default function Dashboard() {
           className="px-6 py-3.5 bg-white text-emerald-800 font-extrabold rounded-2xl shadow-lg hover:bg-emerald-50 transition flex items-center gap-2 text-sm shrink-0"
         >
           <ClipboardList className="w-5 h-5 text-emerald-600" />
-          Start OPD Intake
+          <span style={{ color: '#065f46' }}>Start OPD Intake</span>
           <ArrowRight className="w-4 h-4 text-emerald-600" />
         </button>
       </div>

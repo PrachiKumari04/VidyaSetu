@@ -2,34 +2,48 @@ import React from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-const ThemeToggle = () => {
+export default function ThemeToggle({ className = '', compact = false }) {
   const { theme, toggleTheme } = useTheme();
-  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
-
-  React.useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (isMobile) return null;
+  const isDark = theme === 'dark';
 
   return (
     <button
+      type="button"
       onClick={toggleTheme}
-      className="fixed top-6 right-6 z-[100] p-3 bg-white/40 dark:bg-black/20 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl text-emerald-600 dark:text-emerald-400 hover:scale-110 active:scale-95 transition-all shadow-2xl group"
-      title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      aria-label={isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+      title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      className={`relative inline-flex items-center gap-2.5 px-3 py-1.5 rounded-2xl border transition-all duration-300 shadow-sm select-none cursor-pointer group ${
+        isDark
+          ? 'bg-slate-900/90 hover:bg-slate-800 border-slate-700/80 text-amber-300'
+          : 'bg-white/90 hover:bg-slate-100 border-slate-200 text-slate-700'
+      } backdrop-blur-md ${className}`}
     >
-      <div className="relative w-6 h-6 flex items-center justify-center">
-        {theme === 'dark' ? (
-          <Sun className="w-6 h-6 transform transition-transform duration-500 rotate-0 scale-100" />
+      <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
+        {isDark ? (
+          <Sun className="w-4 h-4 text-amber-400 transition-transform duration-500 rotate-0 group-hover:rotate-45" />
         ) : (
-          <Moon className="w-6 h-6 transform transition-transform duration-500 rotate-0 scale-100" />
+          <Moon className="w-4 h-4 text-indigo-600 transition-transform duration-500 rotate-0 group-hover:-rotate-12" />
         )}
       </div>
-      <div className="absolute inset-0 rounded-2xl bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+      {!compact && (
+        <span className="text-xs font-bold tracking-tight">
+          {isDark ? 'Dark Mode' : 'Light Mode'}
+        </span>
+      )}
+
+      {/* Modern sliding pill toggle */}
+      <div
+        className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-300 flex items-center shrink-0 ${
+          isDark ? 'bg-amber-500/30 justify-end' : 'bg-slate-200 dark:bg-slate-700 justify-start'
+        }`}
+      >
+        <span
+          className={`w-3 h-3 rounded-full shadow-sm transition-transform duration-300 ${
+            isDark ? 'bg-amber-400' : 'bg-indigo-600'
+          }`}
+        />
+      </div>
     </button>
   );
-};
-
-export default ThemeToggle;
+}

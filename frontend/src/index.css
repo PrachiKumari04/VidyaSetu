@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Outfit:wght@400;600;700;900&display=swap');
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 html {
   font-size: 15px;
@@ -148,71 +148,56 @@ html:not(.dark) #root {
 }
 
 /* ------------------------------------------------------------------
-   STEP 2: TYPOGRAPHY — Maximum Clarity
+   STEP 2: TYPOGRAPHY — Natural Cascading with High-Contrast Defaults
    ------------------------------------------------------------------ */
-html:not(.dark) h1,
-html:not(.dark) h2,
-html:not(.dark) h3,
-html:not(.dark) h4,
-html:not(.dark) h5,
-html:not(.dark) h6 {
-  color: #020617 !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.03em;
+/* In light mode, set readable text colors when elements don't specify explicit utility classes */
+html:not(.dark) body {
+  color: #1e293b;
 }
 
-html:not(.dark) p {
-  color: #1e293b !important;
-  font-weight: 500;
+html:not(.dark) h1:not([class*="text-"]):not([style*="color"]),
+html:not(.dark) h2:not([class*="text-"]):not([style*="color"]),
+html:not(.dark) h3:not([class*="text-"]):not([style*="color"]),
+html:not(.dark) h4:not([class*="text-"]):not([style*="color"]),
+html:not(.dark) h5:not([class*="text-"]):not([style*="color"]),
+html:not(.dark) h6:not([class*="text-"]):not([style*="color"]) {
+  color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
-html:not(.dark) .text-gray-400,
-html:not(.dark) .text-gray-300 {
-  color: #475569 !important;
-  font-weight: 600 !important;
+html:not(.dark) p:not([class*="text-"]):not([style*="color"]) {
+  color: #334155;
 }
 
-html:not(.dark) .text-gray-500 {
-  color: #334155 !important;
-  font-weight: 600 !important;
+/* Guarantee white & light text on dark or colored surfaces */
+.text-white,
+[class~="text-white"],
+[class*="text-white/"] {
+  color: #ffffff !important;
 }
 
-html:not(.dark) .text-gray-900 { color: #020617 !important; }
-html:not(.dark) .text-slate-900 { color: #020617 !important; }
-html:not(.dark) .text-slate-800 { color: #0f172a !important; }
-html:not(.dark) .text-slate-700 { color: #1e293b !important; }
-html:not(.dark) .text-slate-600 { color: #334155 !important; }
+.text-emerald-50, [class~="text-emerald-50"] { color: #ecfdf5 !important; }
+.text-emerald-100, [class~="text-emerald-100"] { color: #d1fae5 !important; }
+.text-emerald-200, [class~="text-emerald-200"] { color: #a7f3d0 !important; }
+.text-emerald-300, [class~="text-emerald-300"] { color: #6ee7b7 !important; }
+.text-emerald-400, [class~="text-emerald-400"] { color: #34d399 !important; }
+.text-slate-100, [class~="text-slate-100"] { color: #f1f5f9 !important; }
+.text-slate-200, [class~="text-slate-200"] { color: #e2e8f0 !important; }
+.text-slate-300, [class~="text-slate-300"] { color: #cbd5e1 !important; }
+.text-slate-400, [class~="text-slate-400"] { color: #94a3b8 !important; }
+.text-blue-100, [class~="text-blue-100"] { color: #dbeafe !important; }
+.text-blue-200, [class~="text-blue-200"] { color: #bfdbfe !important; }
+.text-blue-300, [class~="text-blue-300"] { color: #93c5fd !important; }
+.text-purple-100, [class~="text-purple-100"] { color: #f3e8ff !important; }
+.text-purple-200, [class~="text-purple-200"] { color: #e9d5ff !important; }
+.text-purple-300, [class~="text-purple-300"] { color: #d8b4fe !important; }
 
-html:not(.dark) .text-white {
-  color: #ffffff;
-}
-
-/* Keep white text ON colored backgrounds */
-html:not(.dark) [class*="bg-emerald"] .text-white,
-html:not(.dark) [class*="bg-green"] .text-white,
-html:not(.dark) [class*="bg-blue"] .text-white,
-html:not(.dark) [class*="bg-red"] .text-white,
-html:not(.dark) [class*="bg-rose"] .text-white,
-html:not(.dark) [class*="bg-amber"] .text-white,
-html:not(.dark) [class*="bg-orange"] .text-white,
-html:not(.dark) [class*="bg-fuchsia"] .text-white,
-html:not(.dark) [class*="bg-indigo"] .text-white,
-html:not(.dark) [class*="bg-violet"] .text-white,
-html:not(.dark) [class*="bg-gray-900"] .text-white,
+/* Keep white text ON colored buttons */
 html:not(.dark) button.bg-emerald-600,
 html:not(.dark) button.bg-emerald-500,
 html:not(.dark) button.bg-emerald-600 *,
 html:not(.dark) button.bg-emerald-500 * {
   color: #ffffff !important;
-}
-
-/* Small label text */
-html:not(.dark) .text-\[10px\],
-html:not(.dark) .text-\[9px\],
-html:not(.dark) .text-\[8px\],
-html:not(.dark) .text-\[11px\] {
-  color: #334155 !important;
-  font-weight: 700 !important;
 }
 
 /* ------------------------------------------------------------------
@@ -244,31 +229,31 @@ html:not(.dark) .rounded-3xl {
   position: relative;
 }
 
-/* Make the cards visually rich */
-html:not(.dark) .bg-white,
-html:not(.dark) [class*="backdrop-blur"] {
-  background: linear-gradient(145deg, #ffffff 0%, #f8faff 50%, #f0fdf6 100%) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+/* Make cards visually rich */
+html:not(.dark) .vs-card,
+html:not(.dark) .bg-white.shadow,
+html:not(.dark) .bg-white.rounded-2xl {
+  background: linear-gradient(145deg, #ffffff 0%, #f8faff 50%, #f0fdf6 100%);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 0.9) inset,
     0 -1px 0 0 rgba(0,0,0,0.03) inset,
     0 8px 32px -8px rgba(16, 185, 129, 0.12),
     0 4px 16px -4px rgba(59, 130, 246, 0.08),
-    0 2px 8px rgba(0,0,0,0.04) !important;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-html:not(.dark) .bg-white:hover,
-html:not(.dark) [class*="backdrop-blur"]:hover {
+html:not(.dark) .vs-card:hover,
+html:not(.dark) .bg-white.shadow:hover {
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 1) inset,
     0 -1px 0 0 rgba(0,0,0,0.02) inset,
     0 24px 48px -12px rgba(16, 185, 129, 0.2),
     0 12px 24px -6px rgba(59, 130, 246, 0.12),
-    0 4px 12px rgba(0,0,0,0.06) !important;
-  transform: translateY(-4px) !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%) !important;
+    0 4px 12px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
 /* Override white/glass border colors */

@@ -139,14 +139,14 @@ export default function LabDashboard() {
             <span className="p-2 bg-purple-600/30 rounded-xl text-purple-400 border border-purple-500/30">
               <FlaskConical className="w-5 h-5" />
             </span>
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-purple-400" style={{ color: '#c084fc' }}>
               MediKiosk Pathology & Diagnostic Lab Station
             </span>
           </div>
-          <h1 className="text-2xl font-black mt-2 tracking-tight">
+          <h1 className="text-2xl font-black mt-2 tracking-tight text-white" style={{ color: '#ffffff' }}>
             Laboratory Workorders & Specimen Analysis
           </h1>
-          <p className="text-xs text-purple-200 mt-1 max-w-xl">
+          <p className="text-xs text-purple-200 mt-1 max-w-xl" style={{ color: '#e9d5ff' }}>
             Scan specimen barcodes, process clinical samples ordered during OPD consultations, and certify test results.
           </p>
         </div>
