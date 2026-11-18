@@ -438,7 +438,7 @@ const MyMedicines = () => {
                     <Plus className="w-5 h-5 shadow-sm" />
                     Archive Changes
                   </button>
-                  <p className="text-center text-[8px] text-slate-400 dark:text-gray-600 font-black uppercase tracking-[0.3em] mt-8 italic opacity-50">VaidyaSetu Secure Medical Channel 256-bit Encrypted</p>
+                  <p className="text-center text-[8px] text-slate-400 dark:text-gray-600 font-black uppercase tracking-[0.3em] mt-8 italic opacity-50">MediKiosk Secure Medical Channel 256-bit Encrypted</p>
                 </div>
               </div>
             </div>

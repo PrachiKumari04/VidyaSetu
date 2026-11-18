@@ -324,7 +324,7 @@ const Settings = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `VaidyaSetu_Export_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `MediKiosk_Export_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
     } catch (err) { console.error("Export failed", err); }
   };
@@ -483,7 +483,7 @@ const Settings = () => {
         response: ratingComment || 'User rating submitted.',
         rating: ratingValue >= 4 ? 'up' : 'down'
       });
-      alert(`Thank you for rating VaidyaSetu ${ratingValue} Stars!`);
+      alert(`Thank you for rating MediKiosk ${ratingValue} Stars!`);
       setRateModalOpen(false);
       setRatingComment('');
     } catch (err) {
@@ -498,7 +498,7 @@ const Settings = () => {
      if (navigator.share) {
        try {
          await navigator.share({
-           title: 'VaidyaSetu AI',
+           title: 'MediKiosk AI',
            text: 'Check out this advanced Clinical AI platform for health tracking!',
            url: window.location.origin,
          });
@@ -900,7 +900,7 @@ const Settings = () => {
                </div>
                <div className="space-y-4">
                   <h2 className="text-4xl font-black text-red-600 uppercase tracking-tighter leading-none italic underline decoration-red-500/20 underline-offset-8">Critical Warning</h2>
-                  <p className="text-gray-600 dark:text-gray-300 font-bold text-lg leading-relaxed px-4 uppercase tracking-tighter">You are about to permanently purge all clinical history from the VaidyaSetu matrix. Your identity will remain, but all biometric records will be liquidated.</p>
+                  <p className="text-gray-600 dark:text-gray-300 font-bold text-lg leading-relaxed px-4 uppercase tracking-tighter">You are about to permanently purge all clinical history from the MediKiosk matrix. Your identity will remain, but all biometric records will be liquidated.</p>
                </div>
                <div className="flex flex-col md:flex-row gap-4">
                   <button onClick={() => setPurgeConfirm(false)} className="flex-1 py-6 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-black rounded-[2.5rem] uppercase tracking-widest text-xs hover:bg-gray-200">Abort Sequence</button>
@@ -1035,7 +1035,7 @@ const Settings = () => {
             </div>
 
             <div>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Rate VaidyaSetu</h3>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Rate MediKiosk</h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Your evaluation guides our clinical AI development</p>
             </div>
 

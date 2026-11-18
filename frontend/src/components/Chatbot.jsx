@@ -38,7 +38,7 @@ const Chatbot = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Namaste! 🙏 I am **VaidyaSetu AI**, your personal health companion. I can help with symptom checking, health insights, and wellness guidance.\n\nHow can I assist you today?' }
+    { role: 'assistant', content: 'Namaste! 🙏 I am **MediKiosk AI**, your hospital health companion. I can help with symptom checking, triage insights, and appointment guidance.\n\nHow can I assist you today?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -525,7 +525,7 @@ const Chatbot = () => {
                 }} />
               </div>
               <div>
-                <h3 style={S.aiTitle}>VaidyaSetu AI</h3>
+                <h3 style={S.aiTitle}>MediKiosk AI</h3>
                 <p style={S.aiSubtitle}>Health Intelligence Engine</p>
               </div>
             </div>

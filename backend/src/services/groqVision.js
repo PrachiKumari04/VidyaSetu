@@ -6,7 +6,7 @@ const groq = new Groq({
 
 /**
  * Groq Vision Fallback - Uses LLaMA Vision model to directly read the image.
- * Adapted from MediScan for VaidyaSetu.
+ * Adapted from MediScan for MediKiosk.
  */
 async function extractFromImageGroq(base64Image, mediaType) {
   if (!process.env.GROQ_API_KEY) {

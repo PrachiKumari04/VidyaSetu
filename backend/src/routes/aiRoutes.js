@@ -84,7 +84,7 @@ router.post('/generate-report', async (req, res) => {
 
     // --- Phase 4: Expanded AI Prompt for 20+ Diseases ---
     const prompt = `
-    You are VaidyaSetu AI, a comprehensive health assistant for Indian users.
+    You are MediKiosk AI, a comprehensive health assistant for Indian users.
     IMPORTANT LANGUAGE RULE: Respond only in ${outputLanguage}. Keep medical terms understandable in ${outputLanguage}.
     Analyze this user profile, preliminary risk scores, and vitals telemetry across 20+ disease categories.
 
@@ -174,7 +174,7 @@ router.post('/generate-report', async (req, res) => {
       category_insights: (aiData.category_insights && typeof aiData.category_insights === 'object') ? aiData.category_insights : {},
       mitigations: (aiData.mitigations && typeof aiData.mitigations === 'object') ? aiData.mitigations : {},
       general_tips: Array.isArray(aiData.general_tips) ? aiData.general_tips.join('\n') : (aiData.general_tips || "Maintain a balanced diet and regular exercise."),
-      disclaimer: aiData.disclaimer || "VaidyaSetu is an AI screening tool, not a diagnostic service. Please consult a doctor for clinical advice.",
+      disclaimer: aiData.disclaimer || "MediKiosk is an AI screening tool, not a diagnostic service. Please consult a doctor for clinical advice.",
       // Keep hybrid/questionnaire-updated scores canonical if present
       risk_scores: (existingReport?.risk_scores && Object.keys(existingReport.risk_scores).length > 0)
         ? existingReport.risk_scores
@@ -239,7 +239,7 @@ router.post('/medicine-insight', async (req, res) => {
       }
     }
 
-    const prompt = `You are VaidyaSetu AI, a comprehensive health assistant specializing in Indian healthcare systems (Allopathy, Ayurveda, Homeopathy).
+    const prompt = `You are MediKiosk AI, a comprehensive health assistant specializing in Indian healthcare systems (Allopathy, Ayurveda, Homeopathy).
 IMPORTANT LANGUAGE RULE: Respond only in ${outputLanguage}.
 
 Analyze this medicine: "${medicineName}"

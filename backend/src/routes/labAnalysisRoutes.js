@@ -190,7 +190,7 @@ IMPORTANT GUIDELINES:
     messages: [
       {
         role: 'system',
-        content: 'You are VaidyaSetu AI, an expert medical laboratory analyst specializing in personalized health insights for Indian patients.'
+        content: 'You are MediKiosk AI, an expert medical laboratory analyst specializing in personalized health insights for Indian patients.'
       },
       {
         role: 'user',

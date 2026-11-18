@@ -6,7 +6,7 @@ const Alert = require('../models/Alert');
 // Step 86: Setup Background Jobs
 
 /**
- * Initializes all CRON routines for the VaidyaSetu platform.
+ * Initializes all CRON routines for the MediKiosk platform.
  * Should be mounted globally in server.js.
  */
 const initCronJobs = () => {

@@ -429,7 +429,7 @@ const Prescriptions = () => {
     }
 
     addDisclaimer(doc);
-    doc.save(`VaidyaSetu-Safety-Report-${Date.now()}.pdf`);
+    doc.save(`MediKiosk-Safety-Report-${Date.now()}.pdf`);
   };
 
   const getSeverityStyle = (severity) => {
@@ -1139,7 +1139,7 @@ const Prescriptions = () => {
                         <h4 className="text-white font-bold mb-2 flex items-center gap-2 text-xs uppercase tracking-widest">
                           <Cpu className="w-4 h-4 text-emerald-500" /> Multi-Source Synthesis
                         </h4>
-                        <p>VaidyaSetu utilizes **Retrieval-Augmented Generation (RAG)** to merge data from two critical streams:
+                        <p>MediKiosk utilizes **Retrieval-Augmented Generation (RAG)** to merge data from two critical streams:
                           1. **Live Clinical APIs**: Real-time pharmaceutical data from RxNav (NLM) and OpenFDA.
                           2. **Traditional Knowledge base**: Curated interaction data from IMPPAT, ICMR, and Peer-Reviewed Literature.
                         </p>

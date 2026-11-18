@@ -215,7 +215,7 @@ const LabAnalysisModal = ({ isOpen, onClose, labResults, clerkId }) => {
       doc.setFontSize(8);
       doc.setTextColor(...GRAY);
       doc.text(
-        `VaidyaSetu AI Health Platform - Page ${i} of ${pageCount}`,
+        `MediKiosk Clinical Health Platform - Page ${i} of ${pageCount}`,
         pageWidth / 2,
         doc.internal.pageSize.getHeight() - 10,
         { align: 'center' }

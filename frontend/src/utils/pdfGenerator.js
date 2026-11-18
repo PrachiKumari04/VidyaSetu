@@ -37,7 +37,7 @@ export function addHeader(doc, title, userName, subtitle) {
 
   doc.setFontSize(24);
   doc.setTextColor(...EMERALD);
-  doc.text('VaidyaSetu', 20, 22);
+  doc.text('MediKiosk', 20, 22);
 
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
@@ -73,7 +73,7 @@ export function addDisclaimer(doc) {
     20, pageHeight - 12
   );
   doc.text(
-    'Always consult your healthcare provider before making any medical decisions. \u00A9 VaidyaSetu Health Intelligence',
+    'Always consult your healthcare provider before making any medical decisions. \u00A9 MediKiosk Health Intelligence',
     20, pageHeight - 8
   );
 }
@@ -202,7 +202,7 @@ export function generateDashboardPDF(userName, report, profile, medications) {
   }
 
   addDisclaimer(doc);
-  downloadPdf(doc, `VaidyaSetu-Risk-Report-${Date.now()}.pdf`);
+  downloadPdf(doc, `MediKiosk-Risk-Report-${Date.now()}.pdf`);
 }
 
 /**
@@ -419,7 +419,7 @@ export function generateVitalsPDF(userName, currentVitals, formatValue, getStatu
   });
 
   addDisclaimer(doc);
-  downloadPdf(doc, `VaidyaSetu_Vitals_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+  downloadPdf(doc, `MediKiosk_Vitals_Report_${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
 
@@ -520,7 +520,7 @@ export function generateArchivePDF(userName, data) {
   }
 
   addDisclaimer(doc);
-  downloadPdf(doc, `VaidyaSetu-Health-Archive-${Date.now()}.pdf`);
+  downloadPdf(doc, `MediKiosk-Health-Archive-${Date.now()}.pdf`);
 }
 
 // Helper: check if a lab result is in reference range

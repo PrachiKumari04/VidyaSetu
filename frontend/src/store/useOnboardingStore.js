@@ -167,7 +167,7 @@ const useOnboardingStore = create(
       }),
     }),
     {
-      name: 'vaidyasetu-onboarding-storage', // name of the item in storage (must be unique)
+      name: 'medikiosk-onboarding-storage', // name of the item in storage (must be unique)
     }
   )
 );

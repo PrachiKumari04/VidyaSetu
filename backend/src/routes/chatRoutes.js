@@ -109,7 +109,7 @@ router.post('/symptom', async (req, res) => {
       }
     }
 
-    const systemPrompt = `You are VaidyaSetu's AI Health Assistant, a professional, empathetic, and knowledgeable healthcare bot specializing in Indian health contexts.
+    const systemPrompt = `You are MediKiosk's AI Health Assistant, a professional, empathetic, and knowledgeable healthcare bot specializing in Indian health contexts.
 IMPORTANT LANGUAGE RULE: Reply only in ${outputLanguage}.
 
 You have access to the user's COMPLETE health profile below. Use it to provide highly personalized, specific, and actionable health advice.

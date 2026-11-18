@@ -20,7 +20,7 @@ const Privacy = () => {
                <p className="text-gray-600 dark:text-gray-300 font-bold uppercase tracking-widest text-[10px] mt-2">v1.2.0 • Last Audit: April 12, 2026</p>
             </div>
          </div>
-         <p className="text-lg text-gray-600 dark:text-gray-300 font-medium leading-relaxed max-w-2xl">VaidyaSetu is engineered with **Privacy-First Intelligence**. Your health data is treated as a sovereign asset, protected by clinical-grade encryption and decentralized analysis.</p>
+         <p className="text-lg text-gray-600 dark:text-gray-300 font-medium leading-relaxed max-w-2xl">MediKiosk is engineered with **Privacy-First Intelligence**. Your health data is treated as a sovereign asset, protected by clinical-grade encryption and decentralized analysis.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -49,14 +49,14 @@ const Privacy = () => {
             <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter flex items-center gap-3">
                <div className="w-2 h-8 bg-emerald-500 rounded-full" /> 2. Security Infrastructure
             </h2>
-            <p>All data transit is secured via TLS 1.3. At-rest data in the VaidyaSetu MongoDB Matrix is encrypted using AES-256. We employ Clerk Protocol for identity management, ensuring world-class authentication security.</p>
+            <p>All data transit is secured via TLS 1.3. At-rest data in the MediKiosk MongoDB Matrix is encrypted using AES-256. We employ Clerk Protocol for identity management, ensuring world-class authentication security.</p>
          </section>
       </div>
 
       <div className="p-12 bg-emerald-600 rounded-[3.5rem] text-white shadow-2xl shadow-emerald-500/20">
          <CheckCircle2 className="w-10 h-10 mb-6" />
          <h4 className="text-2xl font-black uppercase tracking-tighter leading-none italic mb-4">Clinical Compliance</h4>
-         <p className="text-emerald-100 font-medium leading-relaxed uppercase tracking-tighter text-sm opacity-90">VaidyaSetu is designed to align with major digital health safety standards. We continuously refine our protocols to ensure maximum patient safety and data integrity.</p>
+         <p className="text-emerald-100 font-medium leading-relaxed uppercase tracking-tighter text-sm opacity-90">MediKiosk is designed to align with major digital health safety standards. We continuously refine our protocols to ensure maximum patient safety and data integrity.</p>
       </div>
 
     </div>

@@ -28,7 +28,7 @@ const DisclaimerBanner = () => {
         </div>
         
         <div className="mt-12 pt-8 border-t border-gray-100 dark:border-white/5 flex flex-col items-center text-center gap-6 text-gray-400 dark:text-gray-500 text-[11px] font-bold uppercase tracking-[0.1em]">
-           <p>© 2026 VaidyaSetu. Bridge to Balanced Health.</p>
+           <p>© 2026 MediKiosk. Intelligent Clinical Intake & Triage Suite.</p>
            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3">
               <a href="#" className="hover:text-emerald-500 transition-colors">Terms of Service</a>
               <a href="#" className="hover:text-emerald-500 transition-colors">Contact Support</a>

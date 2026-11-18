@@ -40,7 +40,7 @@ const Terms = () => {
                </h2>
                <div className="p-6 bg-red-50 dark:bg-red-950/20 border border-red-500/20 rounded-3xl">
                   <p className="text-sm font-bold text-red-600 dark:text-red-400 leading-relaxed uppercase tracking-widest italic">
-                    VaidyaSetu is an AI-augmented health tracking platform, not a replacement for professional medical advice, diagnosis, or treatment. Wait for a licensed physician to interpret any system alerts or predictive diagnostics before making medical decisions.
+                    MediKiosk is an AI-augmented health tracking and intake platform, not a replacement for professional medical advice, diagnosis, or treatment. Wait for a licensed physician to interpret any system alerts or predictive diagnostics before making medical decisions.
                   </p>
                </div>
             </section>

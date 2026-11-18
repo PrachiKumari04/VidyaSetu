@@ -3,7 +3,7 @@ const sharp = require('sharp');
 /**
  * Compresses an image to ensure it stays within AI API limits (usually < 4MB base64).
  * Also optimizes for OCR by boosting contrast and sharpening.
- * Adapted from MediScan for VaidyaSetu.
+ * Adapted from MediScan for MediKiosk.
  */
 async function prepareImageForAI(base64Image) {
   try {

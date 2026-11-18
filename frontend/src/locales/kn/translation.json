@@ -40,7 +40,7 @@
     "analyzing": "Analyzing...",
     "initiate_scan": "Initiate Predictive Scan",
     "no_risk_vectors": "No risk vectors to show",
-    "baseline_ready": "Your biometric baseline is ready. Proceed to activate the VaidyaSetu AI core and generate your personalized health matrix.",
+    "baseline_ready": "Your biometric baseline is ready. Proceed to activate the MediKiosk AI core and generate your personalized health matrix.",
     "tip_onboarding": "Tip: after onboarding, risk cards usually fill automatically from your questionnaire. If scores look empty, confirm your profile saved and the API is reachable.",
     "matrix_updated": "Predictive screening matrix updated as of",
     "live_refresh": "Live refresh active.",

@@ -587,7 +587,7 @@ html:not(.dark) .bg-gray-200 {
 
   /* Add a Report Header only for print */
   body::before {
-    content: "VaidyaSetu Clinical Health Summary";
+    content: "MediKiosk Clinical Health Summary";
     display: block;
     text-align: center;
     font-size: 24px;
