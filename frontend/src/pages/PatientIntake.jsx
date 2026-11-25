@@ -233,6 +233,29 @@ export default function PatientIntake() {
     }
   };
 
+  // Intermediate Step: Save answers and proceed to Vitals & Docs
+  const handleProceedToStep5 = async () => {
+    try {
+      const answersPayload = Object.keys(answers).map(qId => {
+        const qObj = adaptiveQuestions.find(q => q.id === qId);
+        return {
+          questionId: qId,
+          question: qObj?.text || '',
+          answer: String(answers[qId])
+        };
+      }).filter(a => a.answer && a.answer.trim().length > 0);
+
+      if (answersPayload.length > 0 && encounterId) {
+        await axios.post(`${API_URL.replace('/api', '')}/api/intake/${encounterId}/answers`, {
+          answers: answersPayload
+        });
+      }
+    } catch (e) {
+      console.warn('Answers autosave error:', e.message);
+    }
+    setCurrentStep(5);
+  };
+
   // Final Step: Issue Live Token
   const handleIssueToken = async () => {
     setEvaluating(true);
@@ -719,35 +742,101 @@ export default function PatientIntake() {
                 Adaptive Follow-Up Questions (4-5 Items Only)
               </h3>
               <div className="space-y-3">
-                {adaptiveQuestions.map((q) => (
-                  <div key={q.id} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                      {q.text}
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {q.options?.map((opt) => (
-                        <button
-                          type="button"
-                          key={opt}
-                          onClick={() => setAnswers({ ...answers, [q.id]: opt })}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
-                            answers[q.id] === opt
-                              ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-xs'
-                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
+                {adaptiveQuestions.map((q) => {
+                  const isScale = q.type === 'scale' || q.min !== undefined || q.field === 'severity';
+                  const isText = q.type === 'text' || (!q.options && !isScale);
+                  const currentAns = answers[q.id] || '';
+
+                  return (
+                    <div key={q.id} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                          {q.text}
+                        </label>
+                        {currentAns && (
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-900">
+                            Answered
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 1. Scale Input: 1 to 10 rating bar */}
+                      {isScale && (
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                            <span>1 (Mild Discomfort)</span>
+                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                              {currentAns ? `Selected: ${currentAns}` : 'Select 1 - 10'}
+                            </span>
+                            <span>10 (Severe / Emergency)</span>
+                          </div>
+                          <div className="grid grid-cols-10 gap-1 sm:gap-1.5">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => {
+                              const isSelected = String(currentAns).startsWith(String(val)) || currentAns === String(val);
+                              return (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => setAnswers({ ...answers, [q.id]: `${val}/10 (${val <= 3 ? 'Mild' : val <= 6 ? 'Moderate' : 'Severe'})` })}
+                                  className={`py-2 rounded-xl text-xs font-black transition border flex flex-col items-center justify-center ${
+                                    isSelected
+                                      ? val <= 3
+                                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-md scale-105'
+                                        : val <= 6
+                                        ? 'bg-amber-500 text-white border-amber-500 shadow-md scale-105'
+                                        : 'bg-red-600 text-white border-red-600 shadow-md scale-105'
+                                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                                  }`}
+                                >
+                                  <span>{val}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 2. Multiple Choice Options (if provided) */}
+                      {q.options && q.options.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {q.options.map((opt) => (
+                            <button
+                              type="button"
+                              key={opt}
+                              onClick={() => setAnswers({ ...answers, [q.id]: opt })}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
+                                currentAns === opt
+                                  ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 3. Text Input (for text questions, or custom/free typing) */}
+                      {(isText || currentAns.toLowerCase().includes('other') || !q.options || q.options.length === 0) && (
+                        <div className="pt-1">
+                          <input
+                            type="text"
+                            placeholder={isText ? "Type your response here (or write 'None')..." : "Specify details here..."}
+                            value={q.options?.includes(currentAns) ? '' : currentAns}
+                            onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 outline-none"
+                          />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           <button
-            onClick={() => setCurrentStep(5)}
+            onClick={handleProceedToStep5}
             className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 text-sm"
           >
             <span>Proceed to Vitals & Document OCR</span>

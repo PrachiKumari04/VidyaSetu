@@ -17,7 +17,8 @@ const MODERN_QUESTIONS = [
     hi: '1 से 10 के पैमाने पर, आपकी तकलीफ़ कितनी गंभीर है?',
     type: 'scale',
     min: 1,
-    max: 10
+    max: 10,
+    options: ['1-3 (Mild)', '4-6 (Moderate)', '7-8 (Severe)', '9-10 (Extreme / Unbearable)']
   },
   {
     id: 'MQ-03',
@@ -34,6 +35,7 @@ const MODERN_QUESTIONS = [
     text: 'Are you actively taking any prescription or regular medications?',
     hi: 'क्या आप वर्तमान में कोई नियमित दवाइयाँ ले रहे हैं?',
     type: 'text',
+    options: ['None / No regular medications', 'Blood Pressure medication', 'Diabetes medication (Insulin/Metformin)', 'Thyroid medication', 'Other prescription'],
     skipIfFieldPresent: 'medications'
   },
   {

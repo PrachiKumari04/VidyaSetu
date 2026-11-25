@@ -62,19 +62,21 @@ export default function DoctorDashboard() {
     'Serum Electrolytes (Na/K/Cl)'
   ];
 
-  const fetchQueue = async () => {
+  const fetchQueue = async (autoSelectFirst = false) => {
     try {
       const res = await axios.get(`${API_URL.replace('/api', '')}/api/queue/doctor/${doctorId}`);
       if (res.data?.success) {
         const q = res.data.queue || [];
         setQueue(q);
-        setActivePatient(prev => {
-          if (!prev && q.length > 0) {
-            loadPatientSummary(q[0].encounterId);
-            return q[0];
-          }
-          return prev;
-        });
+        if (autoSelectFirst) {
+          setActivePatient(prev => {
+            if (!prev && q.length > 0) {
+              loadPatientSummary(q[0].encounterId);
+              return q[0];
+            }
+            return prev;
+          });
+        }
       }
     } catch (err) {
       console.error(err);
@@ -97,14 +99,14 @@ export default function DoctorDashboard() {
   };
 
   useEffect(() => {
-    fetchQueue();
+    fetchQueue(true);
 
     // Socket.io Real-time connection
     const socket = io(API_URL.replace('/api', ''), { transports: ['websocket'] });
     socket.emit('join:doctor', doctorId);
 
     socket.on('queue:updated', () => {
-      fetchQueue();
+      fetchQueue(false);
     });
 
     return () => {
@@ -213,7 +215,7 @@ export default function DoctorDashboard() {
       setSelectedLabTests([]);
       setLabInstructions('');
       setFollowUpWindow('none');
-      fetchQueue();
+      await fetchQueue(false);
     } catch (err) {
       console.error(err);
       alert('Error finalizing consultation: ' + (err.response?.data?.error || err.message));

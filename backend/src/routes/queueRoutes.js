@@ -43,7 +43,7 @@ router.get('/patient/:patientId/current', async (req, res) => {
     const { patientId } = req.params;
     const activeToken = await QueueToken.findOne({
       patientId,
-      status: { $in: ['waiting', 'called', 'in-consultation'] }
+      status: { $in: ['waiting', 'called', 'in-consultation', 'lab-transit'] }
     }).sort({ createdAt: -1 });
 
     if (!activeToken) {
@@ -57,8 +57,8 @@ router.get('/patient/:patientId/current', async (req, res) => {
       createdAt: { $lt: activeToken.createdAt }
     });
 
-    const livePosition = activeToken.status === 'called' ? 0 : waitingAhead + 1;
-    const estimatedWaitMinutes = Math.max(0, waitingAhead * 8);
+    const livePosition = activeToken.status === 'called' ? 0 : activeToken.status === 'lab-transit' ? 'LAB' : waitingAhead + 1;
+    const estimatedWaitMinutes = activeToken.status === 'lab-transit' ? 10 : Math.max(0, waitingAhead * 8);
 
     res.json({
       success: true,
